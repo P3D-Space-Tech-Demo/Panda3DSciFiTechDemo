@@ -2,12 +2,12 @@ from panda3d.core import PandaNode, Shader
 
 from Section3.UpdatingEffect import UpdatingEffect
 
-from Section3.Common import Common
+import common
 
 class ItemContents():
     def __init__(self, modelName):
-        self.root = Common.framework.showBase.render.attachNewNode(PandaNode("obj"))
-        self.actor = Common.framework.showBase.loader.loadModel(modelName)
+        self.root = common.base.render.attachNewNode(PandaNode("obj"))
+        self.actor = common.base.loader.loadModel(modelName)
         self.actor.reparentTo(self.root)
         self.actor.setLightOff(1)
 
@@ -15,7 +15,7 @@ class ItemContents():
 
         self.auraName = None
 
-    def cleanup(self):
+    def destroy(self):
         if self.root is not None:
             self.root.removeNode()
             self.root = None
@@ -55,9 +55,9 @@ class RegenerationPotion(ItemContents):
 
         owner.addUpdatingEffect(self.effect)
 
-    def cleanup(self):
+    def destroy(self):
         if self.effect is not None:
-            self.effect.cleanup()
+            self.effect.destroy()
             self.effect = None
 
 class Ammo(ItemContents):

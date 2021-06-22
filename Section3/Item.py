@@ -3,7 +3,7 @@ from panda3d.core import Shader
 from Section3.GameObject import GameObject
 
 from Section3.CommonValues import *
-from Section3.Common import Common
+import common
 
 class Item(GameObject):
     def __init__(self, pos, auraModel, contents):
@@ -29,15 +29,15 @@ class Item(GameObject):
 
         self.health = 0
 
-        if Common.framework.currentLevel is not None:
-            if self in Common.framework.currentLevel.items:
-                Common.framework.currentLevel.items.remove(self)
+        if common.currentSection.currentLevel is not None:
+            if self in common.currentSection.currentLevel.items:
+                common.currentSection.currentLevel.items.remove(self)
 
-        self.cleanup()
+        self.destroy()
 
-    def cleanup(self):
+    def destroy(self):
         if self.contents is not None:
-            self.contents.cleanup()
+            self.contents.destroy()
             self.contents = None
 
-        GameObject.cleanup(self)
+        GameObject.destroy(self)

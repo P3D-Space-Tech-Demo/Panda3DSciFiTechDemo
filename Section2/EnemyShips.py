@@ -6,7 +6,7 @@ from Section2.Weapon import ProjectileWeapon, Projectile
 from Section2.Explosion import Explosion
 
 from Section2.CommonValues import *
-from Section2.Common import Common
+import common
 
 import random
 
@@ -30,7 +30,7 @@ class BasicEnemy(FighterEnemy):
                               4)
         self.actor.setScale(0.5)
 
-        self.deathSound = Common.framework.showBase.loader.loadSfx("Assets/Section2/sounds/enemyDie.ogg")
+        self.deathSound = common.base.loader.loadSfx("Assets/Section2/sounds/enemyDie.ogg")
 
         weaponPoint = self.actor.find("**/weaponPoint")
         gun = BasicEnemyBlaster()
@@ -58,5 +58,5 @@ class BasicEnemy(FighterEnemy):
     def runLogic(self, player, dt):
         FighterEnemy.runLogic(self, player, dt)
 
-    def cleanup(self):
-        FighterEnemy.cleanup(self)
+    def destroy(self):
+        FighterEnemy.destroy(self)

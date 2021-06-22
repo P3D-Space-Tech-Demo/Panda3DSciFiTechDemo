@@ -13,7 +13,7 @@ from Section2.Weapon import Weapon, Projectile, SeekingProjectile, ProjectileWea
 from Section2.Explosion import Explosion
 
 from Section2.CommonValues import *
-from Section2.Common import Common
+import common
 
 import random, math
 
@@ -33,8 +33,8 @@ class BlasterProjectile(Projectile):
         }
 
         explosion = Explosion(3, "blasterImpact", shaderInputs, "noiseRadial", random.uniform(0, 3.152), random.uniform(0, 3.152))
-        explosion.activate(Vec3(0, 0, 0), self.root.getPos(Common.framework.showBase.render))
-        Common.framework.currentLevel.explosions.append(explosion)
+        explosion.activate(Vec3(0, 0, 0), self.root.getPos(common.base.render))
+        common.currentSection.currentLevel.explosions.append(explosion)
 
         Projectile.impact(self, impactee)
 
@@ -68,8 +68,8 @@ class BlasterWeapon(ProjectileWeapon):
     def update(self, dt, owner):
         ProjectileWeapon.update(self, dt, owner)
 
-    def cleanup(self):
-        ProjectileWeapon.cleanup(self)
+    def destroy(self):
+        ProjectileWeapon.destroy(self)
 
 class Rocket(SeekingProjectile):
     def __init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
@@ -103,8 +103,8 @@ class Rocket(SeekingProjectile):
         randomVec2 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
 
         explosion = Explosion(7, "explosion", shaderInputs, "noise", randomVec1, randomVec2)
-        explosion.activate(Vec3(0, 0, 0), self.root.getPos(Common.framework.showBase.render))
-        Common.framework.currentLevel.explosions.append(explosion)
+        explosion.activate(Vec3(0, 0, 0), self.root.getPos(common.base.render))
+        common.currentSection.currentLevel.explosions.append(explosion)
 
         SeekingProjectile.impact(self, impactee)
 

@@ -10,7 +10,7 @@ from panda3d.core import NodePath, PandaNode
 from panda3d.core import Quat
 
 from Section2.CommonValues import *
-from Section2.Common import Common
+import common
 
 import math, random
 
@@ -18,7 +18,7 @@ FRICTION = 10.0
 
 class GameObject():
     def __init__(self, pos, modelName, modelAnims, maxHealth, maxSpeed, colliderName, weaponIntoMask, size):
-        self.root = Common.framework.showBase.render.attachNewNode(PandaNode("obj"))
+        self.root = common.base.render.attachNewNode(PandaNode("obj"))
 
         self.colliderName = colliderName
 
@@ -27,7 +27,7 @@ class GameObject():
         if modelName is None:
             self.actor = NodePath(PandaNode("actor"))
         elif modelAnims is None:
-            self.actor = Common.framework.showBase.loader.loadModel(modelName)
+            self.actor = common.base.loader.loadModel(modelName)
         else:
             self.actor = Actor(modelName, modelAnims)
         self.actor.reparentTo(self.root)
@@ -89,7 +89,7 @@ class GameObject():
                 self.velocity *= self.terminalVelocity
                 speed = self.terminalVelocity
 
-        if Common.useFriction:
+        if common.currentSection.useFriction:
             if not self.walking:
                 perc = speed/self.maxSpeed
                 frictionVal = FRICTION*dt/(max(1, perc*perc))
@@ -148,12 +148,12 @@ class GameObject():
 
     def turnTowards(self, target, turnRate, dt):
         if isinstance(target, NodePath):
-            target = target.getPos(Common.framework.showBase.render)
+            target = target.getPos(common.base.render)
         elif isinstance(target, GameObject):
-            target = target.root.getPos(Common.framework.showBase.render)
-        diff = target - self.root.getPos(Common.framework.showBase.render)
+            target = target.root.getPos(common.base.render)
+        diff = target - self.root.getPos(common.base.render)
 
-        selfQuat = self.root.getQuat(Common.framework.showBase.render)
+        selfQuat = self.root.getQuat(common.base.render)
         selfForward = selfQuat.getForward()
 
         axis = selfForward.cross(diff.normalized())
@@ -166,17 +166,17 @@ class GameObject():
         angle = math.copysign(min(abs(angle), turnRate*dt), angle)
         quat.setFromAxisAngle(angle, axis)
         newQuat = selfQuat*quat
-        self.root.setQuat(Common.framework.showBase.render, newQuat)
+        self.root.setQuat(common.base.render, newQuat)
 
     def getAngleWithVec(self, vec):
-        forward = self.actor.getQuat(Common.framework.showBase.render).getForward()
+        forward = self.actor.getQuat(common.base.render).getForward()
         forward2D = Vec2(forward.x, forward.y)
         vec = Vec2(vec.x, vec.y)
         vec.normalize()
         angle = forward2D.signedAngleDeg(vec)
         return angle
 
-    def cleanup(self):
+    def destroy(self):
         if self.colliderNP is not None and not self.colliderNP.isEmpty():
             self.colliderNP.clearPythonTag(TAG_OWNER)
             self.colliderNP.removeNode()
@@ -232,10 +232,10 @@ class ArmedObject():
     def attackPerformed(self, weapon):
         pass
 
-    def cleanup(self):
+    def destroy(self):
         for weaponSet in self.weaponSets:
             for weapon in weaponSet:
-                weapon.cleanup()
+                weapon.destroy()
         self.weaponSets = []
 
         self.weaponNPs = {}
@@ -262,7 +262,7 @@ class Blast():
 
         self.model.setAlphaScale(math.sin(perc*3.142))
 
-    def cleanup(self):
+    def destroy(self):
         if self.model is not None:
             self.model.removeNode()
             self.model = None

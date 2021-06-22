@@ -15,6 +15,6 @@ class UpdatingEffect():
         if self.duration <= 0:
             self.finish(owner)
 
-    def cleanup(self):
+    def destroy(self):
         if self.active:
             self.finish()

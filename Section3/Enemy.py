@@ -6,7 +6,7 @@ from panda3d.core import Shader
 from Section3.GameObject import GameObject, ArmedObject
 from Section3.CommonValues import *
 
-from Section3.Common import Common
+import common
 
 import random
 
@@ -95,9 +95,9 @@ class Enemy(GameObject, ArmedObject):
         if self.attackSound is not None:
             self.attackSound.play()
 
-    def cleanup(self):
-        ArmedObject.cleanup(self)
-        GameObject.cleanup(self)
+    def destroy(self):
+        ArmedObject.destroy(self)
+        GameObject.destroy(self)
 
 class ChasingEnemy(Enemy):
     def __init__(self, pos, modelName, modelAnims, maxHealth, maxSpeed, colliderName, height,
@@ -141,12 +141,12 @@ class ChasingEnemy(Enemy):
 
             self.steeringRayNPs.append(rayNodePath)
 
-        Common.framework.traverser.addCollider(rayNodePath, self.steeringQueue)
+        common.currentSection.traverser.addCollider(rayNodePath, self.steeringQueue)
 
     def runLogic(self, player, dt):
         Enemy.runLogic(self, player, dt)
 
-        selfPos = self.root.getPos(Common.framework.showBase.render)
+        selfPos = self.root.getPos(common.base.render)
 
         vectorToPlayer = player.root.getPos() - selfPos
 
@@ -160,28 +160,28 @@ class ChasingEnemy(Enemy):
                 attackControl = self.actor.getAnimControl("attack")
                 if not attackControl.isPlaying():
                     self.walking = True
-                    quat = self.root.getQuat(Common.framework.showBase.render)
+                    quat = self.root.getQuat(common.base.render)
                     forward = quat.getForward()
                     if vectorToPlayer.dot(forward) > 0 and self.steeringQueue.getNumEntries() > 0:
                         self.steeringQueue.sortEntries()
                         entry = self.steeringQueue.getEntry(0)
-                        hitPos = entry.getSurfacePoint(Common.framework.showBase.render)
+                        hitPos = entry.getSurfacePoint(common.base.render)
                         right = quat.getRight()
                         up = quat.getUp()
                         dotRight = vectorToPlayer.dot(right)
                         if STEER_RIGHT in self.steerDirs and dotRight < 0:
                             self.velocity += right*self.acceleration*dt
-                            self.root.setH(Common.framework.showBase.render, self.root.getH(Common.framework.showBase.render) + self.turnRateWalking*2*dt)
+                            self.root.setH(common.base.render, self.root.getH(common.base.render) + self.turnRateWalking*2*dt)
                         if STEER_LEFT in self.steerDirs and dotRight >= 0:
                             self.velocity -= right*self.acceleration*dt
-                            self.root.setH(Common.framework.showBase.render, self.root.getH(Common.framework.showBase.render) - self.turnRateWalking*2*dt)
+                            self.root.setH(common.base.render, self.root.getH(common.base.render) - self.turnRateWalking*2*dt)
                         if STEER_UP in self.steerDirs:
                             self.velocity += up*self.acceleration*dt
                         if STEER_DOWN in self.steerDirs:
                             self.velocity -= up*self.acceleration*dt
                     else:
                         self.turnTowards(player, self.turnRateWalking, dt)
-                        self.velocity += self.root.getQuat(Common.framework.showBase.render).getForward()*self.acceleration*dt
+                        self.velocity += self.root.getQuat(common.base.render).getForward()*self.acceleration*dt
 
                 self.endAttacking()
             else:
@@ -192,11 +192,11 @@ class ChasingEnemy(Enemy):
 
                 self.startAttacking()
 
-    def cleanup(self):
+    def destroy(self):
         for np in self.steeringRayNPs:
-            Common.framework.traverser.removeCollider(np)
+            common.currentSection.traverser.removeCollider(np)
             np.removeNode()
         self.steeringRayNPs = []
         self.steeringQueue = None
-        Enemy.cleanup(self)
+        Enemy.destroy(self)
 

@@ -18,7 +18,7 @@ class Trigger():
             np.setName("trigger")
             self.colliderNPs.append(np)
 
-    def cleanup(self):
+    def destroy(self):
         for np in self.colliderNPs:
             np.clearPythonTag(TAG_OWNER)
         self.colliderNPs = []

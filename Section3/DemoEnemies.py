@@ -5,7 +5,7 @@ from Section3.GameObject import Walker, ArmedObject, GameObject, FRICTION
 from Section3.Weapon import HitscanWeapon, ProjectileWeapon, Projectile
 
 from Section3.CommonValues import *
-from Section3.Common import Common
+import common
 
 import random
 
@@ -58,9 +58,9 @@ class MeleeEnemyBasic(ChasingEnemy, Walker):
         if spawnControl is not None and spawnControl.isPlaying():
             return
 
-    def cleanup(self):
-        Walker.cleanup(self)
-        ChasingEnemy.cleanup(self)
+    def destroy(self):
+        Walker.destroy(self)
+        ChasingEnemy.destroy(self)
 
 class RangedEnemyBasic(ChasingEnemy, Walker):
     def __init__(self):
@@ -101,8 +101,8 @@ class RangedEnemyBasic(ChasingEnemy, Walker):
             "flinch1"
         ]
 
-        self.deathSound = loader.loadSfx("Sounds/enemyDie.ogg")
-        self.attackSound = loader.loadSfx("Sounds/enemyAttack.ogg")
+        self.deathSound = loader.loadSfx("Assets/Section3/sounds/enemyDie.ogg")
+        self.attackSound = loader.loadSfx("Assets/Section3/sounds/enemyAttack.ogg")
 
         self.weaponNP = self.actor.attachNewNode(PandaNode("weapon"))
         self.weaponNP.setZ(self.height*0.75)
@@ -145,11 +145,11 @@ class RangedEnemyBasic(ChasingEnemy, Walker):
                 else:
                     direction = -1
                     anim = "strafeLeft"
-                self.velocity = self.root.getQuat(Common.framework.showBase.render).getRight()*direction*self.strafeSpeed
+                self.velocity = self.root.getQuat(common.base.render).getRight()*direction*self.strafeSpeed
                 self.actor.loop(anim)
                 self.walking = True
                 self.strafeTimer = self.strafeDuration
 
-    def cleanup(self):
-        Walker.cleanup(self)
-        ChasingEnemy.cleanup(self)
+    def destroy(self):
+        Walker.destroy(self)
+        ChasingEnemy.destroy(self)

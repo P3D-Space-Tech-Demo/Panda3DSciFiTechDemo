@@ -9,9 +9,11 @@ import Section2.Section2 as Section2
 import Section3.Section3 as Section3
 import Section2.Section2 as Section4
 
+import common
+
 from Ships import shipSpecs
 
-class Game(ShowBase):
+class Game():
     @staticmethod
     def makeButton(text, command, menu, width, extraArgs = None):
         btn = DirectButton(text = text,
@@ -27,24 +29,25 @@ class Game(ShowBase):
         return btn
 
     def __init__(self):
-        ShowBase.__init__(self)
+
+        common.gameController = self
 
         properties = WindowProperties()
         properties.setSize(1280, 720)
-        self.win.requestProperties(properties)
+        common.base.win.requestProperties(properties)
 
-        self.win.setClearColor(Vec4(0, 0, 0, 1))
+        common.base.win.setClearColor(Vec4(0, 0, 0, 1))
 
-        self.disableMouse()
+        common.base.disableMouse()
 
-        self.exitFunc = self.cleanup
+        common.base.exitFunc = self.destroy
 
-        self.accept("window-event", self.windowUpdated)
+        common.base.accept("window-event", self.windowUpdated)
 
         ### Main Menu
 
         self.mainMenuBackdrop = DirectFrame(
-                                            frameSize = (-1/self.aspect2d.getSx(), 1/self.aspect2d.getSx(), -1, 1),
+                                            frameSize = (-1/common.base.aspect2d.getSx(), 1/common.base.aspect2d.getSx(), -1, 1),
                                            )
 
         self.title = DirectLabel(text = "CAPTAIN PANDA",
@@ -223,22 +226,22 @@ class Game(ShowBase):
 
         ### Utility
 
-        self.accept("f", self.toggleFrameRateMeter)
+        common.base.accept("f", self.toggleFrameRateMeter)
         self.showFrameRateMeter = False
 
     def toggleFrameRateMeter(self):
         self.showFrameRateMeter = not self.showFrameRateMeter
 
-        self.setFrameRateMeter(self.showFrameRateMeter)
+        common.base.setFrameRateMeter(self.showFrameRateMeter)
 
     def windowUpdated(self, window):
-        ShowBase.windowEvent(self, window)
-        self.mainMenuBackdrop["frameSize"] = (-1/self.aspect2d.getSx(), 1/self.aspect2d.getSx(),
-                                              -1/self.aspect2d.getSz(), 1/self.aspect2d.getSz())
-        self.mainMenuPanel.setX(self.render2d, -1)
-        self.mainMenuPanel["frameSize"] = (0, 1.25, -1/self.aspect2d.getSz(), 1/self.aspect2d.getSz())
-        self.sectionMenu.setPos(self.render, -0.8, 0, 0)
-        self.shipSelectionMenu.setPos(self.render, -0.6, 0, 0)
+        ShowBase.windowEvent(common.base, window)
+        self.mainMenuBackdrop["frameSize"] = (-1/common.base.aspect2d.getSx(), 1/common.base.aspect2d.getSx(),
+                                              -1/common.base.aspect2d.getSz(), 1/common.base.aspect2d.getSz())
+        self.mainMenuPanel.setX(common.base.render2d, -1)
+        self.mainMenuPanel["frameSize"] = (0, 1.25, -1/common.base.aspect2d.getSz(), 1/common.base.aspect2d.getSz())
+        self.sectionMenu.setPos(common.base.render, -0.8, 0, 0)
+        self.shipSelectionMenu.setPos(common.base.render, -0.6, 0, 0)
 
     def openMenu(self):
         self.currentSectionIndex = 0
@@ -269,7 +272,7 @@ class Game(ShowBase):
 
     def startSectionInternal(self, index, data):
         if self.currentSectionObject is not None:
-            self.currentSectionObject.cleanup()
+            self.currentSectionObject.destroy()
 
         self.mainMenuPanel.hide()
         self.mainMenuBackdrop.hide()
@@ -284,7 +287,7 @@ class Game(ShowBase):
         elif hasattr(sectionModule, "initialize"):
             initialisationMethod = sectionModule.initialize
 
-        self.currentSectionObject = initialisationMethod(self, data)
+        self.currentSectionObject = initialisationMethod(data)
 
     def selectSection(self):
         self.sectionMenu.show()
@@ -295,19 +298,19 @@ class Game(ShowBase):
 
     def gameOver(self):
         if self.currentSectionObject is not None:
-            self.currentSectionObject.cleanup()
+            self.currentSectionObject.destroy()
             self.currentSectionObject = None
 
         if self.gameOverScreen.isHidden():
             self.gameOverScreen.show()
 
-    def cleanup(self):
+    def destroy(self):
         pass
 
     def quit(self):
-        self.cleanup()
+        self.destroy()
 
-        self.userExit()
+        common.base.userExit()
 
 game = Game()
-game.run()
+common.base.run()

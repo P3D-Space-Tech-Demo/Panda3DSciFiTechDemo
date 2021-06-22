@@ -4,7 +4,7 @@ from panda3d.core import Vec3
 from panda3d.core import ColorBlendAttrib
 
 from Section2.CommonValues import *
-from Section2.Common import Common
+import common
 
 from Section2.GameObject import GameObject
 
@@ -74,7 +74,7 @@ class Weapon():
         self.firingTimer = self.firingPeriod
         owner.weaponFired(self)
 
-    def cleanup(self):
+    def destroy(self):
         pass
 
 class ProjectileWeapon(Weapon):
@@ -98,10 +98,10 @@ class ProjectileWeapon(Weapon):
         weaponNP = owner.weaponNPs[self]
 
         proj = Projectile.makeRealProjectileFromTemplate(self.projectileTemplate,
-                                                         weaponNP.getPos(Common.framework.showBase.render))
-        proj.fly(weaponNP.getQuat(Common.framework.showBase.render).getForward())
-        if Common.framework.currentLevel is not None:
-            Common.framework.currentLevel.projectiles.append(proj)
+                                                         weaponNP.getPos(common.base.render))
+        proj.fly(weaponNP.getQuat(common.base.render).getForward())
+        if common.currentSection.currentLevel is not None:
+            common.currentSection.currentLevel.projectiles.append(proj)
 
         return proj
 
@@ -140,7 +140,7 @@ class Projectile(GameObject):
             self.blastModel = None
             self.blastModelFile = None
         else:
-            self.blastModel = Common.framework.showBase.loader.loadModel(blastModel)
+            self.blastModel = common.base.loader.loadModel(blastModel)
             self.blastModelFile = blastModel
 
     @staticmethod
@@ -169,8 +169,8 @@ class Projectile(GameObject):
         colliderNode.setFromCollideMask(MASK_WALLS | self.mask)
         colliderNode.setIntoCollideMask(0)
 
-        Common.framework.pusher.addCollider(self.colliderNP, self.root)
-        Common.framework.traverser.addCollider(self.colliderNP, Common.framework.pusher)
+        common.currentSection.pusher.addCollider(self.colliderNP, self.root)
+        common.currentSection.traverser.addCollider(self.colliderNP, common.currentSection.pusher)
 
         #self.colliderNP.show()
 
@@ -182,33 +182,33 @@ class Projectile(GameObject):
     def update(self, dt):
         GameObject.update(self, dt, fluid = True)
         if self.range is not None:
-            diff = self.root.getPos(Common.framework.showBase.render) - self.startPos
+            diff = self.root.getPos(common.base.render) - self.startPos
             self.currentDistanceSq = diff.lengthSquared()
             if self.currentDistanceSq > self.rangeSq:
                 self.health = 0
 
     def impact(self, impactee):
-        selfPos = self.root.getPos(Common.framework.showBase.render)
+        selfPos = self.root.getPos(common.base.render)
         damageVal = -self.damage
         if self.damageByTime:
             damageVal *= globalClock.getDt()
 
         if impactee is not None:
-            impactee.alterHealth(damageVal, (impactee.root.getPos(Common.framework.showBase.render) - selfPos).normalized(),  self.knockback,
+            impactee.alterHealth(damageVal, (impactee.root.getPos(common.base.render) - selfPos).normalized(),  self.knockback,
                               self.flinchValue)
 
         if self.aoeRadius > 0:
             if self.blastModel is not None:
-                Common.framework.currentLevel.addBlast(self.blastModel,
+                common.currentSection.currentLevel.addBlast(self.blastModel,
                                                        max(0.01, self.aoeRadius - 0.7),
                                                        self.aoeRadius + 0.2,
                                                        0.15,
                                                        selfPos)
                 self.blastModel = None
             aoeRadiusSq = self.aoeRadius*self.aoeRadius
-            for other in Common.framework.currentLevel.enemies:
+            for other in common.currentSection.currentLevel.enemies:
                 if other is not impactee:
-                    diff = other.root.getPos(Common.framework.showBase.render) - selfPos
+                    diff = other.root.getPos(common.base.render) - selfPos
                     distSq = diff.lengthSquared()
                     if distSq < aoeRadiusSq:
                         perc = distSq/aoeRadiusSq
@@ -218,7 +218,7 @@ class Projectile(GameObject):
         if self.maxHealth > 0:
             self.health = 0
 
-    def cleanup(self):
+    def destroy(self):
         if self.blastModel is not None:
             self.blastModel.removeNode()
             self.blastModel = None
@@ -228,7 +228,7 @@ class Projectile(GameObject):
             self.colliderNP.removeNode()
         self.colliderNP = None
 
-        GameObject.cleanup(self)
+        GameObject.destroy(self)
 
 class SeekingProjectile(Projectile):
     def __init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
@@ -243,13 +243,13 @@ class SeekingProjectile(Projectile):
     def update(self, dt):
         if self.owner is not None:
             if self.owner.lockedTarget is not None and self.owner.lockedTarget.root is not None:
-                diff = self.owner.lockedTarget.root.getPos(Common.framework.showBase.render) - self.root.getPos(Common.framework.showBase.render)
+                diff = self.owner.lockedTarget.root.getPos(common.base.render) - self.root.getPos(common.base.render)
                 diff.normalize()
                 self.velocity += diff*self.acceleration*dt
                 self.actor.lookAt(self.velocity)
 
         Projectile.update(self, dt)
 
-    def cleanup(self):
+    def destroy(self):
         self.owner = None
-        Projectile.cleanup(self)
+        Projectile.destroy(self)

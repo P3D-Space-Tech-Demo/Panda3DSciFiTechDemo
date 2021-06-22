@@ -13,7 +13,7 @@ from Section3.PlayerWeapons import RapidShotgunWeapon, BlasterWeapon
 from Section3.SpecificItems import *
 
 from Section3.CommonValues import *
-from Section3.Common import Common
+import common
 
 class Player(GameObject, Walker, ArmedObject):
     def __init__(self):
@@ -36,17 +36,17 @@ class Player(GameObject, Walker, ArmedObject):
         light.setAttenuation((1, 0.01, 0.005))
         self.lightNP = self.root.attachNewNode(light)
         self.lightNP.setZ(1)
-        Common.framework.showBase.render.setLight(self.lightNP)
+        common.base.render.setLight(self.lightNP)
 
         self.collider.node().setFromCollideMask(MASK_WALLS | MASK_FROM_PLAYER)
 
         self.actor.setZ(self.height)
 
-        Common.framework.showBase.camera.reparentTo(self.actor)
-        Common.framework.showBase.camera.setPos(0, 0, 0)
-        Common.framework.showBase.camera.setHpr(0, 0, 0)
+        common.base.camera.reparentTo(self.actor)
+        common.base.camera.setPos(0, 0, 0)
+        common.base.camera.setHpr(0, 0, 0)
 
-        lens = Common.framework.showBase.camLens
+        lens = common.base.camLens
         ratio = lens.getAspectRatio()
 
         lens.setFov(80*ratio)
@@ -61,9 +61,9 @@ class Player(GameObject, Walker, ArmedObject):
         self.healthRight = 0.9
         self.healthWidth = self.healthRight - self.healthLeft
 
-        self.uiRoot = Common.framework.showBase.a2dBottomCenter.attachNewNode(PandaNode("player UI"))
+        self.uiRoot = common.base.a2dBottomCenter.attachNewNode(PandaNode("player UI"))
 
-        self.healthBar = Common.framework.showBase.loader.loadModel("Assets/Section3/models/healthBar")
+        self.healthBar = common.base.loader.loadModel("Assets/Section3/models/healthBar")
         self.healthBar.reparentTo(self.uiRoot)
         self.healthBar.setZ(0.05)
         self.healthBar.setX(self.healthLeft)
@@ -107,7 +107,7 @@ class Player(GameObject, Walker, ArmedObject):
 
         self.walking = False
 
-        quat = self.root.getQuat(Common.framework.showBase.render)
+        quat = self.root.getQuat(common.base.render)
         forward = quat.getForward()
         right = quat.getRight()
 
@@ -126,13 +126,13 @@ class Player(GameObject, Walker, ArmedObject):
         if self.walking:
             self.inControl = True
 
-        mouseWatcher = Common.framework.showBase.mouseWatcherNode
+        mouseWatcher = common.base.mouseWatcherNode
         if mouseWatcher.hasMouse():
-            xSize = Common.framework.showBase.win.getXSize()
-            ySize = Common.framework.showBase.win.getYSize()
+            xSize = common.base.win.getXSize()
+            ySize = common.base.win.getYSize()
             xPix = float(xSize % 2)/xSize
             yPix = float(ySize % 2)/ySize
-            mousePos = Vec2(Common.framework.showBase.mouseWatcherNode.getMouse())
+            mousePos = Vec2(common.base.mouseWatcherNode.getMouse())
             mousePos.addX(-xPix)
             mousePos.addY(-yPix)
             if abs(mousePos.x) < xPix:
@@ -140,7 +140,7 @@ class Player(GameObject, Walker, ArmedObject):
             if abs(mousePos.y) < yPix:
                 mousePos.y = 0
 
-            Common.framework.showBase.win.movePointer(0, xSize//2, ySize//2)
+            common.base.win.movePointer(0, xSize//2, ySize//2)
         else:
             mousePos = self.lastMousePos
 
@@ -154,7 +154,7 @@ class Player(GameObject, Walker, ArmedObject):
                 self.endAttacking()
 
         [effect.update(self, dt) for effect in self.updatingEffects]
-        [effect.cleanup() for effect in self.updatingEffects if not effect.active]
+        [effect.destroy() for effect in self.updatingEffects if not effect.active]
         self.updatingEffects = [effect for effect in self.updatingEffects if effect.active]
 
     def attackPerformed(self, weapon):
@@ -183,7 +183,7 @@ class Player(GameObject, Walker, ArmedObject):
         self.setCurrentWeapon(newIndex)
 
     def interact(self):
-        self.interactionSegmentTraverser.traverse(Common.framework.showBase.render)
+        self.interactionSegmentTraverser.traverse(common.base.render)
 
         if self.interactionSegmentQueue.getNumEntries() > 0:
             #print ("Hit something:")
@@ -199,7 +199,7 @@ class Player(GameObject, Walker, ArmedObject):
         self.updatingEffects.append(effect)
         effect.start(self)
 
-    def cleanup(self):
+    def destroy(self):
         if self.uiRoot is not None:
             self.uiRoot.removeNode()
             self.uiRoot = None
@@ -207,14 +207,14 @@ class Player(GameObject, Walker, ArmedObject):
         self.weaponUIRoot = None
 
         if self.lightNP is not None:
-            Common.framework.showBase.render.clearLight(self.lightNP)
+            common.base.render.clearLight(self.lightNP)
             self.lightNP.removeNode()
             self.lightNP = None
 
         for effect in self.updatingEffects:
-            effect.cleanup()
+            effect.destroy()
         self.updatingEffects = []
 
-        ArmedObject.cleanup(self)
-        Walker.cleanup(self)
-        GameObject.cleanup(self)
+        ArmedObject.destroy(self)
+        Walker.destroy(self)
+        GameObject.destroy(self)

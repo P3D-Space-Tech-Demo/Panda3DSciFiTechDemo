@@ -9,7 +9,7 @@ from panda3d.core import PointLight
 from panda3d.core import NodePath, PandaNode
 
 from Section3.CommonValues import *
-from Section3.Common import Common
+import common
 
 import math, random
 
@@ -17,7 +17,7 @@ FRICTION = 150.0
 
 class GameObject():
     def __init__(self, pos, modelName, modelAnims, maxHealth, maxSpeed, colliderName, height, weaponIntoMask):
-        self.root = Common.framework.showBase.render.attachNewNode(PandaNode("obj"))
+        self.root = common.base.render.attachNewNode(PandaNode("obj"))
 
         self.colliderName = colliderName
 
@@ -26,7 +26,7 @@ class GameObject():
         if modelName is None:
             self.actor = NodePath(PandaNode("actor"))
         elif modelAnims is None:
-            self.actor = Common.framework.showBase.loader.loadModel(modelName)
+            self.actor = common.base.loader.loadModel(modelName)
         else:
             self.actor = Actor(modelName, modelAnims)
         self.actor.reparentTo(self.root)
@@ -127,10 +127,10 @@ class GameObject():
 
     def turnTowards(self, target, turnRate, dt):
         if isinstance(target, NodePath):
-            target = target.getPos(Common.framework.showBase.render)
+            target = target.getPos(common.base.render)
         elif isinstance(target, GameObject):
-            target = target.root.getPos(Common.framework.showBase.render)
-        diff = target - self.root.getPos(Common.framework.showBase.render)
+            target = target.root.getPos(common.base.render)
+        diff = target - self.root.getPos(common.base.render)
 
         angle = self.getAngleWithVec(diff)
 
@@ -155,14 +155,14 @@ class GameObject():
                 return angle-maxTurn
 
     def getAngleWithVec(self, vec):
-        forward = self.actor.getQuat(Common.framework.showBase.render).getForward()
+        forward = self.actor.getQuat(common.base.render).getForward()
         forward2D = Vec2(forward.x, forward.y)
         vec = Vec2(vec.x, vec.y)
         vec.normalize()
         angle = forward2D.signedAngleDeg(vec)
         return angle
 
-    def cleanup(self):
+    def destroy(self):
         if self.weaponCollider is not None and not self.weaponCollider.isEmpty():
             self.weaponCollider.clearPythonTag(TAG_OWNER)
             self.weaponCollider.removeNode()
@@ -190,8 +190,8 @@ class Walker():
 
         self.collider.setZ(self.height*0.5)
 
-        Common.framework.pusher.addCollider(self.collider, self.root)
-        Common.framework.traverser.addCollider(self.collider, Common.framework.pusher)
+        common.currentSection.pusher.addCollider(self.collider, self.root)
+        common.currentSection.traverser.addCollider(self.collider, common.currentSection.pusher)
 
         self.ray = CollisionRay(0, 0, self.height/2, 0, 0, -1)
 
@@ -204,22 +204,22 @@ class Walker():
         self.rayNodePath = self.root.attachNewNode(rayNode)
         self.rayQueue = CollisionHandlerQueue()
 
-        Common.framework.traverser.addCollider(self.rayNodePath, self.rayQueue)
+        common.currentSection.traverser.addCollider(self.rayNodePath, self.rayQueue)
 
     def update(self, dt):
         if self.rayQueue.getNumEntries() > 0:
             self.rayQueue.sortEntries()
             rayHit = self.rayQueue.getEntry(0)
-            hitPos = rayHit.getSurfacePoint(Common.framework.showBase.render)
+            hitPos = rayHit.getSurfacePoint(common.base.render)
             self.root.setZ(hitPos.z)
 
-    def cleanup(self):
+    def destroy(self):
         if self.collider is not None and not self.collider.isEmpty():
             self.collider.clearPythonTag(TAG_OWNER)
-            Common.framework.traverser.removeCollider(self.collider)
-            Common.framework.pusher.removeCollider(self.collider)
+            common.currentSection.traverser.removeCollider(self.collider)
+            common.currentSection.pusher.removeCollider(self.collider)
 
-        Common.framework.traverser.removeCollider(self.rayNodePath)
+        common.currentSection.traverser.removeCollider(self.rayNodePath)
 
 class ArmedObject():
     def __init__(self):
@@ -270,9 +270,9 @@ class ArmedObject():
     def attackPerformed(self, weapon):
         pass
 
-    def cleanup(self):
+    def destroy(self):
         for weapon in self.weapons:
-            weapon.cleanup()
+            weapon.destroy()
         self.weapons = []
 
         self.currentWeapon = None
@@ -300,7 +300,7 @@ class Blast():
 
         self.model.setAlphaScale(math.sin(perc*3.142))
 
-    def cleanup(self):
+    def destroy(self):
         if self.model is not None:
             self.model.removeNode()
             self.model = None

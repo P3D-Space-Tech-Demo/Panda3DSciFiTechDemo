@@ -1,5 +1,3 @@
-from direct.showbase.ShowBase import ShowBase
-
 from direct.actor.Actor import Actor
 from direct.task import Task
 from panda3d.core import CollisionTraverser, CollisionHandlerPusher, CollisionSphere, CollisionTube, CollisionNode
@@ -15,18 +13,15 @@ from Section3.Player import *
 from Section3.Enemy import *
 from Section3.Level import Level
 
-from Section3.Common import Common
+import common
 
 import random
 
 class Section3():
-    def __init__(self, showBase):
-        self.showBase = showBase
+    def __init__(self):
+        common.currentSection = self
 
-        Common.initialise()
-        Common.framework = self
-
-        showBase.render.setShaderAuto()
+        common.base.render.setShaderAuto()
 
         self.keyMap = {
             "up" : False,
@@ -39,21 +34,21 @@ class Section3():
             "invRight" : False
         }
 
-        showBase.accept("w", self.updateKeyMap, ["up", True])
-        showBase.accept("w-up", self.updateKeyMap, ["up", False])
-        showBase.accept("s", self.updateKeyMap, ["down", True])
-        showBase.accept("s-up", self.updateKeyMap, ["down", False])
-        showBase.accept("a", self.updateKeyMap, ["left", True])
-        showBase.accept("a-up", self.updateKeyMap, ["left", False])
-        showBase.accept("d", self.updateKeyMap, ["right", True])
-        showBase.accept("d-up", self.updateKeyMap, ["right", False])
-        showBase.accept("mouse1", self.updateKeyMap, ["shoot", True])
-        showBase.accept("mouse1-up", self.updateKeyMap, ["shoot", False])
-        showBase.accept("wheel_up", self.onMouseWheel, [1])
-        showBase.accept("wheel_down", self.onMouseWheel, [-1])
-        showBase.accept("space-up", self.interact)
-        showBase.accept("1", self.selectWeapon, [0])
-        showBase.accept("2", self.selectWeapon, [1])
+        common.base.accept("w", self.updateKeyMap, ["up", True])
+        common.base.accept("w-up", self.updateKeyMap, ["up", False])
+        common.base.accept("s", self.updateKeyMap, ["down", True])
+        common.base.accept("s-up", self.updateKeyMap, ["down", False])
+        common.base.accept("a", self.updateKeyMap, ["left", True])
+        common.base.accept("a-up", self.updateKeyMap, ["left", False])
+        common.base.accept("d", self.updateKeyMap, ["right", True])
+        common.base.accept("d-up", self.updateKeyMap, ["right", False])
+        common.base.accept("mouse1", self.updateKeyMap, ["shoot", True])
+        common.base.accept("mouse1-up", self.updateKeyMap, ["shoot", False])
+        common.base.accept("wheel_up", self.onMouseWheel, [1])
+        common.base.accept("wheel_down", self.onMouseWheel, [-1])
+        common.base.accept("space-up", self.interact)
+        common.base.accept("1", self.selectWeapon, [0])
+        common.base.accept("2", self.selectWeapon, [1])
 
         self.pusher = CollisionHandlerPusher()
         self.traverser = CollisionTraverser()
@@ -65,10 +60,10 @@ class Section3():
         self.pusher.add_in_pattern("%fn-into")
         self.pusher.add_again_pattern("%fn-again-into")
         #self.accept("trapEnemy-into-wall", self.stopTrap)
-        showBase.accept("projectile-into", self.projectileImpact)
-        showBase.accept("projectile-again-into", self.projectileImpact)
-        showBase.accept("playerWallCollider-into-item", self.itemCollected)
-        showBase.accept("playerWallCollider-into-trigger", self.triggerActivated)
+        common.base.accept("projectile-into", self.projectileImpact)
+        common.base.accept("projectile-again-into", self.projectileImpact)
+        common.base.accept("playerWallCollider-into-item", self.itemCollected)
+        common.base.accept("playerWallCollider-into-trigger", self.triggerActivated)
 
         self.updateTask = taskMgr.add(self.update, "update")
 
@@ -76,7 +71,7 @@ class Section3():
         self.currentLevel = None
 
     def startGame(self):
-        self.cleanup()
+        self.destroy()
 
         self.player = Player()
 
@@ -107,10 +102,10 @@ class Section3():
             self.currentLevel.update(self.player, self.keyMap, dt)
 
             if self.player is not None and self.player.health <= 0:
-                self.showBase.gameOver()
+                common.gameController.gameOver()
                 return Task.done
 
-            self.traverser.traverse(self.showBase.render)
+            self.traverser.traverse(common.base.render)
 
             if self.player is not None and self.player.health > 0:
                 self.player.postTraversalUpdate(dt)
@@ -144,16 +139,16 @@ class Section3():
         if self.currentLevel is not None:
             self.currentLevel.triggerActivated(trigger)
 
-    def cleanup(self):
+    def destroy(self):
         if self.currentLevel is not None:
-            self.currentLevel.cleanup()
+            self.currentLevel.destroy()
             self.currentLevel = None
 
         if self.player is not None:
-            self.player.cleanup()
+            self.player.destroy()
             self.player = None
 
-def initialise(showBase, data = None):
-    game = Section3(showBase)
+def initialise(data = None):
+    game = Section3()
     game.startGame()
     return game

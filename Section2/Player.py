@@ -17,7 +17,7 @@ from Section2.GameObject import GameObject, ArmedObject
 from Section2.PlayerWeapons import BlasterWeapon, RocketWeapon
 
 from Section2.CommonValues import *
-from Section2.Common import Common
+import common
 
 import math
 
@@ -69,18 +69,18 @@ class Player(GameObject, ArmedObject):
         light.setAttenuation((1, 0.01, 0.001))
         self.lightNP = self.root.attachNewNode(light)
         self.lightNP.setZ(1)
-        Common.framework.showBase.render.setLight(self.lightNP)
+        common.base.render.setLight(self.lightNP)
 
         self.colliderNP.node().setFromCollideMask(MASK_WALLS | MASK_FROM_PLAYER)
 
-        Common.framework.pusher.addCollider(self.colliderNP, self.root)
-        Common.framework.traverser.addCollider(self.colliderNP, Common.framework.pusher)
+        common.currentSection.pusher.addCollider(self.colliderNP, self.root)
+        common.currentSection.traverser.addCollider(self.colliderNP, common.currentSection.pusher)
 
-        Common.framework.showBase.camera.reparentTo(self.actor)
-        Common.framework.showBase.camera.setPos(0, 0, 0)
-        Common.framework.showBase.camera.setHpr(0, 0, 0)
+        common.base.camera.reparentTo(self.actor)
+        common.base.camera.setPos(0, 0, 0)
+        common.base.camera.setHpr(0, 0, 0)
 
-        lens = Common.framework.showBase.camLens
+        lens = common.base.camLens
 
         lens.setNear(0.03)
 
@@ -105,24 +105,24 @@ class Player(GameObject, ArmedObject):
         self.lockTargetTimer = 0
         self.lockDuration = 1
 
-        Common.framework.traverser.addCollider(self.targetingRayNP, self.targetingQueue)
+        common.currentSection.traverser.addCollider(self.targetingRayNP, self.targetingQueue)
 
         #rayNodePath.show()
 
-        self.uiRoot = aspect2d.attachNewNode(PandaNode("player UI"))
+        self.uiRoot = common.base.aspect2d.attachNewNode(PandaNode("player UI"))
 
         cardMaker = CardMaker("UI maker")
         cardMaker.setFrame(-1, 1, -1, 1)
 
         self.centreSpot = self.uiRoot.attachNewNode(cardMaker.generate())
-        self.centreSpot.setTexture(Common.framework.showBase.loader.loadTexture("Assets/Section2/tex/spot.png"))
+        self.centreSpot.setTexture(common.base.loader.loadTexture("Assets/Section2/tex/spot.png"))
         self.centreSpot.setTransparency(True)
         self.centreSpot.setPos(0, 0, 0)
         self.centreSpot.setScale(0.01)
         self.centreSpot.setAlphaScale(0.5)
 
         self.directionIndicator = self.uiRoot.attachNewNode(cardMaker.generate())
-        self.directionIndicator.setTexture(Common.framework.showBase.loader.loadTexture("Assets/Section2/tex/directionIndicator.png"))
+        self.directionIndicator.setTexture(common.base.loader.loadTexture("Assets/Section2/tex/directionIndicator.png"))
         self.directionIndicator.setTransparency(True)
         self.directionIndicator.setScale(0.05)
         self.directionIndicator.hide()
@@ -131,20 +131,20 @@ class Player(GameObject, ArmedObject):
         for i in range(4):
             markerRotationNP = self.lockMarkerRoot.attachNewNode(PandaNode("lock marker rotation"))
             marker = markerRotationNP.attachNewNode(cardMaker.generate())
-            marker.setTexture(Common.framework.showBase.loader.loadTexture("Assets/Section2/tex/lockMarker.png"))
+            marker.setTexture(common.base.loader.loadTexture("Assets/Section2/tex/lockMarker.png"))
             marker.setTransparency(True)
             markerRotationNP.setScale(0.04)
             markerRotationNP.setR(i*90)
         self.lockMarkerRoot.hide()
 
-        self.lockBar = Common.framework.showBase.loader.loadModel("Assets/Section2/models/uiLockBar")
+        self.lockBar = common.base.loader.loadModel("Assets/Section2/models/uiLockBar")
         self.lockBar.reparentTo(self.uiRoot)
         self.lockBar.setScale(0.15)
         #self.lockBar.hide()
 
         cardMaker.setFrame(-1, 1, 0, 1)
 
-        self.cockpit = Common.framework.showBase.loader.loadModel("Assets/Section2/models/{0}".format(shipSpec.cockpitModelFile))
+        self.cockpit = common.base.loader.loadModel("Assets/Section2/models/{0}".format(shipSpec.cockpitModelFile))
         self.cockpit.reparentTo(self.actor)
 
         healthBarRoot = self.cockpit.find("**/healthBar")
@@ -221,7 +221,7 @@ class Player(GameObject, ArmedObject):
 
         self.walking = False
 
-        quat = self.root.getQuat(Common.framework.showBase.render)
+        quat = self.root.getQuat(common.base.render)
         forward = quat.getForward()
         right = quat.getRight()
         up = quat.getUp()
@@ -290,7 +290,7 @@ class Player(GameObject, ArmedObject):
                 self.ceaseFiringSet(i + 1)
 
         [effect.update(self, dt) for effect in self.updatingEffects]
-        [effect.cleanup() for effect in self.updatingEffects if not effect.active]
+        [effect.destroy() for effect in self.updatingEffects if not effect.active]
         self.updatingEffects = [effect for effect in self.updatingEffects if effect.active]
 
         if self.targetingQueue.getNumEntries() > 0:
@@ -335,11 +335,11 @@ class Player(GameObject, ArmedObject):
                         self.lockMarkerRoot.show()
 
                     camPt = Point2()
-                    convertedPt = Common.framework.showBase.cam.getRelativePoint(
-                                            Common.framework.showBase.render,
-                                            self.lockedTarget.root.getPos(Common.framework.showBase.render))
-                    if Common.framework.showBase.camLens.project(convertedPt, camPt):
-                        self.lockMarkerRoot.setPos(Common.framework.showBase.render2d, camPt.x, 0, camPt.y)
+                    convertedPt = common.base.cam.getRelativePoint(
+                                            common.base.render,
+                                            self.lockedTarget.root.getPos(common.base.render))
+                    if common.base.camLens.project(convertedPt, camPt):
+                        self.lockMarkerRoot.setPos(common.base.render2d, camPt.x, 0, camPt.y)
                         if self.lockMarkerRoot.isHidden():
                             self.lockMarkerRoot.show()
                         for child in self.lockMarkerRoot.getChildren():
@@ -425,8 +425,8 @@ class Player(GameObject, ArmedObject):
         self.speedometer.resetFrameSize()
 
     def updateRadar(self):
-        if Common.framework.currentLevel is not None:
-            self.radarDrawer.begin(Common.framework.showBase.cam, Common.framework.showBase.render)
+        if common.currentSection.currentLevel is not None:
+            self.radarDrawer.begin(common.base.cam, common.base.render)
 
             uvs = Vec2(0, 0)
             
@@ -441,7 +441,7 @@ class Player(GameObject, ArmedObject):
 
             selfForward = Vec3(0, 1, 0)
 
-            for enemy in Common.framework.currentLevel.enemies:
+            for enemy in common.currentSection.currentLevel.enemies:
                 enemyPos = enemy.root.getPos(self.root)
                 dist = enemyPos.length()
                 if dist < self.maxRadarRange:
@@ -466,20 +466,20 @@ class Player(GameObject, ArmedObject):
         self.updatingEffects.append(effect)
         effect.start(self)
 
-    def cleanup(self):
+    def destroy(self):
         if self.uiRoot is not None:
             self.uiRoot.removeNode()
             self.uiRoot = None
         self.healthBar = None
 
         if self.lightNP is not None:
-            Common.framework.showBase.render.clearLight(self.lightNP)
+            common.base.render.clearLight(self.lightNP)
             self.lightNP.removeNode()
             self.lightNP = None
 
         for effect in self.updatingEffects:
-            effect.cleanup()
+            effect.destroy()
         self.updatingEffects = []
 
-        ArmedObject.cleanup(self)
-        GameObject.cleanup(self)
+        ArmedObject.destroy(self)
+        GameObject.destroy(self)

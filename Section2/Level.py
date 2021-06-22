@@ -6,7 +6,7 @@ from Section2.Trigger import Trigger
 from Section2.Spawner import Spawner
 import Section2.SpecificEnemies as SpecificEnemies
 
-from Section2.Common import Common
+import common
 
 from panda3d.core import TextNode
 
@@ -14,8 +14,8 @@ class Level():
     def __init__(self, levelFile):
         self.levelFile = levelFile
 
-        self.geometry = Common.framework.showBase.loader.loadModel("Assets/Section2/levels/" + levelFile)
-        self.geometry.reparentTo(Common.framework.showBase.render)
+        self.geometry = common.base.loader.loadModel("Assets/Section2/levels/" + levelFile)
+        self.geometry.reparentTo(common.base.render)
 
         try:
             moduleObj = __import__("Assets/Section2.scripts.{0}".format(levelFile), levelFile)
@@ -80,8 +80,8 @@ class Level():
             id = np.getTag("id")
             spawnerIsActive = np.getTag("active") == "True"
             spawnerGroupName = np.getTag("groupName")
-            pos = np.getPos(Common.framework.showBase.render)
-            h = np.getH(Common.framework.showBase.render)
+            pos = np.getPos(common.base.render)
+            h = np.getH(common.base.render)
             spawnerName = np.getName()
 
             np.removeNode()
@@ -121,7 +121,7 @@ class Level():
                 auraPath = None
             item = Item(obj.root.getPos() + Vec3(0, 0, 1), auraPath, obj)
             self.items.append(item)
-        obj.root.wrtReparentTo(Common.framework.showBase.render)
+        obj.root.wrtReparentTo(common.base.render)
 
     def activateSpawnerGroup(self, groupName):
         spawnerList = self.spawnerGroups.get(groupName, None)
@@ -145,7 +145,7 @@ class Level():
 
     def addBlast(self, model, minSize, maxSize, duration, pos):
         blast = Blast(model, minSize, maxSize, duration)
-        blast.model.reparentTo(Common.framework.showBase.render)
+        blast.model.reparentTo(common.base.render)
         blast.model.setPos(pos)
         self.blasts.append(blast)
         blast.update(0)
@@ -172,14 +172,14 @@ class Level():
                 enemiesAnimatingDeaths = []
                 for enemy in self.deadEnemies:
                     GameObject.update(enemy, dt)
-                    enemy.cleanup()
+                    enemy.destroy()
                 self.deadEnemies = enemiesAnimatingDeaths
 
                 # Projectile update
 
                 [proj.update(dt) for proj in self.projectiles]
 
-                [proj.cleanup() for proj in self.projectiles if proj.maxHealth > 0 and proj.health <= 0]
+                [proj.destroy() for proj in self.projectiles if proj.maxHealth > 0 and proj.health <= 0]
                 self.projectiles = [proj for proj in self.projectiles if proj.maxHealth <= 0 or proj.health > 0]
 
                 # Passive object update
@@ -188,45 +188,45 @@ class Level():
 
                 [blast.update(dt) for blast in self.blasts]
 
-                [blast.cleanup() for blast in self.blasts if blast.timer <= 0]
+                [blast.destroy() for blast in self.blasts if blast.timer <= 0]
                 self.blasts = [blast for blast in self.blasts if blast.timer > 0]
 
                 [explosion.update(dt) for explosion in self.explosions]
-                [explosion.cleanup() for explosion in self.explosions if not explosion.isAlive()]
+                [explosion.destroy() for explosion in self.explosions if not explosion.isAlive()]
                 self.explosions = [explosion for explosion in self.explosions if explosion.isAlive()]
 
         [system.update(dt) for system in self.particleSystems]
 
-    def cleanup(self):
+    def destroy(self):
         if self.geometry is not None:
             self.geometry.removeNode()
             self.geometry = None
 
         for blast in self.blasts:
-            blast.cleanup()
+            blast.destroy()
         self.blasts = []
 
         for trigger in self.triggers:
-            trigger.cleanup()
+            trigger.destroy()
         self.triggers = []
 
         for spawner in self.spawners.values():
-            spawner.cleanup()
+            spawner.destroy()
         self.spawners = {}
         self.spawnerGroups = {}
 
         for enemy in self.enemies:
-            enemy.cleanup()
+            enemy.destroy()
         self.enemies = []
 
         for enemy in self.deadEnemies:
-            enemy.cleanup()
+            enemy.destroy()
         self.deadEnemies = []
 
         for passive in self.passiveObjects:
-            passive.cleanup()
+            passive.destroy()
         self.passiveObjects = []
 
         for projectile in self.projectiles:
-            projectile.cleanup()
+            projectile.destroy()
         self.projectiles = []

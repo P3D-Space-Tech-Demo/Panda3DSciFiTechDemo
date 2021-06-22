@@ -1,5 +1,5 @@
 
-from Section2.Common import Common
+import common
 
 class Spawner():
     def __init__(self, data, pos, h, objIsEnemy):
@@ -8,17 +8,17 @@ class Spawner():
         else:
             self.spawnObj = data()
 
-        self.spawnObj.root.setPos(Common.framework.showBase.render, pos)
-        self.spawnObj.root.setH(Common.framework.showBase.render, h)
+        self.spawnObj.root.setPos(common.base.render, pos)
+        self.spawnObj.root.setH(common.base.render, h)
         self.spawnObj.root.detachNode()
 
         self.objIsEnemy = objIsEnemy
 
         self.isReady = True
 
-    def cleanup(self):
+    def destroy(self):
         if self.spawnObj is not None:
-            self.spawnObj.cleanup()
+            self.spawnObj.destroy()
             self.spawnObj = None
 
         self.isReady = False

@@ -6,7 +6,7 @@ from panda3d.core import ColorBlendAttrib
 
 from Section2.GameObject import GameObject, ArmedObject
 from Section2.CommonValues import *
-from Section2.Common import Common
+import common
 
 import random, math
 
@@ -18,8 +18,8 @@ class Enemy(GameObject, ArmedObject):
 
         self.colliderNP.node().setFromCollideMask(MASK_WALLS | MASK_FROM_ENEMY)
 
-        Common.framework.pusher.addCollider(self.colliderNP, self.root)
-        Common.framework.traverser.addCollider(self.colliderNP, Common.framework.pusher)
+        common.currentSection.pusher.addCollider(self.colliderNP, self.root)
+        common.currentSection.traverser.addCollider(self.colliderNP, common.currentSection.pusher)
 
         colliderNode = CollisionNode("lock sphere")
         solid = CollisionSphere(0, 0, 0, size*2)
@@ -65,12 +65,12 @@ class Enemy(GameObject, ArmedObject):
             self.flinch()
 
         if dHealth < 0 and incomingImpulse is not None:
-            shield = Common.framework.showBase.loader.loadModel("Assets/Section2/models/shield")
+            shield = common.base.loader.loadModel("Assets/Section2/models/shield")
             shield.setScale(self.size)
             shield.reparentTo(self.root)
             shield.setAttrib(ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne))
-            shield.lookAt(Common.framework.showBase.render,
-                          self.root.getPos(Common.framework.showBase.render) + incomingImpulse)
+            shield.lookAt(common.base.render,
+                          self.root.getPos(common.base.render) + incomingImpulse)
             shield.setBin("unsorted", 1)
             shield.setDepthWrite(False)
             self.shields.append([shield, 0])
@@ -114,14 +114,14 @@ class Enemy(GameObject, ArmedObject):
     def onDeath(self):
         explosion = self.explosion
         self.explosion = None
-        explosion.activate(self.velocity, self.root.getPos(Common.framework.showBase.render))
-        Common.framework.currentLevel.explosions.append(explosion)
+        explosion.activate(self.velocity, self.root.getPos(common.base.render))
+        common.currentSection.currentLevel.explosions.append(explosion)
         self.walking = False
 
-    def cleanup(self):
+    def destroy(self):
         self.lockColliderNP.clearPythonTag(TAG_OWNER)
-        ArmedObject.cleanup(self)
-        GameObject.cleanup(self)
+        ArmedObject.destroy(self)
+        GameObject.destroy(self)
 
 class FighterEnemy(Enemy):
     STATE_ATTACK = 0
@@ -165,15 +165,15 @@ class FighterEnemy(Enemy):
 
             self.steeringRayNPs.append(rayNodePath)
 
-        Common.framework.traverser.addCollider(rayNodePath, self.steeringQueue)
+        common.currentSection.traverser.addCollider(rayNodePath, self.steeringQueue)
 
     def runLogic(self, player, dt):
         Enemy.runLogic(self, player, dt)
 
-        selfPos = self.root.getPos(Common.framework.showBase.render)
+        selfPos = self.root.getPos(common.base.render)
         playerPos = player.root.getPos()
         playerVel = player.velocity
-        playerQuat = player.root.getQuat(Common.framework.showBase.render)
+        playerQuat = player.root.getQuat(common.base.render)
         playerForward = playerQuat.getForward()
         playerUp = playerQuat.getUp()
         playerRight = playerQuat.getRight()
@@ -202,7 +202,7 @@ class FighterEnemy(Enemy):
 
         distanceToPlayer = vectorToTargetPt.length()
 
-        quat = self.root.getQuat(Common.framework.showBase.render)
+        quat = self.root.getQuat(common.base.render)
         forward = quat.getForward()
         up = quat.getUp()
         right = quat.getRight()
@@ -246,15 +246,15 @@ class FighterEnemy(Enemy):
 
             self.velocity += forward*self.acceleration*dt
 
-    def cleanup(self):
+    def destroy(self):
         if self.explosion is not None:
-            self.explosion.cleanup()
+            self.explosion.destroy()
             self.explosion = None
 
         for np in self.steeringRayNPs:
-            Common.framework.traverser.removeCollider(np)
+            common.currentSection.traverser.removeCollider(np)
             np.removeNode()
         self.steeringRayNPs = []
         self.steeringQueue = None
-        Enemy.cleanup(self)
+        Enemy.destroy(self)
 

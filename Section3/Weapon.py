@@ -3,7 +3,7 @@ from panda3d.core import BitMask32
 from panda3d.core import Vec3
 
 from Section3.CommonValues import *
-from Section3.Common import Common
+import common
 
 from Section3.GameObject import GameObject
 
@@ -73,7 +73,7 @@ class Weapon():
     def fire(self, owner, dt):
         pass
 
-    def cleanup(self):
+    def destroy(self):
         pass
 
 class HitscanWeapon(Weapon):
@@ -126,7 +126,7 @@ class HitscanWeapon(Weapon):
                 subject = hitNP.getPythonTag(TAG_OWNER)
                 subject.alterHealth(-self.damage, rayDir * self.knockback, self.flinchValue)
 
-    def cleanup(self):
+    def destroy(self):
         self.traverser.removeCollider(self.rayNodePath)
         self.traverser = None
 
@@ -134,7 +134,7 @@ class HitscanWeapon(Weapon):
             self.rayNodePath.removeNode()
             self.rayNodePath = None
 
-        Weapon.cleanup(self)
+        Weapon.destroy(self)
 
 class ProjectileWeapon(Weapon):
     def __init__(self, projectileTemplate):
@@ -154,10 +154,10 @@ class ProjectileWeapon(Weapon):
     def fire(self, owner, dt):
         Weapon.fire(self, owner, dt)
 
-        proj = Projectile.makeRealProjectileFromTemplate(self.projectileTemplate, owner.weaponNP.getPos(Common.framework.showBase.render))
-        proj.fly(owner.weaponNP.getQuat(Common.framework.showBase.render).getForward())
-        if Common.framework.currentLevel is not None:
-            Common.framework.currentLevel.projectiles.append(proj)
+        proj = Projectile.makeRealProjectileFromTemplate(self.projectileTemplate, owner.weaponNP.getPos(common.base.render))
+        proj.fly(owner.weaponNP.getQuat(common.base.render).getForward())
+        if common.currentSection.currentLevel is not None:
+            common.currentSection.currentLevel.projectiles.append(proj)
 
         return proj
 
@@ -220,8 +220,8 @@ class Projectile(GameObject):
 
         #self.collider.show()
 
-        Common.framework.pusher.addCollider(self.collider, self.root)
-        Common.framework.traverser.addCollider(self.collider, Common.framework.pusher)
+        common.currentSection.pusher.addCollider(self.collider, self.root)
+        common.currentSection.traverser.addCollider(self.collider, common.currentSection.pusher)
 
     def fly(self, direction):
         self.velocity = direction*self.maxSpeed
@@ -247,14 +247,14 @@ class Projectile(GameObject):
 
         if self.aoeRadius > 0:
             if self.blastModel is not None:
-                Common.framework.currentLevel.addBlast(self.blastModel,
+                common.currentSection.currentLevel.addBlast(self.blastModel,
                                                        max(0.01, self.aoeRadius - 0.7),
                                                        self.aoeRadius + 0.2,
                                                        0.15,
                                                        selfPos)
                 self.blastModel = None
             aoeRadiusSq = self.aoeRadius*self.aoeRadius
-            for other in Common.framework.currentLevel.enemies:
+            for other in common.currentSection.currentLevel.enemies:
                 if other is not impactee:
                     diff = other.root.getPos(render) - selfPos
                     distSq = diff.lengthSquared()
@@ -266,7 +266,7 @@ class Projectile(GameObject):
         if self.maxHealth > 0:
             self.health = 0
 
-    def cleanup(self):
+    def destroy(self):
         if self.blastModel is not None:
             self.blastModel.removeNode()
             self.blastModel = None
@@ -276,5 +276,5 @@ class Projectile(GameObject):
             self.collider.removeNode()
         self.collider = None
 
-        GameObject.cleanup(self)
+        GameObject.destroy(self)
 

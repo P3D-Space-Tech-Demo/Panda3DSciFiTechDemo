@@ -1,13 +1,13 @@
 from panda3d.core import PandaNode
 
 from Section3.CommonValues import *
-from Section3.Common import Common
+import common
 
 import math
 
 class Door():
     def __init__(self, modelNP = None):
-        self.root = Common.framework.showBase.render.attachNewNode(PandaNode("obj"))
+        self.root = common.base.render.attachNewNode(PandaNode("obj"))
 
         self.isOpen = False
         self.movementTimer = 0
@@ -50,14 +50,14 @@ class Door():
     def open(self):
         self.isOpen = True
         self.movementTimer = 0
-        self.lastZ = self.model.getZ(Common.framework.showBase.render)
+        self.lastZ = self.model.getZ(common.base.render)
         self.zVec = -self.height - self.lastZ
         self.movementDuration = abs(abs(self.lastZ) - self.height)/self.movementSpeed
 
     def close(self):
         self.isOpen = False
         self.movementTimer = 0
-        self.lastZ = self.model.getZ(Common.framework.showBase.render)
+        self.lastZ = self.model.getZ(common.base.render)
         self.zVec = abs(self.lastZ)
         self.movementDuration = abs(self.lastZ)/self.movementSpeed
 
@@ -87,7 +87,7 @@ class Door():
         self.collisionNPs = []
         self.height = 0
 
-    def cleanup(self):
+    def destroy(self):
         self.cleanupModel()
         if self.root is not None:
             self.root.removeNode()

@@ -1,7 +1,7 @@
 
 from panda3d.core import CardMaker, Shader, Vec3, Vec2, NodePath, ColorBlendAttrib
 
-from Section2.Common import Common
+import common
 
 import random
 
@@ -34,8 +34,8 @@ class Explosion():
         for inputName, inputValue in shaderInputs.items():
             self.explosionCard.setShaderInput(inputName, inputValue)
 
-        self.explosionCard.setShaderInput("sourceTex1", Common.framework.showBase.loader.loadTexture("Assets/Section2/tex/{0}1.png".format(inputTextureName)))
-        self.explosionCard.setShaderInput("sourceTex2", Common.framework.showBase.loader.loadTexture("Assets/Section2/tex/{0}2.png".format(inputTextureName)))
+        self.explosionCard.setShaderInput("sourceTex1", common.base.loader.loadTexture("Assets/Section2/tex/{0}1.png".format(inputTextureName)))
+        self.explosionCard.setShaderInput("sourceTex2", common.base.loader.loadTexture("Assets/Section2/tex/{0}2.png".format(inputTextureName)))
 
         self.explosionCard.setShaderInput("randomisation1", randomVal1)
         self.explosionCard.setShaderInput("randomisation2", randomVal2)
@@ -58,7 +58,7 @@ class Explosion():
         self.startTime = globalClock.getRealTime()
         self.explosionCard.setShaderInput("startTime", self.startTime)
         self.velocity = velocity
-        self.explosionCard.reparentTo(Common.framework.showBase.render)
+        self.explosionCard.reparentTo(common.base.render)
         self.explosionCard.setPos(pos)
 
     def update(self, dt):
@@ -67,7 +67,7 @@ class Explosion():
     def isAlive(self):
         return (globalClock.getRealTime() - self.startTime) < (self.duration)
 
-    def cleanup(self):
+    def destroy(self):
         if self.explosionCard is not None:
             self.explosionCard.removeNode()
             self.explosionCard = None

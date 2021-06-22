@@ -1,5 +1,3 @@
-from direct.showbase.ShowBase import ShowBase
-
 from direct.actor.Actor import Actor
 from direct.task import Task
 from panda3d.core import CollisionTraverser, CollisionHandlerPusher, CollisionSphere, CollisionTube, CollisionNode
@@ -15,18 +13,15 @@ from Section2.Player import *
 from Section2.Enemy import *
 from Section2.Level import Level
 
-from Section2.Common import Common
+import common
 
 import random
 
 class Section2():
-    def __init__(self, showBase):
-        self.showBase = showBase
+    def __init__(self):
+        common.currentSection = self
 
-        Common.initialise()
-        Common.framework = self
-
-        showBase.render.setShaderAuto()
+        common.base.render.setShaderAuto()
 
         self.keyMap = {
             "up" : False,
@@ -37,16 +32,16 @@ class Section2():
             "shootSecondary" : False
         }
 
-        showBase.accept("w", self.updateKeyMap, ["up", True])
-        showBase.accept("w-up", self.updateKeyMap, ["up", False])
-        showBase.accept("s", self.updateKeyMap, ["down", True])
-        showBase.accept("s-up", self.updateKeyMap, ["down", False])
-        showBase.accept("mouse1", self.updateKeyMap, ["shoot", True])
-        showBase.accept("mouse1-up", self.updateKeyMap, ["shoot", False])
-        showBase.accept("mouse3", self.updateKeyMap, ["shootSecondary", True])
-        showBase.accept("mouse3-up", self.updateKeyMap, ["shootSecondary", False])
+        common.base.accept("w", self.updateKeyMap, ["up", True])
+        common.base.accept("w-up", self.updateKeyMap, ["up", False])
+        common.base.accept("s", self.updateKeyMap, ["down", True])
+        common.base.accept("s-up", self.updateKeyMap, ["down", False])
+        common.base.accept("mouse1", self.updateKeyMap, ["shoot", True])
+        common.base.accept("mouse1-up", self.updateKeyMap, ["shoot", False])
+        common.base.accept("mouse3", self.updateKeyMap, ["shootSecondary", True])
+        common.base.accept("mouse3-up", self.updateKeyMap, ["shootSecondary", False])
 
-        showBase.accept("\\", self.toggleFriction)
+        common.base.accept("\\", self.toggleFriction)
 
         self.pusher = CollisionHandlerPusher()
         self.traverser = CollisionTraverser()
@@ -55,18 +50,20 @@ class Section2():
         self.pusher.add_in_pattern("%fn-into-%in")
         self.pusher.add_in_pattern("%fn-into")
         self.pusher.add_again_pattern("%fn-again-into")
-        showBase.accept("projectile-into", self.projectileImpact)
-        showBase.accept("projectile-again-into", self.projectileImpact)
-        showBase.accept("player-into", self.gameObjectPhysicalImpact)
-        showBase.accept("enemy-into", self.gameObjectPhysicalImpact)
+        common.base.accept("projectile-into", self.projectileImpact)
+        common.base.accept("projectile-again-into", self.projectileImpact)
+        common.base.accept("player-into", self.gameObjectPhysicalImpact)
+        common.base.accept("enemy-into", self.gameObjectPhysicalImpact)
 
-        self.updateTask = showBase.taskMgr.add(self.update, "update")
+        self.updateTask = common.base.taskMgr.add(self.update, "update")
 
         self.player = None
         self.currentLevel = None
 
+        self.useFriction = False
+
     def toggleFriction(self):
-        Common.useFriction = not Common.useFriction
+        self.useFriction = not self.useFriction
 
     def startGame(self, shipSpec):
         self.cleanupLevel()
@@ -88,10 +85,10 @@ class Section2():
             self.currentLevel.update(self.player, self.keyMap, dt)
 
             if self.player is not None and self.player.health <= 0:
-                self.showBase.gameOver()
+                common.gameController.gameOver()
                 return Task.done
 
-            self.traverser.traverse(self.showBase.render)
+            self.traverser.traverse(common.base.render)
 
             if self.player is not None and self.player.health > 0:
                 self.player.postTraversalUpdate(dt)
@@ -112,7 +109,7 @@ class Section2():
     def gameObjectPhysicalImpact(self, entry):
         fromNP = entry.getFromNodePath()
         if fromNP.hasPythonTag(TAG_OWNER):
-            fromNP.getPythonTag(TAG_OWNER).physicalImpact(entry.getSurfaceNormal(self.showBase.render))
+            fromNP.getPythonTag(TAG_OWNER).physicalImpact(entry.getSurfaceNormal(common.base.render))
 
     def triggerActivated(self, entry):
         intoNP = entry.getIntoNodePath()
@@ -123,34 +120,35 @@ class Section2():
 
     def cleanupLevel(self):
         if self.currentLevel is not None:
-            self.currentLevel.cleanup()
+            self.currentLevel.destroy()
             self.currentLevel = None
 
         if self.player is not None:
-            self.player.cleanup()
+            self.player.destroy()
             self.player = None
 
-    def cleanup(self):
-        self.showBase.ignore("w")
-        self.showBase.ignore("w-up")
-        self.showBase.ignore("s")
-        self.showBase.ignore("s-up")
-        self.showBase.ignore("mouse1")
-        self.showBase.ignore("mouse1-up")
-        self.showBase.ignore("mouse3")
-        self.showBase.ignore("mouse3-up")
-        self.showBase.ignore("\\")
-        self.showBase.ignore("projectile-into")
-        self.showBase.ignore("projectile-again-into")
-        self.showBase.ignore("player-into")
-        self.showBase.ignore("enemy-into")
+    def destroy(self):
+        common.base.ignore("w")
+        common.base.ignore("w-up")
+        common.base.ignore("s")
+        common.base.ignore("s-up")
+        common.base.ignore("mouse1")
+        common.base.ignore("mouse1-up")
+        common.base.ignore("mouse3")
+        common.base.ignore("mouse3-up")
+        common.base.ignore("\\")
+        common.base.ignore("projectile-into")
+        common.base.ignore("projectile-again-into")
+        common.base.ignore("player-into")
+        common.base.ignore("enemy-into")
 
         self.cleanupLevel()
-        self.showBase.taskMgr.remove(self.updateTask)
-        self.showBase = None
+        common.base.taskMgr.remove(self.updateTask)
         self.updateTask = None
 
-def initialise(showBase, shipSpec):
-    game = Section2(showBase)
+        common.currentSection = None
+
+def initialise(shipSpec):
+    game = Section2()
     game.startGame(shipSpec)
     return game

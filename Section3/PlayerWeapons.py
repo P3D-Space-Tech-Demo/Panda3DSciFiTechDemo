@@ -12,7 +12,7 @@ from direct.gui.OnscreenText import OnscreenText
 from Section3.Weapon import Weapon, HitscanWeapon, Projectile, ProjectileWeapon
 
 from Section3.CommonValues import *
-from Section3.Common import Common
+import common
 
 import random, math
 
@@ -43,7 +43,7 @@ class PlayerWeapon():
 
         self.ammoCounter = OnscreenText(text = "", parent = self.uiRoot,
                                         mayChange = True,
-                                        #font = Common.framework.showBase.font,
+                                        #font = common.base.font,
                                         fg = (1, 1, 1, 1),
                                         scale = 0.125,
                                         align = TextNode.ACenter)
@@ -78,7 +78,7 @@ class PlayerWeapon():
         else:
             self.ammoCounter.setText("{0:-.0f}".format(max(0, self.ammoValue)))
 
-    def cleanup(self):
+    def destroy(self):
         if self.handModel is not None:
             self.handModel.cleanup()
             self.handModel.removeNode()
@@ -107,9 +107,9 @@ class RapidShotgunWeapon(HitscanWeapon, PlayerWeapon):
         self.impactModels = []
 
         for i in range(self.numShots):
-            impactModel = Common.framework.showBase.loader.loadModel("Assets/Section3/models/WeaponShotgun/shotgunImpact")
+            impactModel = common.base.loader.loadModel("Assets/Section3/models/WeaponShotgun/shotgunImpact")
 
-            impactModel.reparentTo(Common.framework.showBase.render)
+            impactModel.reparentTo(common.base.render)
             impactModel.hide()
             impactModel.setLightOff(1)
 
@@ -169,8 +169,8 @@ class RapidShotgunWeapon(HitscanWeapon, PlayerWeapon):
 
             self.firingTimer = self.firingPeriod
 
-            ownerPos = owner.actor.getPos(Common.framework.showBase.render)
-            quat = owner.actor.getQuat(Common.framework.showBase.render)
+            ownerPos = owner.actor.getPos(common.base.render)
+            quat = owner.actor.getQuat(common.base.render)
             ownerForward = quat.getForward()
             ownerRight = quat.getRight()
             ownerUp = quat.getUp()
@@ -189,14 +189,14 @@ class RapidShotgunWeapon(HitscanWeapon, PlayerWeapon):
 
                 hit, hitEntry = self.performRayCast(ownerPos, spreadVec)
                 if hit:
-                    hitPos = hitEntry.getSurfacePoint(Common.framework.showBase.render)
+                    hitPos = hitEntry.getSurfacePoint(common.base.render)
                     hitNP = hitEntry.getIntoNodePath()
-                    hitNormal = hitEntry.getSurfaceNormal(Common.framework.showBase.render)
+                    hitNormal = hitEntry.getSurfaceNormal(common.base.render)
 
                     if hit:
                         model = self.impactModels[i]
                         model.show()
-                        model.setPos(Common.framework.showBase.render, hitPos)
+                        model.setPos(common.base.render, hitPos)
                         model.setPythonTag("timer", self.impactPulsePeriod)
                         #model.lookAt(hitPos + hitNormal)
 
@@ -209,9 +209,9 @@ class RapidShotgunWeapon(HitscanWeapon, PlayerWeapon):
                             model.setScale(0.1)
                             model.setPythonTag("scalar", 0.1125)
 
-    def cleanup(self):
-        HitscanWeapon.cleanup(self)
-        PlayerWeapon.cleanup(self)
+    def destroy(self):
+        HitscanWeapon.destroy(self)
+        PlayerWeapon.destroy(self)
 
 class BlasterWeapon(ProjectileWeapon, PlayerWeapon):
     def __init__(self, uiRoot):
@@ -314,6 +314,6 @@ class BlasterWeapon(ProjectileWeapon, PlayerWeapon):
 
             return proj
 
-    def cleanup(self):
-        ProjectileWeapon.cleanup(self)
-        PlayerWeapon.cleanup(self)
+    def destroy(self):
+        ProjectileWeapon.destroy(self)
+        PlayerWeapon.destroy(self)
