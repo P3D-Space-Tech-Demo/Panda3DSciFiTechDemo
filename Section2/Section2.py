@@ -5,7 +5,7 @@ from panda3d.core import Vec4, Vec3, Vec2
 from panda3d.core import WindowProperties
 from panda3d.core import Shader
 from panda3d.core import ClockObject
-from panda3d.core import PointLight
+from panda3d.core import AmbientLight
 
 from direct.gui.DirectGui import *
 
@@ -23,15 +23,15 @@ class Section2():
         common.currentSection = self
 
         common.base.render.setShaderAuto()
-
-        plight_1 = PointLight('plight')
-        plight_1_node = common.base.render.attach_new_node(plight_1)
-        plight_1_node.set_pos(-800, 800, 0)
-        common.base.render.set_light(plight_1_node)
+        
+        amb_light = AmbientLight('amblight')
+        amb_light.setColor((1, 1, 1, 1))
+        amb_light_node = common.base.render.attachNewNode(amb_light)
 
         skybox = common.base.loader.load_model('Assets/Section2/models/5k_spacebox.gltf')
-        skybox.reparent_to(common.base.camera)
+        skybox.reparent_to(common.base.render)
         skybox.set_shader_off()
+        skybox.set_light(amb_light_node)
         skybox.setCompass()
         skybox.setBin("background", 1)
         skybox.setDepthWrite(False)
