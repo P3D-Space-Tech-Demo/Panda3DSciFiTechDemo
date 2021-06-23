@@ -29,7 +29,7 @@ class Section2():
         amb_light_node = common.base.render.attachNewNode(amb_light)
 
         skybox = common.base.loader.load_model('Assets/Section2/models/5k_spacebox.gltf')
-        skybox.reparent_to(common.base.render)
+        skybox.reparent_to(common.base.camera)
         skybox.set_shader_off()
         skybox.set_light(amb_light_node)
         skybox.setCompass()
