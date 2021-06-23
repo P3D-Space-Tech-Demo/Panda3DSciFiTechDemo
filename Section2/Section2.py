@@ -29,7 +29,7 @@ class Section2():
         plight_1_node.set_pos(-800, 800, 0)
         common.base.render.set_light(plight_1_node)
 
-        skybox = common.base.loader.load_model('Assets/Section2/models/spacebox_1.gltf')
+        skybox = common.base.loader.load_model('Assets/Section2/models/5k_spacebox.gltf')
         skybox.reparent_to(common.base.camera)
         skybox.set_shader_off()
         skybox.setCompass()
