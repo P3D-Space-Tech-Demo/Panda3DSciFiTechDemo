@@ -16,10 +16,13 @@ framebuffer-multisample 1
 multisamples 4
 """)
 
-import simplepbr
 
 base = ShowBase()
-base.pipeline = simplepbr.init()
+# load a scene shader
+vert_shader = "Assets/Section1/shaders/simplepbr_vert_mod_1.vert"
+frag_shader = "Assets/Section1/shaders/simplepbr_frag_mod_1.frag"
+scene_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
+base.render.set_shader(scene_shader)
 
 gameController = None
 
