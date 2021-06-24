@@ -18,7 +18,7 @@ FRICTION = 10.0
 
 class GameObject():
     def __init__(self, pos, modelName, modelAnims, maxHealth, maxSpeed, colliderName, weaponIntoMask, size):
-        self.root = common.base.render.attachNewNode(PandaNode("obj"))
+        self.root = NodePath(PandaNode("obj"))
 
         self.colliderName = colliderName
 

@@ -16,8 +16,10 @@ framebuffer-multisample 1
 multisamples 4
 """)
 
+import simplepbr
 
 base = ShowBase()
+base.pipeline = simplepbr.init()
 
 gameController = None
 

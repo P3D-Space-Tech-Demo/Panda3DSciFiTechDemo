@@ -6,6 +6,7 @@ from panda3d.core import WindowProperties
 from panda3d.core import Shader
 from panda3d.core import ClockObject
 from panda3d.core import AmbientLight
+from panda3d.core import CompassEffect
 
 from direct.gui.DirectGui import *
 
@@ -22,19 +23,17 @@ class Section2():
     def __init__(self):
         common.currentSection = self
 
-        common.base.render.setShaderAuto()
-        
+        self.skybox = common.base.loader.load_model('Assets/Section2/models/5k_spacebox.gltf')
+        self.skybox.reparent_to(common.base.render)
+        self.skybox.setEffect(CompassEffect.make(common.base.camera, CompassEffect.P_pos))
+        self.skybox.setBin("background", 1)
+        self.skybox.setDepthWrite(False)
+
         amb_light = AmbientLight('amblight')
         amb_light.setColor((1, 1, 1, 1))
-        amb_light_node = common.base.render.attachNewNode(amb_light)
+        amb_light_node = self.skybox.attachNewNode(amb_light)
 
-        skybox = common.base.loader.load_model('Assets/Section2/models/5k_spacebox.gltf')
-        skybox.reparent_to(common.base.camera)
-        skybox.set_shader_off()
-        skybox.set_light(amb_light_node)
-        skybox.setCompass()
-        skybox.setBin("background", 1)
-        skybox.setDepthWrite(False)
+        self.skybox.set_light(amb_light_node)
 
         self.keyMap = {
             "up" : False,
@@ -81,9 +80,9 @@ class Section2():
     def startGame(self, shipSpec):
         self.cleanupLevel()
 
-        self.player = Player(shipSpec)
-
         self.currentLevel = Level("spaceLevel")
+
+        self.player = Player(shipSpec)
 
     def updateKeyMap(self, controlName, controlState, callback = None):
         self.keyMap[controlName] = controlState
@@ -141,6 +140,10 @@ class Section2():
             self.player = None
 
     def destroy(self):
+        if self.skybox is not None:
+            self.skybox.removeNode()
+            self.skybox = None
+
         common.base.ignore("w")
         common.base.ignore("w-up")
         common.base.ignore("s")
@@ -165,3 +168,6 @@ def initialise(shipSpec):
     game = Section2()
     game.startGame(shipSpec)
     return game
+
+def addOptions():
+    pass

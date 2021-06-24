@@ -13,15 +13,23 @@ import common
 
 from Ships import shipSpecs
 
+TAG_PREVIOUS_MENU = "predecessor"
+
 class Game():
     @staticmethod
-    def makeButton(text, command, menu, width, extraArgs = None):
+    def makeButton(text, command, menu, width, extraArgs = None, leftAligned = True):
+        if leftAligned:
+            frame = (-0.1, width, -0.75, 0.75)
+            alignment = TextNode.ALeft
+        else:
+            frame = (-width*0.5 , width*0.5, -0.75, 0.75)
+            alignment = TextNode.ACenter
         btn = DirectButton(text = text,
                            command = command,
                            scale = 0.1,
                            parent = menu,
-                           text_align = TextNode.ALeft,
-                           frameSize = (-0.1, width, -0.75, 0.75),
+                           text_align = alignment,
+                           frameSize = frame,
                            text_pos = (0, -0.375)
                            )
         if extraArgs is not None:
@@ -43,6 +51,8 @@ class Game():
         common.base.exitFunc = self.destroy
 
         common.base.accept("window-event", self.windowUpdated)
+
+        self.currentMenu = None
 
         ### Main Menu
 
@@ -93,6 +103,47 @@ class Game():
 
         ### Options Menu
 
+        self.optionsTop = 0.35
+        self.currentOptionsZ = self.optionsTop
+        self.optionSpacingHeading = 0.2
+
+        self.optionsMenu = DirectDialog(
+                                        frameSize = (-1, 1, -0.85, 0.85),
+                                        fadeScreen = 0.5,
+                                        pos = (0, 0, 0),
+                                        relief = DGG.FLAT
+                                       )
+        self.optionsMenu.hide()
+
+        label = DirectLabel(text = "Options",
+                            parent = self.optionsMenu,
+                            scale = 0.1,
+                            pos = (0, 0, 0.65),
+                            #text_font = self.font,
+                            relief = None)
+
+        self.optionsScroller = DirectScrolledFrame(
+                                        parent = self.optionsMenu,
+                                        relief = DGG.SUNKEN,
+                                        scrollBarWidth = 0.1,
+                                        frameSize = (-0.8, 0.9, -0.5, 0.5),
+                                        canvasSize = (-0.8, 0.8, -0.4, 0.5),
+                                        autoHideScrollBars = False,
+                                    )
+        self.optionsScroller.horizontalScroll.hide()
+
+        self.addOptionHeading("General")
+        self.addOptionSlider("Music Volume", (0, 100), 1, self.setMusicVolume)
+        self.addOptionSlider("Sound Volume", (0, 100), 1, self.setSoundVolume)
+        self.addOptionHeading("Section 1")
+        self.addOptionHeading("Section 2")
+        Section2.addOptions()
+        self.addOptionHeading("Section 3")
+        self.addOptionHeading("Section 4")
+
+        btn = Game.makeButton("Back", self.closeCurrentMenu, self.optionsMenu, 5, leftAligned = False)
+        btn.setPos(0, 0, -0.7)
+
         ### Section Menu
 
         self.sectionMenu = DirectDialog(
@@ -102,6 +153,12 @@ class Game():
                                         relief = DGG.FLAT
                                        )
         self.sectionMenu.hide()
+
+        label = DirectLabel(text = "Select a Chapter:",
+                            parent = self.sectionMenu,
+                            scale = 0.1,
+                            pos = (0.085, 0, 0.65),
+                            text_align = TextNode.ALeft)
 
         buttons = []
 
@@ -117,12 +174,14 @@ class Game():
         btn = Game.makeButton("Chapter 4 // The Escape", self.startSection, self.sectionMenu, 15, extraArgs = [3])
         buttons.append(btn)
 
-        buttonSpacing = 0.3
+        buttonSpacing = 0.25
         buttonY = (len(buttons) - 1)*0.5*buttonSpacing
         for btn in buttons:
             btn.setPos(0.1, 0, buttonY)
             buttonY -= buttonSpacing
 
+        btn = Game.makeButton("Back", self.closeCurrentMenu, self.sectionMenu, 5)
+        btn.setPos(0.1, 0, -0.7)
 
         ### Game-over menu
 
@@ -184,6 +243,7 @@ class Game():
                                               relief = DGG.FLAT
                                              )
         self.shipSelectionMenu.hide()
+        self.shipSelectionMenu.setPythonTag(TAG_PREVIOUS_MENU, self.sectionMenu)
 
         label = DirectLabel(text = "Select a Ship:",
                             parent = self.shipSelectionMenu,
@@ -208,6 +268,9 @@ class Game():
             btn.setPos(0.1, 0, buttonY)
             buttonY -= buttonSpacing
 
+        btn = Game.makeButton("Back", self.closeCurrentMenu, self.shipSelectionMenu, 5)
+        btn.setPos(0.1, 0, -0.55)
+
         ### Section-data
 
         self.currentSectionIndex = 0
@@ -229,13 +292,34 @@ class Game():
         common.base.accept("f", self.toggleFrameRateMeter)
         self.showFrameRateMeter = False
 
+    def addOptionSlider(self, text, rangeTuple, stepSize, callback):
+        pass
+
+    def addOptionHeading(self, text):
+        label = DirectLabel(text = text,
+                            text_align = TextNode.ACenter,
+                            scale = 0.1,
+                            parent = self.optionsScroller.getCanvas(),
+                            pos = (0, 0, self.currentOptionsZ))
+        self.currentOptionsZ -= self.optionSpacingHeading
+        self.updateOptionsCanvasSize()
+
+    def updateOptionsCanvasSize(self):
+        self.optionsScroller["canvasSize"] = (-0.8, 0.8, self.currentOptionsZ, 0.5)
+
+    def setMusicVolume(self, vol):
+        pass
+
+    def setSoundVolume(self, vol):
+        pass
+
     def toggleFrameRateMeter(self):
         self.showFrameRateMeter = not self.showFrameRateMeter
 
         common.base.setFrameRateMeter(self.showFrameRateMeter)
 
     def windowUpdated(self, window):
-        ShowBase.windowEvent(common.base, window)
+        common.base.windowEvent(window)
         self.mainMenuBackdrop["frameSize"] = (-1/common.base.aspect2d.getSx(), 1/common.base.aspect2d.getSx(),
                                               -1/common.base.aspect2d.getSz(), 1/common.base.aspect2d.getSz())
         self.mainMenuPanel.setX(common.base.render2d, -1)
@@ -251,8 +335,11 @@ class Game():
         self.mainMenuBackdrop.show()
         self.mainMenuPanel.show()
 
+        self.currentMenu = None
+
     def openOptions(self):
-        pass
+        self.optionsMenu.show()
+        self.currentMenu = self.optionsMenu
 
     def startGame(self):
         self.startSection(0)
@@ -263,6 +350,7 @@ class Game():
         specificMenu = self.sections[index][1]
         if specificMenu is not None and data is None:
             specificMenu.show()
+            self.currentMenu = specificMenu
         else:
             self.startSectionInternal(index, data)
 
@@ -276,6 +364,7 @@ class Game():
 
         self.mainMenuPanel.hide()
         self.mainMenuBackdrop.hide()
+        self.currentMenu = None
 
         self.currentSectionIndex = index
         self.currentSectionData = data
@@ -291,6 +380,7 @@ class Game():
 
     def selectSection(self):
         self.sectionMenu.show()
+        self.currentMenu = self.sectionMenu
 
     def restartCurrentSection(self):
         self.gameOverScreen.hide()
@@ -304,8 +394,18 @@ class Game():
         if self.gameOverScreen.isHidden():
             self.gameOverScreen.show()
 
+    def closeCurrentMenu(self):
+        if self.currentMenu is not None:
+            self.currentMenu.hide()
+            if self.currentMenu.hasPythonTag(TAG_PREVIOUS_MENU):
+                otherMenu = self.currentMenu.getPythonTag(TAG_PREVIOUS_MENU)
+                otherMenu.show()
+                self.currentMenu = otherMenu
+            else:
+                self.currentMenu = None
+
     def destroy(self):
-        pass
+        self.shipSelectionMenu.clearPythonTag(TAG_PREVIOUS_MENU)
 
     def quit(self):
         self.destroy()

@@ -154,6 +154,7 @@ class Projectile(GameObject):
         result.root.setAttrib(ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne))
         result.root.setBin("unsorted", 1)
         result.root.setDepthWrite(False)
+        result.root.reparentTo(common.currentSection.currentLevel.geometry)
 
         result.generateCollisionObject()
 

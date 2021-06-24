@@ -16,6 +16,7 @@ class Level():
 
         self.geometry = common.base.loader.loadModel("Assets/Section2/levels/" + levelFile)
         self.geometry.reparentTo(common.base.render)
+        self.geometry.setShaderAuto()
 
         try:
             moduleObj = __import__("Assets/Section2.scripts.{0}".format(levelFile), levelFile)
@@ -121,7 +122,7 @@ class Level():
                 auraPath = None
             item = Item(obj.root.getPos() + Vec3(0, 0, 1), auraPath, obj)
             self.items.append(item)
-        obj.root.wrtReparentTo(common.base.render)
+        obj.root.wrtReparentTo(self.geometry)
 
     def activateSpawnerGroup(self, groupName):
         spawnerList = self.spawnerGroups.get(groupName, None)
@@ -145,7 +146,7 @@ class Level():
 
     def addBlast(self, model, minSize, maxSize, duration, pos):
         blast = Blast(model, minSize, maxSize, duration)
-        blast.model.reparentTo(common.base.render)
+        blast.model.reparentTo(self.geometry.render)
         blast.model.setPos(pos)
         self.blasts.append(blast)
         blast.update(0)

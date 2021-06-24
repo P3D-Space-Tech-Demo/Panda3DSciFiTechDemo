@@ -34,6 +34,8 @@ class Player(GameObject, ArmedObject):
                             2)
         ArmedObject.__init__(self)
 
+        self.root.reparentTo(common.currentSection.currentLevel.geometry)
+
         self.acceleration = shipSpec.acceleration
         self.turnRate = shipSpec.turnRate
 
@@ -69,7 +71,7 @@ class Player(GameObject, ArmedObject):
         light.setAttenuation((1, 0.01, 0.001))
         self.lightNP = self.root.attachNewNode(light)
         self.lightNP.setZ(1)
-        common.base.render.setLight(self.lightNP)
+        common.currentSection.currentLevel.geometry.setLight(self.lightNP)
 
         self.colliderNP.node().setFromCollideMask(MASK_WALLS | MASK_FROM_PLAYER)
 
