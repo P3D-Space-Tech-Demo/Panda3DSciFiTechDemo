@@ -4,7 +4,7 @@ from direct.showbase.ShowBase import ShowBase
 from panda3d.core import WindowProperties, TextNode, Vec4
 from direct.gui.DirectGui import *
 
-import Section2.Section2 as Section1
+import Section1.section1 as Section1
 import Section2.Section2 as Section2
 import Section3.Section3 as Section3
 import Section2.Section2 as Section4
