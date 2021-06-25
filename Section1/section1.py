@@ -7,7 +7,7 @@ SHADOW_MASK = BitMask32.bit(1)
 # load a scene shader
 vert_shader = ASSET_PATH + "shaders/simplepbr_vert_mod_1.vert"
 frag_shader = ASSET_PATH + "shaders/simplepbr_frag_mod_1.frag"
-SCENE_SHADER = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
+#SCENE_SHADER = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 
 
 def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048):
@@ -853,7 +853,7 @@ class Section1:
 
         model_root = base.loader.load_model(ASSET_PATH + f"models/{starship_id}.bam")
         model_root.reparent_to(base.render)
-        model_root.set_shader(SCENE_SHADER)
+#        model_root.set_shader(SCENE_SHADER)
         # model_root.set_two_sided(True)
         model_root.set_color(1., 1., 1., 1.)
 
@@ -1065,15 +1065,12 @@ class Section1:
 
 def initialise(data=None):
 
-    # we want the mixed graphics pipe for procedural gen so we'll
-    # not set the SCENE_SHADER on base.render
-    # base.render.set_shader(SCENE_SHADER)
     base.render.set_antialias(AntialiasAttrib.MMultisample)
 
     # add a shop floor
     floor = base.loader.load_model(ASSET_PATH + "models/shiny_floor.gltf")
     floor.reparent_to(base.render)
-    floor.set_shader(SCENE_SHADER)
+#    floor.set_shader(SCENE_SHADER)
     floor.set_z(-0.3)
 
     for x in range(6):
