@@ -1,20 +1,20 @@
 from common import *
 
 
-asset_path = "Assets/Section1/"
-shadow_mask = BitMask32.bit(1)
+ASSET_PATH = "Assets/Section1/"
+SHADOW_MASK = BitMask32.bit(1)
 
 # load a scene shader
-vert_shader = asset_path + "shaders/simplepbr_vert_mod_1.vert"
-frag_shader = asset_path + "shaders/simplepbr_frag_mod_1.frag"
-scene_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
+vert_shader = ASSET_PATH + "shaders/simplepbr_vert_mod_1.vert"
+frag_shader = ASSET_PATH + "shaders/simplepbr_frag_mod_1.frag"
+SCENE_SHADER = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 
 
 def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048):
     spotlight = Spotlight('random_light')
     if shadows:
         spotlight.set_shadow_caster(True, shadow_res, shadow_res)
-        spotlight.camera_mask = shadow_mask
+        spotlight.camera_mask = SHADOW_MASK
 
     lens = PerspectiveLens()
     lens.set_near_far(0.5, 5000)
@@ -27,13 +27,6 @@ def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048
     
 
 r_sec = 2.0
-
-
-pbr_material = Material("pbr_material")
-pbr_material.base_color = (0.0049883, 0., 0.8, 1.)
-pbr_material.refractive_index = 1.
-pbr_material.emission = (0., 0.39676, 0.527723, 0.)
-pbr_material.roughness = 0.5
 
 
 # define custom, multi-array vertex format with separate float color column
@@ -95,14 +88,13 @@ def create_beam():
     node.add_geom(geom)
     beam = NodePath(node)
     beam.set_light_off()
-    beam.set_material(pbr_material)
     beam.set_transparency(TransparencyAttrib.M_alpha)
     beam.set_shader_off()
     attrib = CBA.make(CBA.M_none, CBA.O_incoming_color, CBA.O_incoming_color,
         CBA.M_add, CBA.O_incoming_alpha, CBA.O_one, (.5, .5, 1., 1.))
     beam.set_attrib(attrib)
     beam.set_bin("unsorted", 0)
-    beam.hide(shadow_mask)
+    beam.hide(SHADOW_MASK)
 
     return beam
 
@@ -130,14 +122,13 @@ def create_beam_connector():
     beam_connector = NodePath(node)
     beam_connector.set_two_sided(True)
     beam_connector.set_light_off()
-    beam_connector.set_material(pbr_material)
     beam_connector.set_transparency(TransparencyAttrib.M_alpha)
     beam_connector.set_shader_off()
     attrib = CBA.make(CBA.M_none, CBA.O_incoming_color, CBA.O_incoming_color,
         CBA.M_add, CBA.O_incoming_alpha, CBA.O_one, (.5, .5, 1., 1.))
     beam_connector.set_attrib(attrib)
     beam_connector.set_bin("unsorted", 0)
-    beam_connector.hide(shadow_mask)
+    beam_connector.hide(SHADOW_MASK)
 
     return beam_connector
 
@@ -218,7 +209,7 @@ class Worker:
         prim = self.part.primitive
 
         if not model:
-            return  
+            return
 
         v_data = model.node().get_geom(0).get_vertex_data()
         pos_reader = GeomVertexReader(v_data, "vertex")
@@ -400,7 +391,7 @@ class Worker:
 class WorkerBot(Worker):
 
     def __init__(self, beam, beam_connector):
-        model = base.loader.load_model(asset_path + "models/worker_bot.gltf")
+        model = base.loader.load_model(ASSET_PATH + "models/worker_bot.gltf")
         model.set_shader_off()
 
         Worker.__init__(self, "bot", model, beam, beam_connector, .25, -.8875)
@@ -484,7 +475,7 @@ class WorkerDrone(Worker):
 
     def __init__(self, beam, beam_connector):
 
-        model = base.loader.load_model(asset_path + "models/worker_drone.gltf")
+        model = base.loader.load_model(ASSET_PATH + "models/worker_drone.gltf")
         model.set_shader_off()
         model.set_pos(0, 0, random.uniform(20, 26))
 
@@ -603,7 +594,6 @@ class Part:
         self.model = NodePath(node)
         self.model.set_transparency(TransparencyAttrib.M_alpha)
         self.model.set_light_off()
-        self.model.set_material(pbr_material)
         self.model.set_color(0.5, 0.5, 1., 1.)
         self.model.set_alpha_scale(0.)
         self.model.set_transform(job.component.get_net_transform())
@@ -653,7 +643,7 @@ class Elevator:
     def __init__(self, y):
 
         self.instances.append(self)
-        self.model = base.loader.load_model(asset_path + "models/worker_bot_elevator.gltf")
+        self.model = base.loader.load_model(ASSET_PATH + "models/worker_bot_elevator.gltf")
         self.model.reparent_to(base.render)
         self.model.set_y(y)
         self.y = y
@@ -861,9 +851,9 @@ class Section1:
         starship_id = "starship_a"  # should be determined by user
         self.starship_components = {}
 
-        model_root = base.loader.load_model(asset_path + f"models/{starship_id}.bam")
+        model_root = base.loader.load_model(ASSET_PATH + f"models/{starship_id}.bam")
         model_root.reparent_to(base.render)
-        model_root.set_shader(scene_shader)
+        model_root.set_shader(SCENE_SHADER)
         # model_root.set_two_sided(True)
         model_root.set_color(1., 1., 1., 1.)
 
@@ -1073,17 +1063,17 @@ class Section1:
             worker.generator.set_z(worker.generator_start_z)
 
 
-def start(_=None, data=None):
+def initialise(data=None):
 
     # we want the mixed graphics pipe for procedural gen so we'll
-    # not set the scene_shader on base.render
-    # base.render.set_shader(scene_shader)
+    # not set the SCENE_SHADER on base.render
+    # base.render.set_shader(SCENE_SHADER)
     base.render.set_antialias(AntialiasAttrib.MMultisample)
 
     # add a shop floor
-    floor = base.loader.load_model(asset_path + "models/shiny_floor.gltf")
+    floor = base.loader.load_model(ASSET_PATH + "models/shiny_floor.gltf")
     floor.reparent_to(base.render)
-    floor.set_shader(scene_shader)
+    floor.set_shader(SCENE_SHADER)
     floor.set_z(-0.3)
 
     for x in range(6):
@@ -1101,6 +1091,3 @@ def start(_=None, data=None):
     # make_simple_spotlight((200, 100, 300), (0, 5, 10), False)
 
     Section1()
-
-
-initialise = start
