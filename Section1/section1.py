@@ -24,6 +24,9 @@ def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048
     spotlight.set_pos(input_pos)
     spotlight.look_at(look_at)
     base.render.set_light(spotlight)
+    
+
+r_sec = 1.5
 
 
 pbr_material = Material("pbr_material")
@@ -215,7 +218,7 @@ class Worker:
         prim = self.part.primitive
 
         if not model:
-            return
+            return  
 
         v_data = model.node().get_geom(0).get_vertex_data()
         pos_reader = GeomVertexReader(v_data, "vertex")
@@ -309,18 +312,36 @@ class Worker:
 
         def do_job():
 
-            self.part.model.reparent_to(base.render)
-            self.part.model.wrt_reparent_to(tmp_node)
-            tmp_node.set_scale(.1)
-            duration = 1.5
-            self.reset_energy_beams()
-            self.beam_root.show()
-            base.task_mgr.add(self.shoot_energy_beams, "shoot_energy_beams", delay=0.)
-            self.part.move_to_ship(tmp_node, duration)
-            solidify_task = lambda task: self.part.solidify(task, duration)
-            base.task_mgr.add(solidify_task, "solidify")
-            base.task_mgr.add(deactivation_task, "deactivate_beams", delay=duration)
-
+            if tmp_node.get_pos(base.render)[2] < 3:
+                self.part.model.reparent_to(base.render)
+                self.part.model.wrt_reparent_to(tmp_node)
+                tmp_node.set_scale(.1)
+                duration = 1.5
+                self.reset_energy_beams()
+                self.beam_root.show()
+                base.task_mgr.add(self.shoot_energy_beams, "shoot_energy_beams", delay=0.)
+                self.part.move_to_ship(tmp_node, duration)
+                solidify_task = lambda task: self.part.solidify(task, duration)
+                base.task_mgr.add(solidify_task, "solidify")
+                base.task_mgr.add(deactivation_task, "deactivate_beams", delay=duration)
+                
+            if tmp_node.get_pos(base.render)[2] > 3:
+                def activate_drone_beam():
+                    time.sleep(r_sec)
+                    self.part.model.reparent_to(base.render)
+                    self.part.model.wrt_reparent_to(tmp_node)
+                    tmp_node.set_scale(.1)
+                    duration = 1.5
+                    self.reset_energy_beams()
+                    self.beam_root.show()
+                    base.task_mgr.add(self.shoot_energy_beams, "shoot_energy_beams", delay=0.)
+                    self.part.move_to_ship(tmp_node, duration)
+                    solidify_task = lambda task: self.part.solidify(task, duration)
+                    base.task_mgr.add(solidify_task, "solidify")
+                    base.task_mgr.add(deactivation_task, "deactivate_beams", delay=duration)
+                    
+                threading2._start_new_thread(activate_drone_beam, ())
+                    
         def activate_generator(task):
 
             dt = globalClock.get_dt()
@@ -481,7 +502,6 @@ class WorkerDrone(Worker):
         
         drone_rotors = self.model.find_all_matches("**/propeller*")
         for r in drone_rotors:
-            # print(r)
             LerpHprInterval(r, 0.1, (360, 0, 0), (0, 0, 0), blendType='easeInOut').loop()
         
         di_par = Parallel()
