@@ -5,7 +5,7 @@
 #version 130
 
 #ifndef MAX_LIGHTS
-    #define MAX_LIGHTS 8
+    #define MAX_LIGHTS 18
 #endif
 
 uniform struct p3d_MaterialParameters {
