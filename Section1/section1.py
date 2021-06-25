@@ -486,7 +486,7 @@ class WorkerDrone(Worker):
 
         model = base.loader.load_model(asset_path + "models/worker_drone.gltf")
         model.set_shader_off()
-        model.set_pos(0, 0, 20)
+        model.set_pos(0, 0, random.uniform(20, 26))
 
         Worker.__init__(self, "drone", model, beam, beam_connector, -.1)
 
