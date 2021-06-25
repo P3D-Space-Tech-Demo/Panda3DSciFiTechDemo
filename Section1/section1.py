@@ -26,7 +26,7 @@ def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048
     base.render.set_light(spotlight)
     
 
-r_sec = 1.5
+r_sec = 2.0
 
 
 pbr_material = Material("pbr_material")
