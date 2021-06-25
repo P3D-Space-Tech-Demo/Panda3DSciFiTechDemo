@@ -495,7 +495,6 @@ class WorkerDrone(Worker):
 
         self.part = part
         x, y, z = part.worker_pos
-        r_sec = random.uniform(1.5, 2.5)
         drone_inter = LerpPosInterval(self.model, r_sec, (x, y, z), self.model.get_pos(), blendType='easeInOut')
         ran_hpr = Vec3(random.uniform(-10, 10), random.uniform(-10, 10), random.uniform(-15, 15))
         drone_rot = LerpHprInterval(self.model, 0.5, (ran_hpr), self.model.get_hpr(), blendType='easeInOut')
