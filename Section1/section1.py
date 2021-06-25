@@ -94,6 +94,7 @@ def create_beam():
     beam.set_light_off()
     beam.set_material(pbr_material)
     beam.set_transparency(TransparencyAttrib.M_alpha)
+    beam.set_shader_off()
     attrib = CBA.make(CBA.M_none, CBA.O_incoming_color, CBA.O_incoming_color,
         CBA.M_add, CBA.O_incoming_alpha, CBA.O_one, (.5, .5, 1., 1.))
     beam.set_attrib(attrib)
@@ -128,6 +129,7 @@ def create_beam_connector():
     beam_connector.set_light_off()
     beam_connector.set_material(pbr_material)
     beam_connector.set_transparency(TransparencyAttrib.M_alpha)
+    beam_connector.set_shader_off()
     attrib = CBA.make(CBA.M_none, CBA.O_incoming_color, CBA.O_incoming_color,
         CBA.M_add, CBA.O_incoming_alpha, CBA.O_one, (.5, .5, 1., 1.))
     beam_connector.set_attrib(attrib)
