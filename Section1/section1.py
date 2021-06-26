@@ -1,4 +1,5 @@
 from common import *
+import fp_ctrl
 
 
 ASSET_PATH = "Assets/Section1/"
@@ -832,12 +833,20 @@ class Section1:
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(10.)
         self.cam_target.set_h(self.cam_heading)
-        base.camera.reparent_to(self.cam_target)
-        base.camera.set_x(-50)
-        base.camera.set_y(-125.)
-        base.camera.set_z(2)
-        base.camera.look_at(0, 0, 0)
-        base.task_mgr.add(self.move_camera, "move_camera")
+        self.cam_switch_bool = False
+        
+        def cam_switch():
+            if not self.cam_switch_bool:
+                base.camera.reparent_to(self.cam_target)
+                base.camera.set_x(-50)
+                base.camera.set_y(-125.)
+                base.camera.set_z(2)
+                base.camera.look_at(0, 0, 0)
+                base.task_mgr.add(self.move_camera, "move_camera")
+                
+                self.cam_switch_bool = True
+            
+        base.accept("\\", cam_switch)
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
         self.setup_elevator_camera()
@@ -986,14 +995,14 @@ class Section1:
         return job_schedule
 
     def move_camera(self, task):
-
+    
         dt = globalClock.get_dt()
         self.cam_heading -= 1.75 * dt
         self.cam_target.set_h(self.cam_heading)
         if base.camera.get_z() < 50:
             base.camera.set_z(base.camera.get_z() + 0.4 * dt)
         base.camera.look_at(0, 0, 5)
-
+        
         return task.cont
 
     def setup_elevator_camera(self):
@@ -1066,6 +1075,13 @@ class Section1:
 def initialise(data=None):
 
     base.render.set_antialias(AntialiasAttrib.MMultisample)
+    
+    fp_ctrl.recognize_base()
+    fp_ctrl.fp_init()
+    base.task_mgr.add(fp_ctrl.update_cam)
+    base.task_mgr.add(fp_ctrl.physics_update)
+    
+    base.accept("escape", sys.exit, [0])
 
     # add a shop floor
     floor = base.loader.load_model(ASSET_PATH + "models/shiny_floor.gltf")
