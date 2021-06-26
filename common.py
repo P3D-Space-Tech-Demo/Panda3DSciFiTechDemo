@@ -7,6 +7,7 @@ import random
 import array
 import os
 import time
+import sys
 
 load_prc_file_data("",
 """
