@@ -7,6 +7,7 @@ from panda3d.core import Shader
 from panda3d.core import ClockObject
 from panda3d.core import AmbientLight
 from panda3d.core import CompassEffect
+from panda3d.core import OmniBoundingVolume
 
 from direct.gui.DirectGui import *
 
@@ -28,6 +29,8 @@ class Section2():
         self.skybox.setEffect(CompassEffect.make(common.base.camera, CompassEffect.P_pos))
         self.skybox.setBin("background", 1)
         self.skybox.setDepthWrite(False)
+        self.skybox.node().setBounds(OmniBoundingVolume())
+        self.skybox.node().setFinal(True)
 
         amb_light = AmbientLight('amblight')
         amb_light.setColor((1, 1, 1, 1))
