@@ -89,7 +89,7 @@ class GameObject():
                 self.velocity *= self.terminalVelocity
                 speed = self.terminalVelocity
 
-        if common.currentSection.useFriction:
+        if not common.getOption("section2", "useNewtonianFlight"):
             if not self.walking:
                 perc = speed/self.maxSpeed
                 frictionVal = FRICTION*dt/(max(1, perc*perc))

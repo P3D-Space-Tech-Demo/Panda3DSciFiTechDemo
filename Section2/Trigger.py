@@ -14,9 +14,13 @@ class Trigger():
         for np in colliders:
             np.setPythonTag(TAG_OWNER, self)
             np.node().setFromCollideMask(0)
-            np.node().setIntoCollideMask(MASK_FROM_PLAYER)
+            np.node().setIntoCollideMask(MASK_PLAYER_TRIGGER_DETECTOR)
             np.setName("trigger")
             self.colliderNPs.append(np)
+            #np.show()
+            #np.ls()
+            #if hasattr(np.node(), "getRadius"):
+            #    print (np.node().getRadius())
 
     def destroy(self):
         for np in self.colliderNPs:

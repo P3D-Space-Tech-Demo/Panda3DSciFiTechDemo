@@ -66,23 +66,26 @@ class Section2():
         common.base.accept("projectile-again-into", self.projectileImpact)
         common.base.accept("player-into", self.gameObjectPhysicalImpact)
         common.base.accept("enemy-into", self.gameObjectPhysicalImpact)
+        common.base.accept("playerTriggerDetector-into-trigger", self.triggerActivated)
 
         self.updateTask = common.base.taskMgr.add(self.update, "update")
 
         self.player = None
         self.currentLevel = None
-
-        self.useFriction = False
+        self.shipSpec = None
 
     def toggleFriction(self):
-        self.useFriction = not self.useFriction
+        common.setOption("section2", "useNewtonianFlight", not common.getOption("section2", "useNewtonianFlight"))
 
     def startGame(self, shipSpec):
         self.cleanupLevel()
 
+        self.shipSpec = shipSpec
+
         self.currentLevel = Level("spaceLevel")
 
         self.player = Player(shipSpec)
+        self.player.root.setPos(self.currentLevel.playerSpawnPoint)
 
     def updateKeyMap(self, controlName, controlState, callback = None):
         self.keyMap[controlName] = controlState
@@ -130,14 +133,17 @@ class Section2():
         if self.currentLevel is not None:
             self.currentLevel.triggerActivated(trigger)
 
-    def cleanupLevel(self):
-        if self.currentLevel is not None:
-            self.currentLevel.destroy()
-            self.currentLevel = None
+    def exitTriggered(self):
+        common.gameController.startSectionInternal(2, self.shipSpec)
 
+    def cleanupLevel(self):
         if self.player is not None:
             self.player.destroy()
             self.player = None
+
+        if self.currentLevel is not None:
+            self.currentLevel.destroy()
+            self.currentLevel = None
 
     def destroy(self):
         if self.skybox is not None:
@@ -170,4 +176,6 @@ def initialise(shipSpec):
     return game
 
 def addOptions():
-    pass
+    gameController = common.gameController
+
+    gameController.addOptionCheck("Use Semi-Newtonian Flight", "useNewtonianFlight", "section2", True)

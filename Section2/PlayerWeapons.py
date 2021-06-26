@@ -18,11 +18,11 @@ import common
 import random, math
 
 class BlasterProjectile(Projectile):
-    def __init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
+    def __init__(self, model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
                  aoeRadius = 0, blastModel = None,
                  pos = None, damageByTime = False):
         Projectile.__init__(self,
-                            model, mask, range, damage, speed, size, knockback, flinchValue,
+                            model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
                              aoeRadius, blastModel,
                              pos, damageByTime)
 
@@ -40,9 +40,9 @@ class BlasterProjectile(Projectile):
 
 class BlasterWeapon(ProjectileWeapon):
     def __init__(self):
-        projectile = BlasterProjectile("Assets/Section2/models/blasterShot",
+        projectile = BlasterProjectile("Assets/Section2/models/blasterShot", True,
                                         MASK_INTO_ENEMY,
-                                        100, 3, 75, 0.5, 0, 10, 0,
+                                        100, 7, 75, 0.5, 0, 10, 0,
                                         "Assets/Section2/models/blast")
         ProjectileWeapon.__init__(self, projectile)
 
@@ -72,10 +72,10 @@ class BlasterWeapon(ProjectileWeapon):
         ProjectileWeapon.destroy(self)
 
 class Rocket(SeekingProjectile):
-    def __init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
+    def __init__(self, model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
                  aoeRadius = 0, blastModel = None,
                  pos = None, damageByTime = False):
-        SeekingProjectile.__init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
+        SeekingProjectile.__init__(self, model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
                  aoeRadius, blastModel,
                  pos, damageByTime)
 
@@ -110,7 +110,8 @@ class Rocket(SeekingProjectile):
 
 class RocketWeapon(ProjectileWeapon):
     def __init__(self):
-        projectile = Rocket("Assets/Section2/models/rocket", MASK_INTO_ENEMY,
+        projectile = Rocket("Assets/Section2/models/rocket", False,
+                            MASK_INTO_ENEMY,
                             None, 55, 45, 0.7, 20, 0)
         ProjectileWeapon.__init__(self, projectile)
 

@@ -30,6 +30,24 @@ gameController = None
 
 currentSection = None
 
+options = {} # Dictionary of dictionaries of option-values
+# In short: The first key indicates a section, and the section indicates the specific option.
+optionCallbacks = {} # Again, a dictionary of dictionaries, this time of callback-pairs
+# The keys are the same as used in "options", above
+
+def getOption(sectionID, optionID):
+    section = options.get(sectionID, None)
+    if section is None:
+        return None
+    optionValue = section.get(optionID, None)
+    return optionValue
+
+def setOption(sectionID, optionID, newVal):
+    section = options.get(sectionID, None)
+    if section is None:
+        return
+    section[optionID] = newVal
+
 def loadParticles(fileName):
     extension = "ptf"
     directory = "Particles/"

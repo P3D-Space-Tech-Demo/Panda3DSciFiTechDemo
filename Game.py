@@ -106,6 +106,7 @@ class Game():
         self.optionsTop = 0.35
         self.currentOptionsZ = self.optionsTop
         self.optionSpacingHeading = 0.2
+        self.optionCheckSpacing = 0.15
 
         self.optionsMenu = DirectDialog(
                                         frameSize = (-1, 1, -0.85, 0.85),
@@ -133,13 +134,15 @@ class Game():
         self.optionsScroller.horizontalScroll.hide()
 
         self.addOptionHeading("General")
-        self.addOptionSlider("Music Volume", (0, 100), 1, self.setMusicVolume)
-        self.addOptionSlider("Sound Volume", (0, 100), 1, self.setSoundVolume)
+        self.addOptionSlider("Music Volume", (0, 100), 1, "musicVolume", "general", 100, self.setMusicVolume)
+        self.addOptionSlider("Sound Volume", (0, 100), 1, "soundVolume", "general", 100, self.setSoundVolume)
         self.addOptionHeading("Section 1")
         self.addOptionHeading("Section 2")
         Section2.addOptions()
         self.addOptionHeading("Section 3")
         self.addOptionHeading("Section 4")
+
+        self.readOptions()
 
         btn = Game.makeButton("Back", self.closeCurrentMenu, self.optionsMenu, 5, leftAligned = False)
         btn.setPos(0, 0, -0.7)
@@ -292,8 +295,47 @@ class Game():
         common.base.accept("f", self.toggleFrameRateMeter)
         self.showFrameRateMeter = False
 
-    def addOptionSlider(self, text, rangeTuple, stepSize, callback):
+    def readOptions(self):
         pass
+
+    def setOptionData(self, optionID, sectionID, defaultValue, setCallback = None, getCallback = None):
+        if not sectionID in common.optionCallbacks:
+            common.optionCallbacks[sectionID] = {}
+        common.optionCallbacks[sectionID][optionID] = (setCallback, getCallback)
+
+        if not sectionID in common.options:
+            common.options[sectionID] = {}
+        common.options[sectionID][optionID] = defaultValue
+
+    def setOptionValue(self, value, optionID, sectionID):
+        common.options[sectionID][optionID] = value
+
+        setCallback, getCallback = common.optionCallbacks[sectionID][optionID]
+        if setCallback is not None:
+            setCallback(value)
+
+    def addOptionSlider(self, text, rangeTuple, stepSize, optionID, sectionID, defaultValue, setCallback = None, getCallback = None):
+        self.setOptionData(optionID, sectionID, defaultValue, setCallback, getCallback)
+
+    def addOptionCheck(self, text, optionID, sectionID, defaultValue, setCallback = None, getCallback = None):
+        self.setOptionData(optionID, sectionID, defaultValue, setCallback, getCallback)
+
+        check = DirectCheckButton(text = text,
+                                  scale = 0.075,
+                                  text_align = TextNode.ACenter,
+                                  parent = self.optionsScroller.getCanvas(),
+                                  pos = (0, 0, self.currentOptionsZ),
+                                  command = self.setOptionValue,
+                                  extraArgs = [optionID, sectionID],
+                                  indicatorValue = defaultValue)
+        self.currentOptionsZ -= self.optionCheckSpacing
+        self.updateOptionsCanvasSize()
+
+    def addOptionRadioSet(self, text, buttonLabels, optionID, sectionID, defaultValue, setCallback = None, getCallback = None):
+        self.setOptionData(optionID, sectionID, defaultValue, setCallback, getCallback)
+
+    def addOptionMenu(self, text, menuItems, optionID, sectionID, defaultValue, setCallback = None, getCallback = None):
+        self.setOptionData(optionID, sectionID, defaultValue, setCallback, getCallback)
 
     def addOptionHeading(self, text):
         label = DirectLabel(text = text,

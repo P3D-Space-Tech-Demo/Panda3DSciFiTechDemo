@@ -68,15 +68,26 @@ class Player(GameObject, ArmedObject):
 
         light = PointLight("basic light")
         light.setColor(Vec4(1, 1, 1, 1))
-        light.setAttenuation((1, 0.01, 0.001))
+        light.setAttenuation((1, 0.1, 0.01))
         self.lightNP = self.root.attachNewNode(light)
         self.lightNP.setZ(1)
         common.currentSection.currentLevel.geometry.setLight(self.lightNP)
 
         self.colliderNP.node().setFromCollideMask(MASK_WALLS | MASK_FROM_PLAYER)
 
+        solid = CollisionSphere(0, 0, 0, self.size)
+        solid.setTangible(False)
+        triggerDetectorNode = CollisionNode("playerTriggerDetector")
+        triggerDetectorNode.addSolid(solid)
+        self.triggerDetectorNP = self.root.attachNewNode(triggerDetectorNode)
+        self.triggerDetectorNP.setPythonTag(TAG_OWNER, self)
+        triggerDetectorNode.setFromCollideMask(MASK_PLAYER_TRIGGER_DETECTOR)
+        triggerDetectorNode.setIntoCollideMask(0)
+
         common.currentSection.pusher.addCollider(self.colliderNP, self.root)
         common.currentSection.traverser.addCollider(self.colliderNP, common.currentSection.pusher)
+        common.currentSection.pusher.addCollider(self.triggerDetectorNP, self.root)
+        common.currentSection.traverser.addCollider(self.triggerDetectorNP, common.currentSection.pusher)
 
         common.base.camera.reparentTo(self.actor)
         common.base.camera.setPos(0, 0, 0)
@@ -428,6 +439,8 @@ class Player(GameObject, ArmedObject):
 
     def updateRadar(self):
         if common.currentSection.currentLevel is not None:
+            selfForward = Vec3(0, 1, 0)
+
             self.radarDrawer.begin(common.base.cam, common.base.render)
 
             uvs = Vec2(0, 0)
@@ -441,7 +454,19 @@ class Player(GameObject, ArmedObject):
                                  Vec3(spotSize, 0, -spotSize), Vec4(0, 1, 0, 1), uvs,
                                  Vec3(spotSize, 0, spotSize), Vec4(0, 1, 0, 1), uvs)
 
-            selfForward = Vec3(0, 1, 0)
+            exitPos = common.currentSection.currentLevel.exit.nodePath.getPos(self.root)
+            exitPos.normalize()
+            anglePerc = selfForward.angleDeg(exitPos) / 180
+            exitPos.setY(0)
+            exitPos.normalize()
+            exitPos *= anglePerc * self.radarSize
+            
+            self.radarDrawer.tri(Vec3(-spotSize, 0, -spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs,
+                                 Vec3(spotSize, 0, -spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs,
+                                 Vec3(-spotSize, 0, spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs)
+            self.radarDrawer.tri(Vec3(-spotSize, 0, spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs,
+                                 Vec3(spotSize, 0, -spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs,
+                                 Vec3(spotSize, 0, spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs)
 
             for enemy in common.currentSection.currentLevel.enemies:
                 enemyPos = enemy.root.getPos(self.root)
@@ -469,13 +494,18 @@ class Player(GameObject, ArmedObject):
         effect.start(self)
 
     def destroy(self):
+        if self.triggerDetectorNP is not None:
+            self.triggerDetectorNP.clearPythonTag(TAG_OWNER)
+            self.triggerDetectorNP.removeNode()
+            self.triggerDetectorNP = None
+
         if self.uiRoot is not None:
             self.uiRoot.removeNode()
             self.uiRoot = None
         self.healthBar = None
 
         if self.lightNP is not None:
-            common.base.render.clearLight(self.lightNP)
+            common.currentSection.currentLevel.geometry.clearLight(self.lightNP)
             self.lightNP.removeNode()
             self.lightNP = None
 

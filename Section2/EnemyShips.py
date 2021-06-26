@@ -12,7 +12,8 @@ import random
 
 class BasicEnemyBlaster(ProjectileWeapon):
     def __init__(self):
-        projectile = Projectile("Assets/Section2/models/blasterShotEnemy", MASK_INTO_PLAYER,
+        projectile = Projectile("Assets/Section2/models/blasterShotEnemy", True,
+                                MASK_INTO_PLAYER,
                                 100, 7, 60, 0.5, 0, 0,
                                 0, "Assets/Section2/models/blast")
         ProjectileWeapon.__init__(self, projectile)

@@ -1,5 +1,5 @@
 
-from panda3d.core import Vec3
+from panda3d.core import Vec3, Vec4, DirectionalLight
 
 from Section2.GameObject import *
 from Section2.Trigger import Trigger
@@ -7,6 +7,8 @@ from Section2.Spawner import Spawner
 import Section2.SpecificEnemies as SpecificEnemies
 
 import common
+
+import importlib
 
 from panda3d.core import TextNode
 
@@ -19,11 +21,9 @@ class Level():
         self.geometry.setShaderAuto()
 
         try:
-            moduleObj = __import__("Assets/Section2.scripts.{0}".format(levelFile), levelFile)
-            if moduleObj is not None:
-                self.scriptObj = getattr(moduleObj, levelFile)
+            self.scriptObj = importlib.import_module("Assets.Section2.levels.scripts.{0}".format(levelFile))
         except ImportError as e:
-            print ("Error importing script-file" + "Scripts." + levelFile)
+            print ("Error importing script-file " + levelFile)
             print (e)
 
         self.enemies = []
@@ -55,7 +55,9 @@ class Level():
 
         self.geometryInterpreters = {
             "spawner" : self.buildSpawners,
-            "trigger" : self.buildTriggers
+            "trigger" : self.buildTriggers,
+            "playerSpawnPoint" : self.setPlayerSpawnPoint,
+            "exit" : self.setExit
         }
 
         if hasattr(SpecificEnemies, "buildDict"):
@@ -66,6 +68,12 @@ class Level():
 
         self.interpretGeometry()
 
+        light = DirectionalLight("directional light")
+        light.setColor(Vec4(1, 1, 1, 1))
+        self.lightNP = self.geometry.attachNewNode(light)
+        self.lightNP.setHpr(135, -45, 0)
+        self.geometry.setLight(self.lightNP)
+
         for spawnerName in self.spawnersToActivate:
             self.activateSpawner(spawnerName)
 
@@ -75,6 +83,18 @@ class Level():
         for key, callback in self.geometryInterpreters.items():
             nps = self.geometry.findAllMatches("**/={0}".format(key))
             callback(self, nps)
+
+    def setPlayerSpawnPoint(self, level, spawnPtNPs):
+        np = spawnPtNPs[0]
+        self.playerSpawnPoint = np.getPos(common.base.render)
+
+        for np in spawnPtNPs:
+            np.removeNode()
+
+    def setExit(self, level, exitNPs):
+        np = exitNPs[0]
+        exit = Trigger("exitTriggered", np, True, True)
+        self.exit = exit
 
     def buildSpawners(self, level, spawnerNPs):
         for np in spawnerNPs:
@@ -199,9 +219,19 @@ class Level():
         [system.update(dt) for system in self.particleSystems]
 
     def destroy(self):
+        if self.lightNP is not None:
+            if self.geometry is not None:
+                self.geometry.clearLight(self.lightNP)
+            self.lightNP.removeNode()
+            self.lightNP = None
+
         if self.geometry is not None:
             self.geometry.removeNode()
             self.geometry = None
+
+        if self.exit is not None:
+            self.exit.destroy()
+            self.exit = None
 
         for blast in self.blasts:
             blast.destroy()
