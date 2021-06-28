@@ -21,9 +21,6 @@ node.set_friction(0.1)
 np = base.render.attach_new_node(node)
 np.set_pos(0, 0, -0.3)
 world.attach_rigid_body(node)
-
-def recognize_base():
-    print(base.render)
     
 def fp_init():
     # initialize player character physics the Bullet way
@@ -38,10 +35,6 @@ def fp_init():
     base.camera.reparent_to(player)
     base.camera.set_y(player, 0.03)
     base.camera.set_z(player, 3.0)
-    
-    print('fp_init complete.')
-    print(player)
-    print(base.camera.get_pos())
 
 # 3D player movement system begins
 keyMap = {"left": 0, "right": 0, "forward": 0, "backward": 0, "run": 0, "jump": 0}
