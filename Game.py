@@ -301,19 +301,20 @@ class Game():
         self.showFrameRateMeter = False
 
     def readOptions(self):
-        print (common.options)
-        fileObj = open(Filename("{0}/{1}".format(OPTION_FILE_DIR, OPTION_FILE_NAME)).toOsSpecific(), "r")
-        for line in fileObj:
-            sectionID, optionID, optionValueStr = line.split("|")
-            sectionID = sectionID.strip()
-            optionID = optionID.strip()
-            optionValueStr = optionValueStr.strip()
-            optionValue = self.parseOptionVal(optionValueStr)
-            common.options[sectionID][optionID] = optionValue
-            setter = common.optionWidgets[sectionID][optionID][0]
-            setter(optionID, sectionID, optionValue)
-        fileObj.close()
-        print (common.options)
+        try:
+            fileObj = open(Filename("{0}/{1}".format(OPTION_FILE_DIR, OPTION_FILE_NAME)).toOsSpecific(), "r")
+            for line in fileObj:
+                sectionID, optionID, optionValueStr = line.split("|")
+                sectionID = sectionID.strip()
+                optionID = optionID.strip()
+                optionValueStr = optionValueStr.strip()
+                optionValue = self.parseOptionVal(optionValueStr)
+                common.options[sectionID][optionID] = optionValue
+                setter = common.optionWidgets[sectionID][optionID][0]
+                setter(optionID, sectionID, optionValue)
+            fileObj.close()
+        except FileNotFoundError as e:
+            pass
 
     def updateSlider(self, optionID, sectionID, value):
         slider = common.optionWidgets[sectionID][optionID][1]
