@@ -1075,8 +1075,7 @@ class Section1:
 def initialise(data=None):
 
     base.render.set_antialias(AntialiasAttrib.MMultisample)
-    
-    fp_ctrl.recognize_base()
+
     fp_ctrl.fp_init()
     base.task_mgr.add(fp_ctrl.update_cam)
     base.task_mgr.add(fp_ctrl.physics_update)
