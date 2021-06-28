@@ -1,7 +1,8 @@
 
 from direct.showbase.ShowBase import ShowBase
 
-from panda3d.core import WindowProperties, TextNode, Vec4
+from panda3d.core import WindowProperties, TextNode, Vec4, Vec3, Vec2, Filename
+from direct.stdpy.file import *
 from direct.gui.DirectGui import *
 
 import Section1.section1 as Section1
@@ -14,6 +15,9 @@ import common
 from Ships import shipSpecs
 
 TAG_PREVIOUS_MENU = "predecessor"
+
+OPTION_FILE_DIR = "."
+OPTION_FILE_NAME = "options.dat"
 
 class Game():
     @staticmethod
@@ -107,6 +111,7 @@ class Game():
         self.currentOptionsZ = self.optionsTop
         self.optionSpacingHeading = 0.2
         self.optionCheckSpacing = 0.15
+        self.optionSliderSpacing = 0.25
 
         self.optionsMenu = DirectDialog(
                                         frameSize = (-1, 1, -0.85, 0.85),
@@ -127,7 +132,7 @@ class Game():
                                         parent = self.optionsMenu,
                                         relief = DGG.SUNKEN,
                                         scrollBarWidth = 0.1,
-                                        frameSize = (-0.8, 0.9, -0.5, 0.5),
+                                        frameSize = (-0.85, 0.95, -0.5, 0.5),
                                         canvasSize = (-0.8, 0.8, -0.4, 0.5),
                                         autoHideScrollBars = False,
                                     )
@@ -144,7 +149,7 @@ class Game():
 
         self.readOptions()
 
-        btn = Game.makeButton("Back", self.closeCurrentMenu, self.optionsMenu, 5, leftAligned = False)
+        btn = Game.makeButton("Back", self.closeOptionsMenu, self.optionsMenu, 5, leftAligned = False)
         btn.setPos(0, 0, -0.7)
 
         ### Section Menu
@@ -296,29 +301,132 @@ class Game():
         self.showFrameRateMeter = False
 
     def readOptions(self):
-        pass
+        print (common.options)
+        fileObj = open(Filename("{0}/{1}".format(OPTION_FILE_DIR, OPTION_FILE_NAME)).toOsSpecific(), "r")
+        for line in fileObj:
+            sectionID, optionID, optionValueStr = line.split("|")
+            sectionID = sectionID.strip()
+            optionID = optionID.strip()
+            optionValueStr = optionValueStr.strip()
+            optionValue = self.parseOptionVal(optionValueStr)
+            common.options[sectionID][optionID] = optionValue
+            setter = common.optionWidgets[sectionID][optionID][0]
+            setter(optionID, sectionID, optionValue)
+        fileObj.close()
+        print (common.options)
 
-    def setOptionData(self, optionID, sectionID, defaultValue, setCallback = None, getCallback = None):
+    def updateSlider(self, optionID, sectionID, value):
+        slider = common.optionWidgets[sectionID][optionID][1]
+        slider["value"] = value
+
+    def updateCheck(self, optionID, sectionID, value):
+        check = common.optionWidgets[sectionID][optionID][1]
+        check["indicatorValue"] = value
+        check.setIndicatorValue()
+
+    def parseOptionVal(self, valueStr):
+        result = 0
+        if "," in valueStr:
+            valueList = valueStr.split(",")
+            valueList = [self.parseOptionVal(subStr) for subStr in valueList]
+            if len(valueList) == 4:
+                result = Vec4(*valueList)
+            elif len(valueList) == 3:
+                result = Vec3(*valueList)
+            elif len(valueList) == 2:
+                result = Vec2(*valueList)
+            else:
+                result = None
+        elif valueStr.lower() == "true":
+            result = True
+        elif valueStr.lower() == "false":
+            result = False
+        else:
+            try:
+                result = int(valueStr)
+            except ValueError:
+                try:
+                    result = float(valueStr)
+                except ValueError:
+                    result = None
+
+        return result
+
+    def getOptionValueString(self, value):
+        if isinstance(value, str):
+            return value
+        if isinstance(value, Vec4):
+            return "{0}, {1}, {2}, {3}".format(value.x, value.y, value.z, value.w)
+        if isinstance(value, Vec3):
+            return "{0}, {1}, {2}".format(value.x, value.y, value.z)
+        if isinstance(value, Vec2):
+            return "{0}, {1}".format(value.x, value.y)
+        return str(value)
+
+    def writeOptions(self):
+        fileObj = open(Filename("{0}/{1}".format(OPTION_FILE_DIR, OPTION_FILE_NAME)).toOsSpecific(), "w")
+        for sectionKey, section in common.options.items():
+            for optionKey, option in section.items():
+                fileObj.write("{0} | {1} | {2}\n".format(sectionKey, optionKey, self.getOptionValueString(option)))
+        fileObj.close()
+
+    def setOptionData(self, optionID, sectionID, defaultValue, setCallback = None):
         if not sectionID in common.optionCallbacks:
             common.optionCallbacks[sectionID] = {}
-        common.optionCallbacks[sectionID][optionID] = (setCallback, getCallback)
+        common.optionCallbacks[sectionID][optionID] = setCallback
 
         if not sectionID in common.options:
             common.options[sectionID] = {}
         common.options[sectionID][optionID] = defaultValue
 
+    def setOptionWidgets(self, optionID, sectionID, widgetList):
+        if not sectionID in common.optionWidgets:
+            common.optionWidgets[sectionID] = {}
+        common.optionWidgets[sectionID][optionID] = widgetList
+
     def setOptionValue(self, value, optionID, sectionID):
         common.options[sectionID][optionID] = value
 
-        setCallback, getCallback = common.optionCallbacks[sectionID][optionID]
+        setCallback = common.optionCallbacks[sectionID][optionID]
         if setCallback is not None:
             setCallback(value)
 
-    def addOptionSlider(self, text, rangeTuple, stepSize, optionID, sectionID, defaultValue, setCallback = None, getCallback = None):
-        self.setOptionData(optionID, sectionID, defaultValue, setCallback, getCallback)
+    def setOptionValueFromSlider(self, args):
+        optionID, sectionID, slider = args
+        val = slider.getValue()
 
-    def addOptionCheck(self, text, optionID, sectionID, defaultValue, setCallback = None, getCallback = None):
-        self.setOptionData(optionID, sectionID, defaultValue, setCallback, getCallback)
+        self.setOptionValue(val, optionID, sectionID)
+
+    def addOptionSlider(self, text, rangeTuple, pageSize, optionID, sectionID, defaultValue, setCallback = None):
+        self.setOptionData(optionID, sectionID, defaultValue, setCallback)
+
+        slider = DirectSlider(text = text,
+                              parent = self.optionsScroller.getCanvas(),
+                              scale = 0.65,
+                              text_pos = (0, 0.1),
+                              text_scale = 0.1,
+                              pos = (0, 0, self.currentOptionsZ),
+                              command = self.setOptionValueFromSlider,
+                              value = defaultValue,
+                              range = rangeTuple,
+                              pageSize = pageSize,
+                              orientation = DGG.HORIZONTAL)
+        slider["extraArgs"] = [optionID, sectionID, slider],
+        label1 = DirectLabel(text = str(rangeTuple[0]),
+                             scale = 0.06,
+                             pos = (-0.7, 0, self.currentOptionsZ),
+                             parent = self.optionsScroller.getCanvas())
+        label2 = DirectLabel(text = str(rangeTuple[1]),
+                             scale = 0.06,
+                             pos = (0.7, 0, self.currentOptionsZ),
+                             parent = self.optionsScroller.getCanvas())
+        self.setOptionWidgets(optionID, sectionID, [self.updateSlider, slider, label1, label2])
+
+        self.currentOptionsZ -= self.optionSliderSpacing
+        self.updateOptionsCanvasSize()
+
+    def addOptionCheck(self, text, optionID, sectionID, defaultValue, setCallback = None):
+        self.setOptionData(optionID, sectionID, defaultValue, setCallback)
 
         check = DirectCheckButton(text = text,
                                   scale = 0.075,
@@ -328,16 +436,20 @@ class Game():
                                   command = self.setOptionValue,
                                   extraArgs = [optionID, sectionID],
                                   indicatorValue = defaultValue)
+
+        self.setOptionWidgets(optionID, sectionID, [self.updateCheck, check])
+
         self.currentOptionsZ -= self.optionCheckSpacing
         self.updateOptionsCanvasSize()
 
-    def addOptionRadioSet(self, text, buttonLabels, optionID, sectionID, defaultValue, setCallback = None, getCallback = None):
-        self.setOptionData(optionID, sectionID, defaultValue, setCallback, getCallback)
+    def addOptionRadioSet(self, text, buttonLabels, optionID, sectionID, defaultValue, setCallback = None):
+        self.setOptionData(optionID, sectionID, defaultValue, setCallback)
 
-    def addOptionMenu(self, text, menuItems, optionID, sectionID, defaultValue, setCallback = None, getCallback = None):
-        self.setOptionData(optionID, sectionID, defaultValue, setCallback, getCallback)
+    def addOptionMenu(self, text, menuItems, optionID, sectionID, defaultValue, setCallback = None):
+        self.setOptionData(optionID, sectionID, defaultValue, setCallback)
 
     def addOptionHeading(self, text):
+        self.currentOptionsZ -= self.optionSpacingHeading*0.5
         label = DirectLabel(text = text,
                             text_align = TextNode.ACenter,
                             scale = 0.1,
@@ -347,13 +459,13 @@ class Game():
         self.updateOptionsCanvasSize()
 
     def updateOptionsCanvasSize(self):
-        self.optionsScroller["canvasSize"] = (-0.8, 0.8, self.currentOptionsZ, 0.5)
+        self.optionsScroller["canvasSize"] = (-0.85, 0.85, self.currentOptionsZ, 0.5)
 
     def setMusicVolume(self, vol):
-        pass
+        common.base.musicManager.setVolume(vol)
 
     def setSoundVolume(self, vol):
-        pass
+        common.base.sfxManagerList[0].setVolume(vol)
 
     def toggleFrameRateMeter(self):
         self.showFrameRateMeter = not self.showFrameRateMeter
@@ -436,6 +548,10 @@ class Game():
         if self.gameOverScreen.isHidden():
             self.gameOverScreen.show()
 
+    def closeOptionsMenu(self):
+        self.writeOptions()
+        self.closeCurrentMenu()
+
     def closeCurrentMenu(self):
         if self.currentMenu is not None:
             self.currentMenu.hide()
@@ -448,6 +564,15 @@ class Game():
 
     def destroy(self):
         self.shipSelectionMenu.clearPythonTag(TAG_PREVIOUS_MENU)
+
+        for section in common.optionWidgets.values():
+            for key, widgetList in section.items():
+                for widget in widgetList[1:]:
+                    if "extraArgs" in [optTuple[0] for optTuple in widget.options()]:
+                        widget["extraArgs"] = []
+        common.options = {}
+        common.optionWidgets = {}
+        common.optionCallbacks = {}
 
     def quit(self):
         self.destroy()

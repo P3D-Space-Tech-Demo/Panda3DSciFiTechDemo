@@ -31,10 +31,13 @@ gameController = None
 
 currentSection = None
 
-options = {} # Dictionary of dictionaries of option-values
+options = {} # Dictionary of dictionaries of option-values.
 # In short: The first key indicates a section, and the section indicates the specific option.
-optionCallbacks = {} # Again, a dictionary of dictionaries, this time of callback-pairs
-# The keys are the same as used in "options", above
+optionCallbacks = {} # Again, a dictionary of dictionaries, this time of callback-pairs.
+# The keys are the same as used in "options", above.
+optionWidgets = {} # Once again, a dictionary of dictionaries, this time of UI-widgets in a list, and
+# a callback ahead of them.
+# The keys are the same as used in the two option-dictionaries above.
 
 def getOption(sectionID, optionID):
     section = options.get(sectionID, None)
