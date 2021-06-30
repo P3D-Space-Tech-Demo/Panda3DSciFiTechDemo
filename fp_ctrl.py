@@ -21,20 +21,6 @@ node.set_friction(0.1)
 np = base.render.attach_new_node(node)
 np.set_pos(0, 0, -0.3)
 world.attach_rigid_body(node)
-    
-def fp_init():
-    # initialize player character physics the Bullet way
-    shape_1 = BulletCapsuleShape(0.75, 0.5, ZUp)
-    player_node = BulletCharacterControllerNode(shape_1, 0.1, 'Player')  # (shape, mass, player name)
-    player_np = base.render.attach_new_node(player_node)
-    player_np.set_pos(150, 10, 15)
-    player_np.set_collide_mask(BitMask32.allOn())
-    world.attach_character(player_np.node())
-    player = player_np
-
-    base.camera.reparent_to(player)
-    base.camera.set_y(player, 0.03)
-    base.camera.set_z(player, 3.0)
 
 # 3D player movement system begins
 keyMap = {"left": 0, "right": 0, "forward": 0, "backward": 0, "run": 0, "jump": 0}
@@ -42,21 +28,39 @@ keyMap = {"left": 0, "right": 0, "forward": 0, "backward": 0, "run": 0, "jump": 
 def setKey(key, value):
     keyMap[key] = value
 
-# define button map
-base.accept("a", setKey, ["left", 1])
-base.accept("a-up", setKey, ["left", 0])
-base.accept("d", setKey, ["right", 1])
-base.accept("d-up", setKey, ["right", 0])
-base.accept("w", setKey, ["forward", 1])
-base.accept("w-up", setKey, ["forward", 0])
-base.accept("s", setKey, ["backward", 1])
-base.accept("s-up", setKey, ["backward", 0])
-base.accept("shift", setKey, ["run", 1])
-base.accept("shift-up", setKey, ["run", 0])
-base.accept("space", setKey, ["jump", 1])
-base.accept("space-up", setKey, ["jump", 0])
-# disable mouse
-base.disable_mouse()
+def fp_init():
+    # initialize player character physics the Bullet way
+    shape_1 = BulletCapsuleShape(0.75, 0.5, ZUp)
+    player_node = BulletCharacterControllerNode(shape_1, 0.1, 'Player')  # (shape, mass, player name)
+    player = base.render.attach_new_node(player_node)
+    player.set_pos(150, 10, 15)
+    player.set_collide_mask(BitMask32.all_on())
+    world.attach_character(player.node())
+
+def use_fp_camera():
+    player = base.render.find('Player')
+    base.camera.reparent_to(player)
+    base.camera.set_y(player, 0.03)
+    base.camera.set_z(player, 3.0)
+    base.task_mgr.add(update_cam, "update_cam")
+    base.task_mgr.add(physics_update, "physics_update")
+
+    # define button map
+    base.accept("a", setKey, ["left", 1])
+    base.accept("a-up", setKey, ["left", 0])
+    base.accept("d", setKey, ["right", 1])
+    base.accept("d-up", setKey, ["right", 0])
+    base.accept("w", setKey, ["forward", 1])
+    base.accept("w-up", setKey, ["forward", 0])
+    base.accept("s", setKey, ["backward", 1])
+    base.accept("s-up", setKey, ["backward", 0])
+    base.accept("shift", setKey, ["run", 1])
+    base.accept("shift-up", setKey, ["run", 0])
+    base.accept("space", setKey, ["jump", 1])
+    base.accept("space-up", setKey, ["jump", 0])
+
+    # disable mouse
+    base.disable_mouse()
 
 def update_cam(Task):
     # the player movement speed
@@ -65,7 +69,7 @@ def update_cam(Task):
     striveSpeed = 6
     static_pos_bool = False
     static_pos = Vec3()
-    
+
     player = base.render.find('Player')
 
     # get mouse data
@@ -74,7 +78,7 @@ def update_cam(Task):
         pointer = base.win.get_pointer(0)
         mouseX = pointer.get_x()
         mouseY = pointer.get_y()
-                    
+
     # screen sizes
     window_Xcoord_halved = base.win.get_x_size() // 2
     window_Ycoord_halved = base.win.get_y_size() // 2
@@ -86,7 +90,7 @@ def update_cam(Task):
     minPitch = -50
     # cam view target initialization
     camViewTarget = LVecBase3f()
-    
+
     if base.win.movePointer(0, window_Xcoord_halved, window_Ycoord_halved):
         p = 0
 
@@ -119,62 +123,59 @@ def update_cam(Task):
 
             player.set_h(h)
             camViewTarget.set_x(h)
-    
+
     if keyMap["left"]:
         if static_pos_bool:
             static_pos_bool = False
-                        
+
         player.set_x(player, -striveSpeed * globalClock.get_dt())
-                        
+
     if not keyMap["left"]:
         if not static_pos_bool:
             static_pos_bool = True
             static_pos = player.get_pos()
-                        
+
         player.set_x(static_pos[0])
         player.set_y(static_pos[1])
 
     if keyMap["right"]:
         if static_pos_bool:
             static_pos_bool = False
-                        
+
         player.set_x(player, striveSpeed * globalClock.get_dt())
 
     if not keyMap["right"]:
         if not static_pos_bool:
             static_pos_bool = True
             static_pos = player.get_pos()
-                        
+
         player.set_x(static_pos[0])
         player.set_y(static_pos[1])
 
     if keyMap["forward"]:
         if static_pos_bool:
             static_pos_bool = False
-                        
+
         player.set_y(player, movementSpeedForward * globalClock.get_dt())
-                    
+
     if keyMap["forward"] != 1:
         if not static_pos_bool:
             static_pos_bool = True
             static_pos = player.get_pos()
-                        
+
         player.set_x(static_pos[0])
         player.set_y(static_pos[1])
-                    
+
     if keyMap["backward"]:
         if static_pos_bool:
             static_pos_bool = False
-                        
+
         player.set_y(player, -movementSpeedBackward * globalClock.get_dt())
-                
+
     return Task.cont
-    
+
 def physics_update(Task):
     dt = globalClock.get_dt()
     world.do_physics(dt)
-    
-    return Task.cont 
-    
-    
 
+    return Task.cont
