@@ -20,22 +20,45 @@ OPTION_FILE_DIR = "."
 OPTION_FILE_NAME = "options.dat"
 
 class Game():
+    BUTTON_SIZE_LARGE = 0
+    BUTTON_SIZE_SMALL = 1
+
+    fancyFont = loader.loadFont("Assets/Shared/tex/ExcludedItalic.ttf")
+
     @staticmethod
-    def makeButton(text, command, menu, width, extraArgs = None, leftAligned = True):
+    def makeButton(text, command, menu, size, extraArgs = None, leftAligned = True):
+        if size == Game.BUTTON_SIZE_LARGE:
+            width = 20
+        elif size == Game.BUTTON_SIZE_SMALL:
+            width = 10
+        height = width/8
+
         if leftAligned:
-            frame = (-0.1, width, -0.75, 0.75)
+            frame = (0, width, -height*0.5, height*0.5)
             alignment = TextNode.ALeft
         else:
-            frame = (-width*0.5 , width*0.5, -0.75, 0.75)
+            frame = (-width*0.5 , width*0.5, -height*0.5, height*0.5)
             alignment = TextNode.ACenter
+
         btn = DirectButton(text = text,
                            command = command,
                            scale = 0.1,
                            parent = menu,
                            text_align = alignment,
+                           text_font = Game.fancyFont,
                            frameSize = frame,
-                           text_pos = (0, -0.375)
+                           frameColor = (1, 1, 1, 1),
+                           pressEffect = False,
+                           text_pos = (0.9, -0.2),
+                           relief = DGG.FLAT,
+                           frameTexture = (
+                                        "Assets/Shared/tex/mainMenuBtnNormal.png",
+                                        "Assets/Shared/tex/mainMenuBtnClick.png",
+                                        "Assets/Shared/tex/mainMenuBtnHighlight.png",
+                                        "Assets/Shared/tex/mainMenuBtnNormal.png",
+                                      )
                            )
+        btn.setTransparency(True)
         if extraArgs is not None:
             btn["extraArgs"] = extraArgs
         return btn
@@ -62,44 +85,63 @@ class Game():
 
         self.mainMenuBackdrop = DirectFrame(
                                             frameSize = (-1/common.base.aspect2d.getSx(), 1/common.base.aspect2d.getSx(), -1, 1),
+                                            frameTexture = "Assets/Shared/tex/mainMenuBack.png"
                                            )
 
         self.title = DirectLabel(text = "CAPTAIN PANDA",
                                  parent = self.mainMenuBackdrop,
                                  scale = 0.07,
-                                 pos = (0, 0, 0.9),
+                                 text_font = Game.fancyFont,
+                                 text_fg = (0.8, 0.9, 1, 1),
+                                 relief = None,
+                                 pos = (0, 0, 0.8),
                                  text_align = TextNode.ALeft)
         self.title = DirectLabel(text = "and the",
                                  parent = self.mainMenuBackdrop,
                                  scale = 0.05,
-                                 pos = (0, 0, 0.85),
+                                 text_font = Game.fancyFont,
+                                 text_fg = (0.8, 0.9, 1, 1),
+                                 relief = None,
+                                 pos = (0, 0, 0.75),
                                  text_align = TextNode.ALeft)
         self.title = DirectLabel(text = "INVASION OF THE MECHANOIDS!",
                                  parent = self.mainMenuBackdrop,
                                  scale = 0.1,
-                                 pos = (0, 0, 0.7625),
+                                 text_font = Game.fancyFont,
+                                 text_fg = (0.8, 0.9, 1, 1),
+                                 relief = None,
+                                 pos = (0, 0, 0.6625),
                                  text_align = TextNode.ALeft)
 
         self.mainMenuPanel = DirectFrame(
                                     frameSize = (0, 1.25, -1, 1),
-                                    frameColor = (0, 0, 0, 0.5)
+                                    frameColor = (0, 0, 0, 0)
                                    )
+
+        self.underline = DirectLabel(frameTexture = "Assets/Shared/tex/underline.png",
+                                     parent = self.mainMenuPanel,
+                                     relief = DGG.FLAT,
+                                     frameSize = (0, 3.9, -0.0609, 0.0609),
+                                     frameColor = (1, 1, 1, 1),
+                                     pos = (3.5, 0, 0.6),
+                                     scale = -1)
+        self.underline.setTransparency(True)
 
         buttons = []
 
-        btn = Game.makeButton("New Game", self.startGame, self.mainMenuPanel, 10)
+        btn = Game.makeButton("New Game", self.startGame, self.mainMenuPanel, Game.BUTTON_SIZE_LARGE)
         buttons.append(btn)
 
-        btn = Game.makeButton("Chapter Selection", self.selectSection, self.mainMenuPanel, 10)
+        btn = Game.makeButton("Chapter Selection", self.selectSection, self.mainMenuPanel, Game.BUTTON_SIZE_LARGE)
         buttons.append(btn)
 
-        btn = Game.makeButton("Options", self.openOptions, self.mainMenuPanel, 10)
+        btn = Game.makeButton("Options", self.openOptions, self.mainMenuPanel, Game.BUTTON_SIZE_LARGE)
         buttons.append(btn)
 
-        btn = Game.makeButton("Quit", self.quit, self.mainMenuPanel, 10)
+        btn = Game.makeButton("Quit", self.quit, self.mainMenuPanel, Game.BUTTON_SIZE_LARGE)
         buttons.append(btn)
 
-        buttonSpacing = 0.2
+        buttonSpacing = 0.2125
         buttonY = (len(buttons) - 1)*0.5*buttonSpacing
         for btn in buttons:
             btn.setPos(0.1, 0, buttonY)
@@ -149,13 +191,14 @@ class Game():
 
         self.readOptions()
 
-        btn = Game.makeButton("Back", self.closeOptionsMenu, self.optionsMenu, 5, leftAligned = False)
+        btn = Game.makeButton("Back", self.closeOptionsMenu, self.optionsMenu, Game.BUTTON_SIZE_SMALL, leftAligned = False)
         btn.setPos(0, 0, -0.7)
 
         ### Section Menu
 
         self.sectionMenu = DirectDialog(
                                         frameSize = (0, 2, -0.85, 0.85),
+                                        frameColor = (0.1, 0.15, 0.4, 0.75),
                                         fadeScreen = 0.5,
                                         pos = (0, 0, 0),
                                         relief = DGG.FLAT
@@ -165,21 +208,26 @@ class Game():
         label = DirectLabel(text = "Select a Chapter:",
                             parent = self.sectionMenu,
                             scale = 0.1,
+                            text_font = Game.fancyFont,
+                            text_fg = (0.8, 0.9, 1, 1),
+                            frameColor = (0, 0, 0.3, 1),
+                            pad = (0.3, 0.3),
+                            relief = DGG.FLAT,
                             pos = (0.085, 0, 0.65),
                             text_align = TextNode.ALeft)
 
         buttons = []
 
-        btn = Game.makeButton("Chapter 1 // A Warrior's Choice", self.startSection, self.sectionMenu, 15, extraArgs = [0])
+        btn = Game.makeButton("Chapter 1 // A Warrior's Choice", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [0])
         buttons.append(btn)
 
-        btn = Game.makeButton("Chapter 2 // Across the Night", self.startSection, self.sectionMenu, 15, extraArgs = [1])
+        btn = Game.makeButton("Chapter 2 // Across the Night", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [1])
         buttons.append(btn)
 
-        btn = Game.makeButton("Chapter 3 // Facing the Foe", self.startSection, self.sectionMenu, 15, extraArgs = [2])
+        btn = Game.makeButton("Chapter 3 // Facing the Foe", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [2])
         buttons.append(btn)
 
-        btn = Game.makeButton("Chapter 4 // The Escape", self.startSection, self.sectionMenu, 15, extraArgs = [3])
+        btn = Game.makeButton("Chapter 4 // The Escape", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [3])
         buttons.append(btn)
 
         buttonSpacing = 0.25
@@ -188,7 +236,7 @@ class Game():
             btn.setPos(0.1, 0, buttonY)
             buttonY -= buttonSpacing
 
-        btn = Game.makeButton("Back", self.closeCurrentMenu, self.sectionMenu, 5)
+        btn = Game.makeButton("Back", self.closeCurrentMenu, self.sectionMenu, Game.BUTTON_SIZE_SMALL)
         btn.setPos(0.1, 0, -0.7)
 
         ### Game-over menu
@@ -248,6 +296,7 @@ class Game():
         self.shipSelectionMenu = DirectDialog(
                                               frameSize = (0, 2, -0.7, 0.7),
                                               fadeScreen = 0.5,
+                                              frameColor = (0.1, 0.15, 0.4, 0.75),
                                               relief = DGG.FLAT
                                              )
         self.shipSelectionMenu.hide()
@@ -256,18 +305,23 @@ class Game():
         label = DirectLabel(text = "Select a Ship:",
                             parent = self.shipSelectionMenu,
                             scale = 0.1,
+                            text_font = Game.fancyFont,
+                            text_fg = (0.8, 0.9, 1, 1),
+                            frameColor = (0, 0, 0.3, 1),
+                            pad = (0.3, 0.3),
+                            relief = DGG.FLAT,
                             pos = (0.085, 0, 0.5),
                             text_align = TextNode.ALeft)
 
-        btn = Game.makeButton("Light fighter", self.sectionSpecificMenuDone, self.shipSelectionMenu, 15,
+        btn = Game.makeButton("Light fighter", self.sectionSpecificMenuDone, self.shipSelectionMenu, Game.BUTTON_SIZE_LARGE,
                               extraArgs = [self.shipSelectionMenu, 1, shipSpecs[0]])
         buttons.append(btn)
 
-        btn = Game.makeButton("Medium Interceptor", self.sectionSpecificMenuDone, self.shipSelectionMenu, 15,
+        btn = Game.makeButton("Medium Interceptor", self.sectionSpecificMenuDone, self.shipSelectionMenu, Game.BUTTON_SIZE_LARGE,
                               extraArgs = [self.shipSelectionMenu, 1, shipSpecs[1]])
         buttons.append(btn)
 
-        btn = Game.makeButton("Heavy Bombardment Platform", self.sectionSpecificMenuDone, self.shipSelectionMenu, 15,
+        btn = Game.makeButton("Heavy Bombardment Platform", self.sectionSpecificMenuDone, self.shipSelectionMenu, Game.BUTTON_SIZE_LARGE,
                               extraArgs = [self.shipSelectionMenu, 1, shipSpecs[2]])
         buttons.append(btn)
 
@@ -276,7 +330,7 @@ class Game():
             btn.setPos(0.1, 0, buttonY)
             buttonY -= buttonSpacing
 
-        btn = Game.makeButton("Back", self.closeCurrentMenu, self.shipSelectionMenu, 5)
+        btn = Game.makeButton("Back", self.closeCurrentMenu, self.shipSelectionMenu, Game.BUTTON_SIZE_SMALL)
         btn.setPos(0.1, 0, -0.55)
 
         ### Section-data
