@@ -14,7 +14,7 @@ def apply_hologram(input_model, pos_adj = Vec3(0, 0, 0), scale_adj = 1):
     # make the distortion buffer
     distort_buff = make_fbo("distortion_buffer")
     distort_buff.set_sort(-3)
-    distort_buff.set_clear_color((0, 0, 0, 0))
+    distort_buff.set_clear_color((0, 0, 0.3, 0))
 
     # add a distortion camera
     distort_cam = base.makeCamera(distort_buff, scene=render, lens=base.cam.node().get_lens(), mask=BitMask32.bit(4))
