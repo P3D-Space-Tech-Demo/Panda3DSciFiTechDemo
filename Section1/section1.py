@@ -1,5 +1,7 @@
+import common
 from common import *
 import fp_ctrl
+import holo
 
 
 ASSET_PATH = "Assets/Section1/"
@@ -10,6 +12,26 @@ vert_shader = ASSET_PATH + "shaders/simplepbr_vert_mod_1.vert"
 frag_shader = ASSET_PATH + "shaders/simplepbr_frag_mod_1.frag"
 #SCENE_SHADER = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 
+ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
+holo.apply_hologram(ship, scale_adj = 0.99)
+# wire_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
+# holo.make_wire(wire_ship, scale_adj = 0.99)
+
+# Keep track of all tasks that could be running, such that they can be removed
+# when this section gets cleaned up.
+
+section_task_ids = set()
+
+def add_section_task(task, task_id, *args, **kwargs):
+
+    base.task_mgr.add(task, task_id, *args, **kwargs)
+    section_task_ids.add(task_id)
+
+
+# Keep track of all lights that have been created, such that they can be removed
+# when this section gets cleaned up.
+
+section_lights = []
 
 def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048):
     spotlight = Spotlight('random_light')
@@ -25,7 +47,8 @@ def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048
     spotlight.set_pos(input_pos)
     spotlight.look_at(look_at)
     base.render.set_light(spotlight)
-    
+    section_lights.append(spotlight)
+
 
 r_sec = 2.0
 
@@ -44,6 +67,8 @@ v_format = GeomVertexFormat.register_format(v_format)
 
 
 CBA = ColorBlendAttrib
+color_blend_attrib = CBA.make(CBA.M_none, CBA.O_incoming_color, CBA.O_incoming_color,
+    CBA.M_add, CBA.O_incoming_alpha, CBA.O_one)
 
 
 def create_beam():
@@ -91,9 +116,8 @@ def create_beam():
     beam.set_light_off()
     beam.set_transparency(TransparencyAttrib.M_alpha)
     beam.set_shader_off()
-    attrib = CBA.make(CBA.M_none, CBA.O_incoming_color, CBA.O_incoming_color,
-        CBA.M_add, CBA.O_incoming_alpha, CBA.O_one, (.5, .5, 1., 1.))
-    beam.set_attrib(attrib)
+    beam.set_attrib(color_blend_attrib)
+    beam.set_depth_write(False)
     beam.set_bin("unsorted", 0)
     beam.hide(SHADOW_MASK)
 
@@ -125,9 +149,8 @@ def create_beam_connector():
     beam_connector.set_light_off()
     beam_connector.set_transparency(TransparencyAttrib.M_alpha)
     beam_connector.set_shader_off()
-    attrib = CBA.make(CBA.M_none, CBA.O_incoming_color, CBA.O_incoming_color,
-        CBA.M_add, CBA.O_incoming_alpha, CBA.O_one, (.5, .5, 1., 1.))
-    beam_connector.set_attrib(attrib)
+    beam_connector.set_attrib(color_blend_attrib)
+    beam_connector.set_depth_write(False)
     beam_connector.set_bin("unsorted", 0)
     beam_connector.hide(SHADOW_MASK)
 
@@ -164,13 +187,28 @@ class IdleWorkers:
         cls.workers[worker.type].insert(0, worker)
         worker.job.worker_done = True
 
+    @classmethod
+    def clear(cls):
+
+        for workers in cls.workers.values():
+
+            for worker in workers:
+                worker.destroy()
+                Worker.instances.remove(worker)
+
+            workers.clear()
+
 
 class Worker:
 
+    instances = []
+
     def __init__(self, worker_type, model, beam, beam_connector, generator_ext_z, pivot_offset=0.):
 
+        self.instances.append(self)
         self.type = worker_type
         self.model = model
+        self.model.set_shader_off()
         self.generator = model.find("**/generator")
         self.generator_start_z = self.generator.get_z()
         self.generator_ext_z = generator_ext_z
@@ -185,6 +223,16 @@ class Worker:
 
         if worker_type == "drone":
             model.reparent_to(base.render)
+
+    def destroy(self):
+
+        self.model.detach_node()
+        self.model = None
+        self._do_job = lambda: None
+
+        '''if self.interval_seq and not self.interval_seq.is_stopped():
+            self.interval_seq.finish()
+            self.interval_seq.clear_intervals()'''
 
     def reset_energy_beams(self,):
 
@@ -268,7 +316,7 @@ class Worker:
             self.target_point = pos + pivot_offset_vec
             target_vec = self.target_point - self.model.get_pos()
             self.start_dist = target_vec.length()
-            base.task_mgr.add(self.move, "move_bot")
+            add_section_task(self.move, "move_bot")
             self._do_job = lambda: elevator.add_request(lambda: elevator.lower_bot(self))
             return
 
@@ -281,7 +329,7 @@ class Worker:
         elif self.type == "bot":
             elevator = self.get_nearest_elevator(self.model.get_y())
             elevator.await_bot(self)
-            base.task_mgr.add(lambda task: self.move_to_elevator(task, elevator),
+            add_section_task(lambda task: self.move_to_elevator(task, elevator),
                 "move_to_elevator")
 
     def do_job(self, job, start=False):
@@ -295,7 +343,7 @@ class Worker:
 
             self.beam_root.hide()
             tmp_node.wrt_reparent_to(base.render)
-            base.task_mgr.add(deactivate_generator, "deactivate_generator")
+            add_section_task(deactivate_generator, "deactivate_generator")
 
             laser_plights = base.render.find_all_matches("**/plight*")
             for l in laser_plights:
@@ -311,29 +359,32 @@ class Worker:
                 duration = 1.5
                 self.reset_energy_beams()
                 self.beam_root.show()
-                base.task_mgr.add(self.shoot_energy_beams, "shoot_energy_beams", delay=0.)
+                add_section_task(self.shoot_energy_beams, "shoot_energy_beams", delay=0.)
                 self.part.move_to_ship(tmp_node, duration)
                 solidify_task = lambda task: self.part.solidify(task, duration)
-                base.task_mgr.add(solidify_task, "solidify")
-                base.task_mgr.add(deactivation_task, "deactivate_beams", delay=duration)
-                
+                add_section_task(solidify_task, "solidify")
+                add_section_task(deactivation_task, "deactivate_beams", delay=duration)
+
             if tmp_node.get_pos(base.render)[2] > 3:
                 def activate_drone_beam():
+                    section = common.currentSection
                     time.sleep(r_sec)
+                    if common.currentSection is not section:
+                        return
                     self.part.model.reparent_to(base.render)
                     self.part.model.wrt_reparent_to(tmp_node)
                     tmp_node.set_scale(.1)
                     duration = 1.5
                     self.reset_energy_beams()
                     self.beam_root.show()
-                    base.task_mgr.add(self.shoot_energy_beams, "shoot_energy_beams", delay=0.)
+                    add_section_task(self.shoot_energy_beams, "shoot_energy_beams", delay=0.)
                     self.part.move_to_ship(tmp_node, duration)
                     solidify_task = lambda task: self.part.solidify(task, duration)
-                    base.task_mgr.add(solidify_task, "solidify")
-                    base.task_mgr.add(deactivation_task, "deactivate_beams", delay=duration)
-                    
+                    add_section_task(solidify_task, "solidify")
+                    add_section_task(deactivation_task, "deactivate_beams", delay=duration)
+
                 threading2._start_new_thread(activate_drone_beam, ())
-                    
+
         def activate_generator(task):
 
             dt = globalClock.get_dt()
@@ -364,13 +415,13 @@ class Worker:
 
             return task.cont
 
-        self._do_job = lambda: base.task_mgr.add(activate_generator, "activate_generator")
+        self._do_job = lambda: add_section_task(activate_generator, "activate_generator")
 
         if start and self.type == "bot":
             self.start_job = lambda: self.set_part(part)
             elevator = self.get_nearest_elevator(job.start_pos.y)
             elevator.add_request(lambda: elevator.raise_bot(self, job.start_pos))
-     
+
         else:
             self.set_part(part)
 
@@ -393,7 +444,6 @@ class WorkerBot(Worker):
 
     def __init__(self, beam, beam_connector):
         model = base.loader.load_model(ASSET_PATH + "models/worker_bot.gltf")
-        model.set_shader_off()
 
         Worker.__init__(self, "bot", model, beam, beam_connector, .25, -.8875)
 
@@ -411,7 +461,7 @@ class WorkerBot(Worker):
         self.target_point = Point3(x, y, 0.)
         target_vec = self.target_point - self.model.get_pos()
         self.start_dist = target_vec.length()
-        base.task_mgr.add(self.move, "move_bot")
+        add_section_task(self.move, "move_bot")
 
     def move(self, task):
 
@@ -477,10 +527,25 @@ class WorkerDrone(Worker):
     def __init__(self, beam, beam_connector):
 
         model = base.loader.load_model(ASSET_PATH + "models/worker_drone.gltf")
-        model.set_shader_off()
         model.set_pos(0, 0, random.uniform(20, 26))
+        self.di_par = None
+        self.rotor_intervals = []
+
+        for r in model.find_all_matches("**/propeller_*"):
+            interval = LerpHprInterval(r, 0.1, (360, 0, 0), (0, 0, 0))
+            interval.loop()
+            self.rotor_intervals.append(interval)
 
         Worker.__init__(self, "drone", model, beam, beam_connector, -.1)
+
+    def destroy(self):
+
+        for interval in self.rotor_intervals:
+            interval.finish()
+
+        self.model.detach_node()
+        self.model = None
+        self._do_job = lambda: None
 
     def set_part(self, part):
         import random
@@ -490,16 +555,12 @@ class WorkerDrone(Worker):
         drone_inter = LerpPosInterval(self.model, r_sec, (x, y, z), self.model.get_pos(), blendType='easeInOut')
         ran_hpr = Vec3(random.uniform(-10, 10), random.uniform(-10, 10), random.uniform(-15, 15))
         drone_rot = LerpHprInterval(self.model, 0.5, (ran_hpr), self.model.get_hpr(), blendType='easeInOut')
-        
-        drone_rotors = self.model.find_all_matches("**/propeller*")
-        for r in drone_rotors:
-            LerpHprInterval(r, 0.1, (360, 0, 0), (0, 0, 0), blendType='easeInOut').loop()
-        
-        di_par = Parallel()
+
+        self.di_par = di_par = Parallel()
         di_par.append(drone_inter)
         di_par.append(drone_rot)
         di_par.start()
-        
+
         self._do_job()
 
 
@@ -583,7 +644,7 @@ class Job:
 class Part:
 
     def __init__(self, job, primitive, worker_pos):
-        
+
         self.job = job
         vertex_data = job.component.node().modify_geom(0).get_vertex_data()
         geom = Geom(vertex_data)
@@ -634,12 +695,13 @@ class Part:
 
     def move_to_ship(self, node, duration):
 
-        base.task_mgr.add(lambda task: self.reset_size(task, node, duration), "reset_part_size")
+        add_section_task(lambda task: self.reset_size(task, node, duration), "reset_part_size")
 
 
 class Elevator:
 
     instances = []
+    cam_target = None
 
     def __init__(self, y):
 
@@ -689,7 +751,7 @@ class Elevator:
                 self.bot.model.wrt_reparent_to(base.render)
                 self.bot.start_job()
                 self.bot = None
-                base.task_mgr.add(set_ready, "set_ready", delay=1.5)
+                add_section_task(set_ready, "set_ready", delay=1.5)
             else:
                 set_ready()
 
@@ -709,7 +771,7 @@ class Elevator:
         if z <= self.platform_z_min:
             z = self.platform_z_min
             r = task.done
-            base.task_mgr.add(self.close_iris, "close_iris")
+            add_section_task(self.close_iris, "close_iris")
 
         self.platform.set_z(z)
 
@@ -726,7 +788,7 @@ class Elevator:
         if self.blade_angle <= 0.:
             self.blade_angle = 0.
             r = task.done
-            base.task_mgr.add(self.raise_platform, "raise_platform")
+            add_section_task(self.raise_platform, "raise_platform")
 
         for blade in self.blades:
             blade.set_h(self.blade_angle)
@@ -754,7 +816,7 @@ class Elevator:
                 self.bot = None
 
                 if self.waiting_bots:
-                    request = lambda: base.task_mgr.add(self.open_iris, "open_iris")
+                    request = lambda: add_section_task(self.open_iris, "open_iris")
                     self.add_request(request, index=0)
 
         for blade in self.blades:
@@ -765,7 +827,7 @@ class Elevator:
     def await_bot(self, bot):
 
         self.waiting_bots.append(bot)
-        request = lambda: base.task_mgr.add(self.open_iris, "open_iris")
+        request = lambda: add_section_task(self.open_iris, "open_iris")
         self.add_request(request)
 
     def raise_bot(self, bot, start_pos):
@@ -780,7 +842,7 @@ class Elevator:
             look_at(quat, vec, Vec3.up())
             h, p, r = quat.get_hpr()
             self.platform_connector.set_h(h)
-            base.task_mgr.add(self.open_iris, "open_iris")
+            add_section_task(self.open_iris, "open_iris")
 
         def raise_if_none_waiting(task):
 
@@ -790,19 +852,19 @@ class Elevator:
             if self.closed:
                 self.add_request(open_iris)
             else:
-                lower_platform = lambda: base.task_mgr.add(self.lower_platform, "lower_platform")
+                lower_platform = lambda: add_section_task(self.lower_platform, "lower_platform")
                 self.add_request(lower_platform)
                 self.add_request(open_iris)
 
             self.cam_target.reparent_to(self.model)
 
-        base.task_mgr.add(raise_if_none_waiting, "raise_if_none_waiting")
+        add_section_task(raise_if_none_waiting, "raise_if_none_waiting")
 
     def lower_bot(self, bot):
 
         self.bot = bot
         bot.model.wrt_reparent_to(self.platform_connector)
-        base.task_mgr.add(self.lower_platform, "lower_platform")
+        add_section_task(self.lower_platform, "lower_platform")
 
     def add_request(self, request, index=None):
 
@@ -833,34 +895,54 @@ class Section1:
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(10.)
         self.cam_target.set_h(self.cam_heading)
-        self.cam_switch_bool = False
-        
+        self.cam_is_fps = False
+
+        def use_orbital_cam():
+            base.camera.reparent_to(self.cam_target)
+            base.camera.set_x(-50)
+            base.camera.set_y(-125.)
+            base.camera.set_z(2)
+            base.camera.look_at(0, 0, 0)
+#            base.cam.node().get_lens(0).fov = 70.#(70, 42.9957)
+            base.cam.node().get_lens(0).fov = 50.942
+            add_section_task(self.move_camera, "move_camera")
+
+        def use_fp_cam():
+            base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
+            base.cam.node().get_lens(0).fov = 50.942#(50.942, 30)
+            fp_ctrl.use_fp_camera()
+
         def cam_switch():
-            if not self.cam_switch_bool:
-                base.camera.reparent_to(self.cam_target)
-                base.camera.set_x(-50)
-                base.camera.set_y(-125.)
-                base.camera.set_z(2)
-                base.camera.look_at(0, 0, 0)
-                base.task_mgr.add(self.move_camera, "move_camera")
-                
-                self.cam_switch_bool = True
-            
+            if self.cam_is_fps:
+                base.task_mgr.remove("update_cam")
+                base.task_mgr.remove("physics_update")
+                use_orbital_cam()
+            else:
+                base.task_mgr.remove("move_camera")
+                use_fp_cam()
+            self.cam_is_fps = not self.cam_is_fps
+
         base.accept("\\", cam_switch)
+        use_orbital_cam()
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
         self.setup_elevator_camera()
 
         for i in range(20):
-            elevator = Elevator(-90. + i * 10.)
-            elevator.cam_target = self.elevator_cam_target
+            Elevator(-90. + i * 10.)
 
-        base.task_mgr.add(Elevator.handle_requests, "handle_elevator_requests")
+        add_section_task(Elevator.handle_requests, "handle_elevator_requests")
+
+        # add a shop floor
+        self.floor = floor = base.loader.load_model(ASSET_PATH + "models/shiny_floor.gltf")
+        floor.reparent_to(base.render)
+#        floor.set_shader(SCENE_SHADER)
+        floor.set_z(-0.3)
 
         starship_id = "starship_a"  # should be determined by user
         self.starship_components = {}
 
-        model_root = base.loader.load_model(ASSET_PATH + f"models/{starship_id}.bam")
+        self.model_root = model_root = base.loader.load_model(ASSET_PATH + f"models/{starship_id}.bam")
         model_root.reparent_to(base.render)
 #        model_root.set_shader(SCENE_SHADER)
         # model_root.set_two_sided(True)
@@ -934,7 +1016,7 @@ class Section1:
         job = self.jobs[0]
         worker = IdleWorkers.pop(job.worker_type)
         check_job = lambda task: self.check_job(task, job, worker)
-        base.task_mgr.add(check_job, "check_job")
+        add_section_task(check_job, "check_job")
         worker.do_job(job, start=True)
         job.is_assigned = True
         self.add_mirror_job(job)
@@ -995,14 +1077,14 @@ class Section1:
         return job_schedule
 
     def move_camera(self, task):
-    
+
         dt = globalClock.get_dt()
         self.cam_heading -= 1.75 * dt
         self.cam_target.set_h(self.cam_heading)
         if base.camera.get_z() < 50:
             base.camera.set_z(base.camera.get_z() + 0.4 * dt)
         base.camera.look_at(0, 0, 5)
-        
+
         return task.cont
 
     def setup_elevator_camera(self):
@@ -1012,7 +1094,7 @@ class Section1:
         dr.set_clear_color_active(True)
         dr.set_clear_depth_active(True)
         cam_node = Camera("elevator_cam")
-        self.elevator_cam_target = target = base.render.attach_new_node("elevator_cam_target")
+        Elevator.cam_target = target = base.render.attach_new_node("elevator_cam_target")
         target.set_hpr(120., -30., 0.)
         self.elevator_cam = cam = target.attach_new_node(cam_node)
         cam.set_y(-10.)
@@ -1041,11 +1123,11 @@ class Section1:
 
             worker = IdleWorkers.pop(mirror_job.worker_type)
             check_job = lambda task: self.check_job(task, mirror_job, worker)
-            base.task_mgr.add(check_job, "check_job")
+            add_section_task(check_job, "check_job")
             worker.do_job(mirror_job, start=True)
             mirror_job.is_assigned = True
 
-        base.task_mgr.add(start_mirror_job, "start_mirror_job", delay=1.5)
+        add_section_task(start_mirror_job, "start_mirror_job", delay=1.5)
 
     def check_job(self, task, job, worker):
 
@@ -1061,7 +1143,7 @@ class Section1:
                 next_worker.do_job(next_job, start=True)
                 next_job.is_assigned = True
                 next_check = lambda task: self.check_job(task, next_job, next_worker)
-                base.task_mgr.add(next_check, "check_job")
+                add_section_task(next_check, "check_job")
                 self.add_mirror_job(next_job)
 
         if not job.done:
@@ -1071,23 +1153,51 @@ class Section1:
             IdleWorkers.add(worker)
             worker.generator.set_z(worker.generator_start_z)
 
+    def destroy(self):
+
+        base.ignore("escape")
+        base.ignore("\\")
+
+        base.win.remove_display_region(self.elevator_display_region)
+        Elevator.cam_target.detach_node()
+        self.elevator_cam = None
+
+        section_task_ids.add("update_cam")
+        section_task_ids.add("physics_update")
+
+        for task_id in section_task_ids:
+            base.task_mgr.remove(task_id)
+
+        IdleWorkers.clear()
+
+        while Worker.instances:
+            Worker.instances.pop().destroy()
+
+#        DroneCompartment.instance.destroy()
+#        self.hangar.destroy()
+        self.model_root.detach_node()
+        self.floor.detach_node()
+
+        while Elevator.instances:
+            elevator = Elevator.instances.pop()
+            elevator.model.detach_node()
+            elevator.model = None
+
+        for light in section_lights:
+            base.render.set_light_off(light)
+            light.detach_node()
+
+        common.currentSection = None
+
 
 def initialise(data=None):
 
     base.render.set_antialias(AntialiasAttrib.MMultisample)
-    
-    fp_ctrl.recognize_base()
-    fp_ctrl.fp_init()
-    base.task_mgr.add(fp_ctrl.update_cam)
-    base.task_mgr.add(fp_ctrl.physics_update)
-    
-    base.accept("escape", sys.exit, [0])
 
-    # add a shop floor
-    floor = base.loader.load_model(ASSET_PATH + "models/shiny_floor.gltf")
-    floor.reparent_to(base.render)
-#    floor.set_shader(SCENE_SHADER)
-    floor.set_z(-0.3)
+    fp_ctrl.fp_init()
+
+#    base.accept("escape", sys.exit, [0])
+    base.accept("escape", common.gameController.gameOver)
 
     for x in range(6):
         plight_1 = PointLight('plight_1')
@@ -1097,10 +1207,14 @@ def initialise(data=None):
         plight_1_node.node().set_color((0.1, 0.1, 0.9, 0.75))
         plight_1_node.node().set_attenuation((0.5, 0, 0.05))
         base.render.set_light(plight_1_node)
+        section_lights.append(plight_1_node)
 
     make_simple_spotlight((200, 100, 900), (0, 5, 10), True)
     make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
     make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
     # make_simple_spotlight((200, 100, 300), (0, 5, 10), False)
 
-    Section1()
+    section = Section1()
+    common.currentSection = section
+
+    return section

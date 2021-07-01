@@ -1,0 +1,26 @@
+//Cg
+
+void vshader(float4 vtx_position : POSITION,
+             uniform float4x4 mat_modelproj,
+             uniform float4x4 trans_model_to_clip,
+             out float4 l_position : POSITION,
+             out float4 l_texcoord0 : TEXCOORD0)
+{
+    l_position = mul(mat_modelproj, vtx_position);
+    l_texcoord0 = mul(trans_model_to_clip, vtx_position);
+    l_texcoord0.z = l_texcoord0.w;
+}
+
+void fshader(float4 l_texcoord0 : TEXCOORD0, uniform sampler2D k_screen : TEXUNIT1,
+             uniform sampler2D waves : TEXUNIT0,
+             uniform float4 texpad_screen,
+             in uniform float sys_time,
+             out float4 o_color : COLOR)
+{
+    float3 screen = l_texcoord0.xyz / l_texcoord0.w;
+    float2 texcoords = float2(screen.xy * 0.8) * texpad_screen.xy + texpad_screen.xy;
+    float4 disturbance = tex2D(waves, texcoords);
+    o_color = tex2D(k_screen, texcoords + disturbance.xy * 0.2 * disturbance.z * sys_time.x);
+    o_color = dot(o_color.xyz, vec3(0.65, 0.2, 0.15));
+    o_color = vec4(0., 0., o_color.z * 5., 0.3);
+}
