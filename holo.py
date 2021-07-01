@@ -23,8 +23,7 @@ def apply_hologram(input_model, pos_adj = Vec3(0, 0, 0), scale_adj = 1):
     input_model.set_pos(pos_adj)
     input_model.set_scale(scale_adj)
     input_model.reparent_to(base.render)
-    input_model.set_transparency(TransparencyAttrib.M_dual)
-        
+
     # load the distortion shader
     distort_shader = Shader.load("Assets/Shared/shaders/holo.sha", Shader.SL_Cg)
     input_model.set_shader(distort_shader)
