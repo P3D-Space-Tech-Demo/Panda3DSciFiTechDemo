@@ -1,6 +1,7 @@
 import common
 from common import *
 import fp_ctrl
+import holo
 
 
 ASSET_PATH = "Assets/Section1/"
@@ -11,6 +12,10 @@ vert_shader = ASSET_PATH + "shaders/simplepbr_vert_mod_1.vert"
 frag_shader = ASSET_PATH + "shaders/simplepbr_frag_mod_1.frag"
 #SCENE_SHADER = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 
+ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
+holo.apply_hologram(ship, scale_adj = 0.99)
+# wire_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
+# holo.make_wire(wire_ship, scale_adj = 0.99)
 
 # Keep track of all tasks that could be running, such that they can be removed
 # when this section gets cleaned up.
@@ -890,7 +895,7 @@ class Section1:
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(10.)
         self.cam_target.set_h(self.cam_heading)
-        self.cam_is_fps = True
+        self.cam_is_fps = False
 
         def use_orbital_cam():
             base.camera.reparent_to(self.cam_target)
@@ -918,7 +923,7 @@ class Section1:
             self.cam_is_fps = not self.cam_is_fps
 
         base.accept("\\", cam_switch)
-        use_fp_cam()
+        use_orbital_cam()
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
         self.setup_elevator_camera()
