@@ -12,10 +12,6 @@ vert_shader = ASSET_PATH + "shaders/simplepbr_vert_mod_1.vert"
 frag_shader = ASSET_PATH + "shaders/simplepbr_frag_mod_1.frag"
 #SCENE_SHADER = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 
-ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
-holo.apply_hologram(ship, scale_adj = 0.99)
-# wire_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
-# holo.make_wire(wire_ship, scale_adj = 0.99)
 
 # Keep track of all tasks that could be running, such that they can be removed
 # when this section gets cleaned up.
@@ -1195,6 +1191,10 @@ def initialise(data=None):
     base.render.set_antialias(AntialiasAttrib.MMultisample)
 
     fp_ctrl.fp_init()
+    ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
+    holo.apply_hologram(ship, scale_adj = 0.99)
+    # wire_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
+    # holo.make_wire(wire_ship, scale_adj = 0.99)
 
 #    base.accept("escape", sys.exit, [0])
     base.accept("escape", common.gameController.gameOver)
