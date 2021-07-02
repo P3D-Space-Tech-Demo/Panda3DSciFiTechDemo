@@ -887,6 +887,7 @@ class Section1:
 
     def __init__(self):
         # set up camera control
+        fp_ctrl.fp_init()
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(10.)
@@ -934,6 +935,11 @@ class Section1:
         floor.reparent_to(base.render)
 #        floor.set_shader(SCENE_SHADER)
         floor.set_z(-0.3)
+
+        self.holo_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
+        holo.apply_hologram(self.holo_ship, scale_adj = 0.99)
+        # wire_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
+        # holo.make_wire(wire_ship, scale_adj = 0.99)
 
         starship_id = "starship_a"  # should be determined by user
         self.starship_components = {}
@@ -1154,9 +1160,16 @@ class Section1:
         base.ignore("escape")
         base.ignore("\\")
 
+        base.camera.reparent_to(base.render)
+        self.cam_target.detach_node()
+        self.cam_target = None
         base.win.remove_display_region(self.elevator_display_region)
         Elevator.cam_target.detach_node()
+        Elevator.cam_target = None
         self.elevator_cam = None
+
+        for tmp_node in base.render.find_all_matches("**/tmp_node"):
+            tmp_node.detach_node()
 
         section_task_ids.add("update_cam")
         section_task_ids.add("physics_update")
@@ -1172,7 +1185,14 @@ class Section1:
 #        DroneCompartment.instance.destroy()
 #        self.hangar.destroy()
         self.model_root.detach_node()
+        self.model_root = None
+        self.holo_ship.detach_node()
+        self.holo_ship = None
         self.floor.detach_node()
+        self.floor = None
+
+        for distort_cam in base.render.find_all_matches("**/distort_cam"):
+            distort_cam.detach_node()
 
         while Elevator.instances:
             elevator = Elevator.instances.pop()
@@ -1189,12 +1209,6 @@ class Section1:
 def initialise(data=None):
 
     base.render.set_antialias(AntialiasAttrib.MMultisample)
-
-    fp_ctrl.fp_init()
-    ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
-    holo.apply_hologram(ship, scale_adj = 0.99)
-    # wire_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
-    # holo.make_wire(wire_ship, scale_adj = 0.99)
 
 #    base.accept("escape", sys.exit, [0])
     base.accept("escape", common.gameController.gameOver)
