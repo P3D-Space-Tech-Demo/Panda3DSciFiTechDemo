@@ -1193,6 +1193,9 @@ class Section1:
 
         for distort_cam in base.render.find_all_matches("**/distort_cam"):
             distort_cam.detach_node()
+            
+        fp_ctrl.fp_cleanup()
+        print('BulletCharacterControllerNode cleaned up.')
 
         while Elevator.instances:
             elevator = Elevator.instances.pop()
