@@ -210,6 +210,9 @@ class RapidShotgunWeapon(HitscanWeapon, PlayerWeapon):
                             model.setPythonTag("scalar", 0.1125)
 
     def destroy(self):
+        for model in self.impactModels:
+            model.removeNode()
+        self.impactModels = []
         HitscanWeapon.destroy(self)
         PlayerWeapon.destroy(self)
 
