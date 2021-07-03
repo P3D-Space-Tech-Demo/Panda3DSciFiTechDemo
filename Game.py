@@ -23,7 +23,14 @@ class Game():
     BUTTON_SIZE_LARGE = 0
     BUTTON_SIZE_SMALL = 1
 
-    fancyFont = loader.loadFont("Assets/Shared/tex/ExcludedItalic.ttf")
+    #fancyFont = loader.loadFont("Assets/Shared/fonts/Excluded/ExcludedItalic.ttf")
+    #italiciseFont = False
+    
+    fancyFont = loader.loadFont("Assets/Shared/fonts/ACBrodie/AC_Brodie.otf")
+    italiciseFont = True
+
+    #fancyFont = loader.loadFont("Assets/Shared/fonts/Sansation/Sansation/Sansation_Bold_Italic.ttf")
+    #italiciseFont = False
 
     @staticmethod
     def makeButton(text, command, menu, size, extraArgs = None, leftAligned = True):
@@ -68,6 +75,8 @@ class Game():
                                         "Assets/Shared/tex/mainMenuBtn{0}Normal.png".format(button),
                                       )
                            )
+        if Game.italiciseFont:
+            btn.setShear((0, 0.1, 0))
         btn.setTransparency(True)
         if extraArgs is not None:
             btn["extraArgs"] = extraArgs
@@ -98,7 +107,7 @@ class Game():
                                             frameTexture = "Assets/Shared/tex/mainMenuBack.png"
                                            )
 
-        self.title = DirectLabel(text = "CAPTAIN PANDA",
+        self.title1 = DirectLabel(text = "CAPTAIN PANDA",
                                  parent = self.mainMenuBackdrop,
                                  scale = 0.07,
                                  text_font = Game.fancyFont,
@@ -106,7 +115,7 @@ class Game():
                                  relief = None,
                                  pos = (0, 0, 0.8),
                                  text_align = TextNode.ALeft)
-        self.title = DirectLabel(text = "and the",
+        self.title2 = DirectLabel(text = "and the",
                                  parent = self.mainMenuBackdrop,
                                  scale = 0.05,
                                  text_font = Game.fancyFont,
@@ -114,7 +123,7 @@ class Game():
                                  relief = None,
                                  pos = (0, 0, 0.75),
                                  text_align = TextNode.ALeft)
-        self.title = DirectLabel(text = "INVASION OF THE MECHANOIDS!",
+        self.title3 = DirectLabel(text = "INVASION OF THE MECHANOIDS!",
                                  parent = self.mainMenuBackdrop,
                                  scale = 0.1,
                                  text_font = Game.fancyFont,
@@ -122,6 +131,11 @@ class Game():
                                  relief = None,
                                  pos = (0, 0, 0.6625),
                                  text_align = TextNode.ALeft)
+
+        if Game.italiciseFont:
+            self.title1.setShear((0, 0.1, 0))
+            self.title2.setShear((0, 0.1, 0))
+            self.title3.setShear((0, 0.1, 0))
 
         self.mainMenuPanel = DirectFrame(
                                     frameSize = (0, 1.25, -1, 1),
@@ -225,6 +239,8 @@ class Game():
                             relief = DGG.FLAT,
                             pos = (0.1925, 0, 0.65),
                             text_align = TextNode.ALeft)
+        if Game.italiciseFont:
+            label.setShear((0, 0.1, 0))
 
         buttons = []
 
@@ -322,6 +338,8 @@ class Game():
                             relief = DGG.FLAT,
                             pos = (0.1925, 0, 0.65),
                             text_align = TextNode.ALeft)
+        if Game.italiciseFont:
+            label.setShear((0, 0.1, 0))
 
         btn = Game.makeButton("Light fighter", self.sectionSpecificMenuDone, self.shipSelectionMenu, Game.BUTTON_SIZE_LARGE,
                               extraArgs = [self.shipSelectionMenu, 1, shipSpecs[0]])
