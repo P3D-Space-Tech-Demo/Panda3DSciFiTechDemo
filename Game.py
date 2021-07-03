@@ -31,14 +31,24 @@ class Game():
             width = 20
         elif size == Game.BUTTON_SIZE_SMALL:
             width = 10
-        height = width/8
+        height = 2.5
 
         if leftAligned:
             frame = (0, width, -height*0.5, height*0.5)
             alignment = TextNode.ALeft
+            textPos = (0.9, -0.2)
+            if size == Game.BUTTON_SIZE_LARGE:
+                button = ""
+            else:
+                button = "Small"
         else:
             frame = (-width*0.5 , width*0.5, -height*0.5, height*0.5)
             alignment = TextNode.ACenter
+            textPos = (0, -0.2)
+            if size == Game.BUTTON_SIZE_LARGE:
+                button = "SmallCentred"
+            else:
+                button = "SmallCentred"
 
         btn = DirectButton(text = text,
                            command = command,
@@ -49,13 +59,13 @@ class Game():
                            frameSize = frame,
                            frameColor = (1, 1, 1, 1),
                            pressEffect = False,
-                           text_pos = (0.9, -0.2),
+                           text_pos = textPos,
                            relief = DGG.FLAT,
                            frameTexture = (
-                                        "Assets/Shared/tex/mainMenuBtnNormal.png",
-                                        "Assets/Shared/tex/mainMenuBtnClick.png",
-                                        "Assets/Shared/tex/mainMenuBtnHighlight.png",
-                                        "Assets/Shared/tex/mainMenuBtnNormal.png",
+                                        "Assets/Shared/tex/mainMenuBtn{0}Normal.png".format(button),
+                                        "Assets/Shared/tex/mainMenuBtn{0}Click.png".format(button),
+                                        "Assets/Shared/tex/mainMenuBtn{0}Highlight.png".format(button),
+                                        "Assets/Shared/tex/mainMenuBtn{0}Normal.png".format(button),
                                       )
                            )
         btn.setTransparency(True)
@@ -211,9 +221,9 @@ class Game():
                             text_font = Game.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),
                             frameColor = (0, 0, 0.3, 1),
-                            pad = (0.3, 0.3),
+                            pad = (0.9, 0.3),
                             relief = DGG.FLAT,
-                            pos = (0.085, 0, 0.65),
+                            pos = (0.1925, 0, 0.65),
                             text_align = TextNode.ALeft)
 
         buttons = []
@@ -294,7 +304,7 @@ class Game():
         buttons = []
 
         self.shipSelectionMenu = DirectDialog(
-                                              frameSize = (0, 2, -0.7, 0.7),
+                                              frameSize = (0, 2, -0.85, 0.85),
                                               fadeScreen = 0.5,
                                               frameColor = (0.1, 0.15, 0.4, 0.75),
                                               relief = DGG.FLAT
@@ -308,9 +318,9 @@ class Game():
                             text_font = Game.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),
                             frameColor = (0, 0, 0.3, 1),
-                            pad = (0.3, 0.3),
+                            pad = (0.9, 0.3),
                             relief = DGG.FLAT,
-                            pos = (0.085, 0, 0.5),
+                            pos = (0.1925, 0, 0.65),
                             text_align = TextNode.ALeft)
 
         btn = Game.makeButton("Light fighter", self.sectionSpecificMenuDone, self.shipSelectionMenu, Game.BUTTON_SIZE_LARGE,
@@ -331,7 +341,7 @@ class Game():
             buttonY -= buttonSpacing
 
         btn = Game.makeButton("Back", self.closeCurrentMenu, self.shipSelectionMenu, Game.BUTTON_SIZE_SMALL)
-        btn.setPos(0.1, 0, -0.55)
+        btn.setPos(0.1, 0, -0.7)
 
         ### Section-data
 
