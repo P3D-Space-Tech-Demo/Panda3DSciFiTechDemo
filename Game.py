@@ -101,6 +101,8 @@ class Game():
 
         common.base.win.setClearColor(Vec4(0, 0, 0, 1))
 
+        common.base.render.set_shader(common.scene_shader)
+
         common.base.disableMouse()
 
         common.base.exitFunc = self.destroy
