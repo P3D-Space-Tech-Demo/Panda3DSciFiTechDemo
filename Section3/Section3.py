@@ -21,7 +21,7 @@ class Section3():
     def __init__(self):
         common.currentSection = self
 
-        common.base.render.setShaderAuto()
+#        common.base.render.setShaderAuto()
 
         self.keyMap = {
             "up" : False,
