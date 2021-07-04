@@ -705,6 +705,7 @@ class Elevator:
         self.model = base.loader.load_model(ASSET_PATH + "models/worker_bot_elevator.gltf")
         self.model.reparent_to(base.render)
         self.model.set_y(y)
+        self.model.set_shader_off()
         self.y = y
         self.ready = False
         self.idle = True
