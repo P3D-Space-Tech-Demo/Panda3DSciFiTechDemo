@@ -32,6 +32,15 @@ class Game():
     #fancyFont = loader.loadFont("Assets/Shared/fonts/Sansation/Sansation/Sansation_Bold_Italic.ttf")
     #italiciseFont = False
 
+    #fancyFont = loader.loadFont("Assets/Shared/fonts/Loja/Loja/Loja-BoldItalic.otf")
+    #italiciseFont = False
+
+    #fancyFont = loader.loadFont("Assets/Shared/fonts/SavingsBond/savings_bond/SAVINGSB_.TTF")
+    #italiciseFont = True
+
+    #fancyFont = loader.loadFont("Assets/Shared/fonts/Void/void/Void.ttf", pointSize = 7, spaceAdvance = 0.3)
+    #italiciseFont = True
+
     @staticmethod
     def makeButton(text, command, menu, size, extraArgs = None, leftAligned = True):
         if size == Game.BUTTON_SIZE_LARGE:
