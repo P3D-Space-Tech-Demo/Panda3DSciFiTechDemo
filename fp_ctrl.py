@@ -36,10 +36,11 @@ def fp_init():
     player.set_pos(150, 10, 15)
     player.set_collide_mask(BitMask32.all_on())
     world.attach_character(player.node())
-    
+
 def fp_cleanup():
     player = base.render.find('Player')
     world.remove(player.node())
+    player.detach_node()
 
 def use_fp_camera():
     player = base.render.find('Player')

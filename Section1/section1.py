@@ -705,6 +705,7 @@ class Elevator:
         self.model = base.loader.load_model(ASSET_PATH + "models/worker_bot_elevator.gltf")
         self.model.reparent_to(base.render)
         self.model.set_y(y)
+        self.model.set_shader_off()
         self.y = y
         self.ready = False
         self.idle = True
@@ -906,7 +907,9 @@ class Section1:
 
         def use_fp_cam():
             base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
-            base.cam.node().get_lens(0).fov = 50.942#(50.942, 30)
+            base.camLens.set_fov(80)
+            base.camLens.set_near_far(0.01, 90000)
+            base.camLens.set_focal_length(7)
             fp_ctrl.use_fp_camera()
 
         def cam_switch():
@@ -937,9 +940,9 @@ class Section1:
         floor.set_z(-0.3)
 
         self.holo_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
-        holo.apply_hologram(self.holo_ship, scale_adj = 0.99)
+        holo.apply_hologram(self.holo_ship, pos_adj = (0, 0, 0.4), scale_adj = (0.98, 1, 0.95))
         # wire_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
-        # holo.make_wire(wire_ship, scale_adj = 0.99)
+        # holo.make_wire(wire_ship, pos_adj = (0, 0, 0.35), scale_adj = (0.98, 1, 0.95))
 
         starship_id = "starship_a"  # should be determined by user
         self.starship_components = {}
