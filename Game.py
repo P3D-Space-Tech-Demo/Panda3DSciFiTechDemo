@@ -1,7 +1,7 @@
 
 from direct.showbase.ShowBase import ShowBase
 
-from panda3d.core import WindowProperties, TextNode, Vec4, Vec3, Vec2, Filename
+from panda3d.core import WindowProperties, TextNode, Vec4, Vec3, Vec2, Filename, Texture
 from direct.stdpy.file import *
 from direct.gui.DirectGui import *
 
@@ -25,21 +25,12 @@ class Game():
 
     #fancyFont = loader.loadFont("Assets/Shared/fonts/Excluded/ExcludedItalic.ttf")
     #italiciseFont = False
-    
-    fancyFont = loader.loadFont("Assets/Shared/fonts/ACBrodie/AC_Brodie.otf")
-    italiciseFont = True
-
-    #fancyFont = loader.loadFont("Assets/Shared/fonts/Sansation/Sansation/Sansation_Bold_Italic.ttf")
-    #italiciseFont = False
-
-    #fancyFont = loader.loadFont("Assets/Shared/fonts/Loja/Loja/Loja-BoldItalic.otf")
-    #italiciseFont = False
 
     #fancyFont = loader.loadFont("Assets/Shared/fonts/SavingsBond/savings_bond/SAVINGSB_.TTF")
     #italiciseFont = True
 
-    #fancyFont = loader.loadFont("Assets/Shared/fonts/Void/void/Void.ttf", pointSize = 7, spaceAdvance = 0.3)
-    #italiciseFont = True
+    fancyFont = loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf", pointSize = 8)
+    italiciseFont = False
 
     @staticmethod
     def makeButton(text, command, menu, size, extraArgs = None, leftAligned = True):
@@ -180,35 +171,51 @@ class Game():
             btn.setPos(0.1, 0, buttonY)
             buttonY -= buttonSpacing
 
+        ### A gradient for sub-menu backgrounds
+
+        gradient = loader.loadTexture("Assets/Shared/tex/menuGradient.png")
+        gradient.setWrapU(Texture.WMClamp)
+        gradient.setWrapV(Texture.WMClamp)
+
         ### Options Menu
 
         self.optionsTop = 0.35
         self.currentOptionsZ = self.optionsTop
         self.optionSpacingHeading = 0.2
-        self.optionCheckSpacing = 0.15
+        self.optionCheckSpacing = 0.25
         self.optionSliderSpacing = 0.25
 
         self.optionsMenu = DirectDialog(
                                         frameSize = (-1, 1, -0.85, 0.85),
+                                        frameColor = (0.225, 0.325, 0.5, 0.75),
                                         fadeScreen = 0.5,
                                         pos = (0, 0, 0),
+                                        frameTexture = gradient,
                                         relief = DGG.FLAT
                                        )
         self.optionsMenu.hide()
 
         label = DirectLabel(text = "Options",
                             parent = self.optionsMenu,
+                            text_font = Game.fancyFont,
+                            text_fg = (0.8, 0.9, 1, 1),
+                            frameColor = (0, 0, 0.225, 1),
+                            pad = (0.9, 0.3),
+                            relief = DGG.FLAT,
                             scale = 0.1,
-                            pos = (0, 0, 0.65),
-                            #text_font = self.font,
-                            relief = None)
+                            pos = (0, 0, 0.65)
+                            )
+        if Game.italiciseFont:
+            label.setShear((0, 0.1, 0))
 
         self.optionsScroller = DirectScrolledFrame(
                                         parent = self.optionsMenu,
                                         relief = DGG.SUNKEN,
                                         scrollBarWidth = 0.1,
                                         frameSize = (-0.85, 0.95, -0.5, 0.5),
+                                        frameColor = (0.225, 0.325, 0.5, 0.75),
                                         canvasSize = (-0.8, 0.8, -0.4, 0.5),
+                                        frameTexture = gradient,
                                         autoHideScrollBars = False,
                                     )
         self.optionsScroller.horizontalScroll.hide()
@@ -231,10 +238,11 @@ class Game():
 
         self.sectionMenu = DirectDialog(
                                         frameSize = (0, 2, -0.85, 0.85),
-                                        frameColor = (0.1, 0.15, 0.4, 0.75),
+                                        frameColor = (0.225, 0.325, 0.5, 0.75),
                                         fadeScreen = 0.5,
                                         pos = (0, 0, 0),
-                                        relief = DGG.FLAT
+                                        relief = DGG.FLAT,
+                                        frameTexture = gradient
                                        )
         self.sectionMenu.hide()
 
@@ -243,7 +251,7 @@ class Game():
                             scale = 0.1,
                             text_font = Game.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),
-                            frameColor = (0, 0, 0.3, 1),
+                            frameColor = (0, 0, 0.225, 1),
                             pad = (0.9, 0.3),
                             relief = DGG.FLAT,
                             pos = (0.1925, 0, 0.65),
@@ -331,8 +339,9 @@ class Game():
         self.shipSelectionMenu = DirectDialog(
                                               frameSize = (0, 2, -0.85, 0.85),
                                               fadeScreen = 0.5,
-                                              frameColor = (0.1, 0.15, 0.4, 0.75),
-                                              relief = DGG.FLAT
+                                              frameColor = (0.225, 0.325, 0.5, 0.75),
+                                              relief = DGG.FLAT,
+                                              frameTexture = gradient
                                              )
         self.shipSelectionMenu.hide()
         self.shipSelectionMenu.setPythonTag(TAG_PREVIOUS_MENU, self.sectionMenu)
@@ -342,7 +351,7 @@ class Game():
                             scale = 0.1,
                             text_font = Game.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),
-                            frameColor = (0, 0, 0.3, 1),
+                            frameColor = (0, 0, 0.225, 1),
                             pad = (0.9, 0.3),
                             relief = DGG.FLAT,
                             pos = (0.1925, 0, 0.65),
@@ -499,19 +508,44 @@ class Game():
                               text_scale = 0.1,
                               pos = (0, 0, self.currentOptionsZ),
                               command = self.setOptionValueFromSlider,
+                              thumb_image = (
+                                  "Assets/Shared/tex/mainMenuSliderThumbNormal.png",
+                                  "Assets/Shared/tex/mainMenuSliderThumbClick.png",
+                                  "Assets/Shared/tex/mainMenuSliderThumbHighlight.png",
+                                  "Assets/Shared/tex/mainMenuSliderThumbNormal.png"
+                              ),
+                              thumb_image_scale = 0.1125,
+                              thumb_frameSize = (-0.06, 0.06, -0.09, 0.09),
+                              thumb_frameColor = (1, 1, 1, 1),
+                              thumb_relief = None,
+                              thumb_pressEffect = False,
                               value = defaultValue,
                               range = rangeTuple,
+                              frameColor = (0.05, 0.05, 0.125, 1),
                               pageSize = pageSize,
                               orientation = DGG.HORIZONTAL)
         slider["extraArgs"] = [optionID, sectionID, slider],
+        slider.setTransparency(True)
         label1 = DirectLabel(text = str(rangeTuple[0]),
                              scale = 0.06,
+                             text_font = Game.fancyFont,
+                             text_fg = (0.8, 0.9, 1, 1),
+                             frameTexture = "Assets/Shared/tex/mainMenuSliderCapLeft.png",
+                             frameSize = (-1.15, 0.85, -1, 1),
                              pos = (-0.7, 0, self.currentOptionsZ),
+                             text_pos = (0, 0.8),
                              parent = self.optionsScroller.getCanvas())
+        label1.setTransparency(True)
         label2 = DirectLabel(text = str(rangeTuple[1]),
                              scale = 0.06,
+                             text_font = Game.fancyFont,
+                             text_fg = (0.8, 0.9, 1, 1),
+                             frameTexture = "Assets/Shared/tex/mainMenuSliderCapRight.png",
+                             frameSize = (-0.85, 1.15, -1, 1),
                              pos = (0.7, 0, self.currentOptionsZ),
+                             text_pos = (0, 0.8),
                              parent = self.optionsScroller.getCanvas())
+        label2.setTransparency(True)
         self.setOptionWidgets(optionID, sectionID, [self.updateSlider, slider, label1, label2])
 
         self.currentOptionsZ -= self.optionSliderSpacing
@@ -526,8 +560,17 @@ class Game():
                                   parent = self.optionsScroller.getCanvas(),
                                   pos = (0, 0, self.currentOptionsZ),
                                   command = self.setOptionValue,
+                                  text_font = Game.fancyFont,
+                                  text_fg = (0.8, 0.9, 1, 1),
+                                  boxPlacement = "below",
+                                  boxRelief = None,
+                                  boxImageScale = (4, 1, 1),
+                                  pressEffect = False,
+                                  boxImage = ("Assets/Shared/tex/mainMenuCheckEmpty.png", "Assets/Shared/tex/mainMenuCheckFull.png", None),
+                                  relief = None,
                                   extraArgs = [optionID, sectionID],
                                   indicatorValue = defaultValue)
+        check.indicator.setTransparency(True)
 
         self.setOptionWidgets(optionID, sectionID, [self.updateCheck, check])
 
@@ -544,9 +587,16 @@ class Game():
         self.currentOptionsZ -= self.optionSpacingHeading*0.5
         label = DirectLabel(text = text,
                             text_align = TextNode.ACenter,
+                            text_font = Game.fancyFont,
+                            text_fg = (0.8, 0.9, 1, 1),
                             scale = 0.1,
+                            frameColor = (0, 0, 0.225, 1),
+                            pad = (0.7, 0.2),
+                            relief = DGG.FLAT,
                             parent = self.optionsScroller.getCanvas(),
                             pos = (0, 0, self.currentOptionsZ))
+        if Game.italiciseFont:
+            label.setShear((0, 0.1, 0))
         self.currentOptionsZ -= self.optionSpacingHeading
         self.updateOptionsCanvasSize()
 
