@@ -7,11 +7,6 @@ import holo
 ASSET_PATH = "Assets/Section1/"
 SHADOW_MASK = BitMask32.bit(1)
 
-# load a scene shader
-vert_shader = ASSET_PATH + "shaders/simplepbr_vert_mod_1.vert"
-frag_shader = ASSET_PATH + "shaders/simplepbr_frag_mod_1.frag"
-#SCENE_SHADER = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
-
 
 # Keep track of all tasks that could be running, such that they can be removed
 # when this section gets cleaned up.
@@ -44,9 +39,6 @@ def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048
     spotlight.look_at(look_at)
     base.render.set_light(spotlight)
     section_lights.append(spotlight)
-
-
-r_sec = 2.0
 
 
 # define custom, multi-array vertex format with separate float color column
@@ -214,11 +206,11 @@ class Worker:
         self.beam_connectors = [beam_connector.copy_to(self.beam_root) for _ in range(4)]
         self.part = None
         self.job = None
+        self._do_job = lambda: None
         self.start_job = lambda: None
+        self.target_point = None
         self.pivot_offset = pivot_offset  # pivot offset from model center
-
-        if worker_type == "drone":
-            model.reparent_to(base.render)
+        self.interval_seq = None
 
     def destroy(self):
 
@@ -226,11 +218,11 @@ class Worker:
         self.model = None
         self._do_job = lambda: None
 
-        '''if self.interval_seq and not self.interval_seq.is_stopped():
+        if self.interval_seq and not self.interval_seq.is_stopped():
             self.interval_seq.finish()
-            self.interval_seq.clear_intervals()'''
+            self.interval_seq.clear_intervals()
 
-    def reset_energy_beams(self,):
+    def reset_energy_beams(self):
 
         for beam in self.beams:
             beam.set_sy(.01)
@@ -310,10 +302,8 @@ class Worker:
             pivot_offset_vec = (pos - model_pos).normalized() * self.pivot_offset
             # make sure the worker model gets centered on the elevator platform
             self.target_point = pos + pivot_offset_vec
-            target_vec = self.target_point - self.model.get_pos()
-            self.start_dist = target_vec.length()
-            add_section_task(self.move, "move_bot")
             self._do_job = lambda: elevator.add_request(lambda: elevator.lower_bot(self))
+            self.move()
             return
 
         return task.cont
@@ -325,8 +315,9 @@ class Worker:
         elif self.type == "bot":
             elevator = self.get_nearest_elevator(self.model.get_y())
             elevator.await_bot(self)
-            add_section_task(lambda task: self.move_to_elevator(task, elevator),
-                "move_to_elevator")
+            add_section_task(lambda task: self.move_to_elevator(task, elevator), "move_to_elevator")
+        else:
+            self.fly_up()
 
     def do_job(self, job, start=False):
 
@@ -348,38 +339,17 @@ class Worker:
 
         def do_job():
 
-            if tmp_node.get_pos(base.render)[2] < 3:
-                self.part.model.reparent_to(base.render)
-                self.part.model.wrt_reparent_to(tmp_node)
-                tmp_node.set_scale(.1)
-                duration = 1.5
-                self.reset_energy_beams()
-                self.beam_root.show()
-                add_section_task(self.shoot_energy_beams, "shoot_energy_beams", delay=0.)
-                self.part.move_to_ship(tmp_node, duration)
-                solidify_task = lambda task: self.part.solidify(task, duration)
-                add_section_task(solidify_task, "solidify")
-                add_section_task(deactivation_task, "deactivate_beams", delay=duration)
-
-            if tmp_node.get_pos(base.render)[2] > 3:
-                def activate_drone_beam():
-                    section = common.currentSection
-                    time.sleep(r_sec)
-                    if common.currentSection is not section:
-                        return
-                    self.part.model.reparent_to(base.render)
-                    self.part.model.wrt_reparent_to(tmp_node)
-                    tmp_node.set_scale(.1)
-                    duration = 1.5
-                    self.reset_energy_beams()
-                    self.beam_root.show()
-                    add_section_task(self.shoot_energy_beams, "shoot_energy_beams", delay=0.)
-                    self.part.move_to_ship(tmp_node, duration)
-                    solidify_task = lambda task: self.part.solidify(task, duration)
-                    add_section_task(solidify_task, "solidify")
-                    add_section_task(deactivation_task, "deactivate_beams", delay=duration)
-
-                threading2._start_new_thread(activate_drone_beam, ())
+            part.model.reparent_to(base.render)
+            part.model.wrt_reparent_to(tmp_node)
+            tmp_node.set_scale(.1)
+            duration = 1.5
+            self.reset_energy_beams()
+            self.beam_root.show()
+            add_section_task(self.shoot_energy_beams, "shoot_energy_beams", delay=0.)
+            self.part.move_to_ship(tmp_node, duration)
+            solidify_task = lambda task: part.solidify(task, duration)
+            add_section_task(solidify_task, "solidify")
+            add_section_task(deactivation_task, "deactivate_beams", delay=duration)
 
         def activate_generator(task):
 
@@ -413,11 +383,16 @@ class Worker:
 
         self._do_job = lambda: add_section_task(activate_generator, "activate_generator")
 
-        if start and self.type == "bot":
+        if start:
             self.start_job = lambda: self.set_part(part)
-            elevator = self.get_nearest_elevator(job.start_pos.y)
-            elevator.add_request(lambda: elevator.raise_bot(self, job.start_pos))
-
+            if self.type == "bot":
+                elevator = self.get_nearest_elevator(job.start_pos.y)
+                elevator.add_request(lambda: elevator.raise_bot(self, job.start_pos))
+            elif self.released:
+                self.speed_vec = Vec3.down()
+                self.set_part(part)
+            else:
+                DroneCompartment.instance.release_drone(self)
         else:
             self.set_part(part)
 
@@ -435,87 +410,60 @@ class Worker:
 
         return nearest_elevator
 
+    def move(self):
+
+        model_pos = self.model.get_pos()
+        quat = Quat()
+        vec = self.target_point - model_pos
+        dist = max(0., vec.length() - 4.)
+        vec.normalize()
+        look_at(quat, vec, Vec3.up())
+        h, p, r = quat.get_hpr()
+
+        if self.type == "bot":
+            main_duration = dist * .139
+            hpr = (h, p, r)
+            blend_duration = .5
+        else:
+            main_duration = dist * .0695
+            hpr = (h, random.uniform(-10, 10), random.uniform(-15, 15))
+            blend_duration = .25
+
+        end_pos1 = model_pos + vec * 2.
+        end_pos2 = end_pos1 + vec * dist
+        end_pos3 = end_pos2 + vec * 2.
+        ease_in = LerpPosInterval(self.model, blend_duration, end_pos1, model_pos, blendType='easeIn')
+        no_blend = LerpPosInterval(self.model, main_duration, end_pos2, end_pos1, blendType='noBlend')
+        ease_out = LerpPosInterval(self.model, blend_duration, end_pos3, end_pos2, blendType='easeOut')
+        seq = Sequence()
+        seq.append(ease_in)
+        seq.append(no_blend)
+        seq.append(ease_out)
+        rot = LerpHprInterval(self.model, 0.5, hpr, self.model.get_hpr(), blendType='easeInOut')
+
+        par = Parallel()
+        par.append(seq)
+        par.append(rot)
+        job_func = Func(lambda: self._do_job())
+        self.interval_seq = seq = Sequence()
+        seq.append(par)
+        seq.append(job_func)
+        seq.start()
+
+    def set_part(self, part):
+
+        self.part = part
+        self.target_point = Point3(*part.worker_pos)
+        self.move()
+
 
 class WorkerBot(Worker):
 
     def __init__(self, beam, beam_connector):
+
         model = base.loader.load_model(ASSET_PATH + "models/worker_bot.gltf")
 
         Worker.__init__(self, "bot", model, beam, beam_connector, .25, -.8875)
-
-        self.turn_speed = 300.
-        self.accel = 15.
-        self.speed = 0.
-        self.speed_max = 5.
-        self.speed_vec = Vec3.forward()
-        self.target_point = None
-        self._do_job = lambda: None
-
-    def set_part(self, part):
-        self.part = part
-        x, y, z = part.worker_pos
-        self.target_point = Point3(x, y, 0.)
-        target_vec = self.target_point - self.model.get_pos()
-        self.start_dist = target_vec.length()
-        add_section_task(self.move, "move_bot")
-
-    def move(self, task):
-
-        dt = globalClock.get_dt()
-        target_vec = self.target_point - self.model.get_pos()
-        dist = min(self.start_dist, target_vec.length())
-        target_vec.normalize()
-        dist_vec = Vec3(target_vec)
-        target_vec *= self.start_dist - dist
-        dot = self.speed_vec.dot(dist_vec)
-        frac = min(1., (.35 + 100 * (1. - (dot + 1.) * .5)) * dt * self.start_dist / dist)
-
-        if dot <= 0.:
-            target_vec = dist_vec * 100.
-#            print("Course corrected!")
-
-        # to interpolate the speed vector, it is shortened by a small fraction,
-        # while that same fraction of the target vector is added to it;
-        # this generally changes the length of the speed vector, so to preserve
-        # its length (the speed), it is normalized and then multiplied with the
-        # current speed value
-        speed_vec = self.speed_vec * self.speed * (1. - frac) + target_vec * frac
-
-        if speed_vec.normalize():
-            self.speed_vec = speed_vec
-
-        pos = self.model.get_pos()
-        old_pos = Point3(pos)
-        pos += self.speed_vec * self.speed * dt
-        pos.z = 0.
-        self.model.set_pos(pos)
-        old_h = self.model.get_h()
-        quat = Quat()
-        look_at(quat, self.speed_vec, Vec3.up())
-        h, p, r = quat.get_hpr()
-        d_h = h - old_h
-
-        if abs(d_h) > self.turn_speed * dt:
-            turn_speed = self.turn_speed * (-1. if d_h < 0. else 1.)
-            self.model.set_h(old_h + turn_speed * dt)
-        else:
-            self.model.set_h(h)
-
-        # accelerate to normal speed
-        self.speed = min(self.speed_max, self.speed + self.accel * dt)
-
-        target_vec = self.target_point - pos
-        dist = target_vec.length()
-
-        if dist <= self.speed * dt:
-            self.speed = 0.
-            self._do_job()
-            self._do_job = lambda: None
-            self.target_point = None
-
-            return task.done
-
-        return task.cont
 
 
 class WorkerDrone(Worker):
@@ -523,41 +471,89 @@ class WorkerDrone(Worker):
     def __init__(self, beam, beam_connector):
 
         model = base.loader.load_model(ASSET_PATH + "models/worker_drone.gltf")
-        model.set_pos(0, 0, random.uniform(20, 26))
-        self.di_par = None
-        self.rotor_intervals = []
-
-        for r in model.find_all_matches("**/propeller_*"):
-            interval = LerpHprInterval(r, 0.1, (360, 0, 0), (0, 0, 0))
-            interval.loop()
-            self.rotor_intervals.append(interval)
 
         Worker.__init__(self, "drone", model, beam, beam_connector, -.1)
+
+        self.released = False
+        self.rotor_intervals = []
+
+        for p in self.model.find_all_matches("**/propeller_*"):
+            interval = LerpHprInterval(p, 0.1, (360, 0, 0), (0, 0, 0))
+            interval.loop()
+            self.rotor_intervals.append(interval)
 
     def destroy(self):
 
         for interval in self.rotor_intervals:
             interval.finish()
 
-        self.model.detach_node()
-        self.model = None
-        self._do_job = lambda: None
+        Worker.destroy(self)
 
-    def set_part(self, part):
-        import random
+    def move(self):
 
-        self.part = part
-        x, y, z = part.worker_pos
-        drone_inter = LerpPosInterval(self.model, r_sec, (x, y, z), self.model.get_pos(), blendType='easeInOut')
-        ran_hpr = Vec3(random.uniform(-10, 10), random.uniform(-10, 10), random.uniform(-15, 15))
-        drone_rot = LerpHprInterval(self.model, 0.5, (ran_hpr), self.model.get_hpr(), blendType='easeInOut')
+        model_pos = self.model.get_pos()
+        x1, y1, _ = self.target_point
+        x2, y2, _ = model_pos
+        # tilt the drone by an angle (maximum of e.g. 20 degrees) depending
+        # on the travel distance, relative to a reference distance (in this
+        # case 20 units)
+        pitch = -20. * min(1., (Point3(x1, y1, 0.) - Point3(x2, y2, 0.)).length() / 20.)
+        vec = self.target_point - model_pos
+        dist = max(0., vec.length() - 4.)
+        vec.normalize()
+        quat = Quat()
+        look_at(quat, vec, Vec3.up())
+        h, p, r = quat.get_hpr()
+        hpr_start = (h, pitch, 0.)
+        hpr_end = (h, 0., 0.)
+        main_duration = dist * .0695
+        blend_duration = .25
 
-        self.di_par = di_par = Parallel()
-        di_par.append(drone_inter)
-        di_par.append(drone_rot)
-        di_par.start()
+        end_pos1 = model_pos + vec * 2.
+        end_pos2 = end_pos1 + vec * dist
+        end_pos3 = end_pos2 + vec * 2.
+        ease_in = LerpPosInterval(self.model, blend_duration, end_pos1, model_pos, blendType='easeIn')
+        no_blend = LerpPosInterval(self.model, main_duration, end_pos2, end_pos1, blendType='noBlend')
+        ease_out = LerpPosInterval(self.model, blend_duration, end_pos3, end_pos2, blendType='easeOut')
 
-        self._do_job()
+        pitch = LerpHprInterval(self.model, blend_duration, hpr_start, self.model.get_hpr(), blendType='easeInOut')
+        level = LerpHprInterval(self.model, blend_duration, hpr_end, hpr_start, blendType='easeInOut')
+
+        ease_in_par = Parallel()
+        ease_in_par.append(ease_in)
+        ease_in_par.append(pitch)
+        ease_out_par = Parallel()
+        ease_out_par.append(ease_out)
+        ease_out_par.append(level)
+
+        job_func = Func(lambda: self._do_job())
+
+        self.interval_seq = seq = Sequence()
+        seq.append(ease_in_par)
+        seq.append(no_blend)
+        seq.append(ease_out_par)
+        seq.append(job_func)
+        seq.start()
+
+    def exit_compartment(self):
+
+        delayed_job = self._do_job
+
+        def set_first_part():
+
+            self.released = True
+            self._do_job = delayed_job
+            self.start_job()
+
+        self._do_job = set_first_part
+        self.move()
+
+    def fly_up(self):
+
+        self._do_job = lambda: IdleWorkers.add(self)
+        x, y, z = self.model.get_pos()
+        self.target_point = Point3(x, y, z + 20.)
+        self.move()
 
 
 class Job:
@@ -576,6 +572,7 @@ class Job:
         self.start_pos = Point3(*worker_pos[0])
         self.next_jobs = {}
         self.is_assigned = False
+        self.worker_done = False
 
         for next_job in next_jobs:
             self.next_jobs[next_job["delay"]] = next_job["rel_index"]
@@ -655,21 +652,20 @@ class Part:
         self.model.set_color(0.5, 0.5, 1., 1.)
         self.model.set_alpha_scale(0.)
         self.model.set_transform(job.component.get_net_transform())
-        p_min, p_max = self.model.get_tight_bounds()
-        self.center = p_min + (p_max - p_min) * .5
 
     def destroy(self):
 
         self.model.detach_node()
         self.model = None
-#        self.job.notify_part_done()
         self.job = None
 
     def solidify(self, task, duration):
 
-        self.model.set_alpha_scale(task.time / duration)
+        t = task.time
 
-        if task.time < duration:
+        self.model.set_alpha_scale(t / duration)
+
+        if t < duration:
             return task.cont
 
         self.job.finalizer(self.primitive)
@@ -686,7 +682,6 @@ class Part:
             return task.cont
 
         node.set_scale(1.)
-        self.model.wrt_reparent_to(base.render)
         node.detach_node()
 
     def move_to_ship(self, node, duration):
@@ -699,11 +694,11 @@ class Elevator:
     instances = []
     cam_target = None
 
-    def __init__(self, y):
+    def __init__(self, elevator_platform, y):
 
         self.instances.append(self)
         self.model = base.loader.load_model(ASSET_PATH + "models/worker_bot_elevator.gltf")
-        self.model.reparent_to(base.render)
+        self.model.reparent_to(elevator_platform)
         self.model.set_y(y)
         self.model.set_shader_off()
         self.y = y
@@ -834,11 +829,11 @@ class Elevator:
             self.bot = bot
             bot.model.set_pos_hpr(0., bot.pivot_offset, 0., 0., 0., 0.)
             bot.model.reparent_to(self.platform_connector)
-            vec = start_pos - self.model.get_pos()
+            vec = start_pos - self.model.get_pos(base.render)
             quat = Quat()
             look_at(quat, vec, Vec3.up())
             h, p, r = quat.get_hpr()
-            self.platform_connector.set_h(h)
+            self.platform_connector.set_h(base.render, h)
             add_section_task(self.open_iris, "open_iris")
 
         def raise_if_none_waiting(task):
@@ -884,6 +879,329 @@ class Elevator:
         return task.cont
 
 
+class DroneCompartment:
+
+    instance = None
+
+    def __init__(self):
+
+        DroneCompartment.instance = self
+        self.model = base.loader.load_model(ASSET_PATH + "models/worker_drone_compartment.gltf")
+        self.model.reparent_to(base.render)
+        self.model.set_shader_off()
+        self.idle = True
+        self.closed = True
+        self.requests = []
+        self.drone = None
+        self.blade_angle = 44.8  # controls aperture of shutter
+        self.blade_speed = 40.
+        self.blades = []
+
+        for blade in self.model.find_all_matches("**/blade.*"):
+            blade.set_h(self.blade_angle)
+            self.blades.append(blade)
+
+    def destroy(self):
+
+        DroneCompartment.instance = None
+        self.model.detach_node()
+        self.model = None
+        self.requests.clear()
+
+    def open_iris(self, task):
+
+        self.idle = False
+        dt = globalClock.get_dt()
+        self.blade_angle -= self.blade_speed * dt
+        r = task.cont
+
+        if self.blade_angle <= 0.:
+            self.blade_angle = 0.
+            r = task.done
+            self.drone.exit_compartment()
+            add_section_task(self.close_iris, "close_iris", delay=2.)
+
+        for blade in self.blades:
+            blade.set_h(self.blade_angle)
+
+        return r
+
+    def close_iris(self, task):
+
+        dt = globalClock.get_dt()
+        self.blade_angle += self.blade_speed * dt
+        r = task.cont
+
+        if self.blade_angle >= 44.8:
+            self.blade_angle = 44.8
+            r = task.done
+            self.idle = True
+
+        for blade in self.blades:
+            blade.set_h(self.blade_angle)
+
+        return r
+
+    def release_drone(self, drone):
+
+        def request():
+
+            self.drone = drone
+            x, y, z = self.model.get_pos()
+            drone.model.reparent_to(base.render)
+            drone.model.set_pos(x, y, z + 1.)
+            drone.target_point = Point3(x, y, z - 5.)
+            add_section_task(self.open_iris, "open_iris")
+
+        self.add_request(request)
+
+    def add_request(self, request, index=None):
+
+        if index is None:
+            self.requests.append(request)
+        else:
+            self.requests.insert(index, request)
+
+    def handle_next_request(self, task):
+
+        if self.idle and self.requests:
+            self.requests.pop(0)()
+
+        return task.cont
+
+
+class Hangar:
+
+    def __init__(self, job_starter):
+
+        self.model = base.loader.load_model(ASSET_PATH + "models/hangar.gltf")
+        self.model.reparent_to(base.render)
+        self.model.set_shader_off()
+        self.create_support_structure()
+        self.stairs = self.model.find_all_matches("**/platform_stair_step*")
+        self.lights = self.model.find_all_matches("**/forcefield_light*")
+
+        for light in self.lights:
+            light.set_light_off()
+            light.set_color(1., 0., 0., 1.)
+
+        self.emission = 0.
+        self.emission_incr = 1.
+        self.emitters = self.model.find_all_matches("**/forcefield_emitter*")
+
+        for emitter in self.emitters:
+            emitter.set_light_off()
+
+        add_section_task(self.pulsate_emitters, "pulsate_emitters")
+
+        self.forcefield = self.model.find("**/forcefield")
+        self.forcefield.set_light_off()
+        self.forcefield.set_color(.2, .2, 1., .1)
+        self.forcefield.set_transparency(TransparencyAttrib.M_alpha)
+        self.forcefield.set_attrib(color_blend_attrib)
+        self.forcefield.set_depth_write(False)
+        # for cameras inside the active force-field, render the latter with
+        # set_depth_test(False) and set_two_sided(True) using set_tag_state(_key),
+        # such that it gets rendered on top of everything else, giving the
+        # impression of it being a volumetric effect
+        self.forcefield.tags["render_state"] = "forcefield"
+
+        self.sliding_panel = self.model.find("**/sliding_panel")
+        self.sliding_panel_start_pos = self.sliding_panel.get_pos()
+        self.sliding_panel.set_pos(0., 0., 0.)
+        self.elevator_platform = self.model.find("**/elevator_platform")
+        self.elevator_platform_start_z = self.elevator_platform.get_z()
+
+        for i in range(14):
+            Elevator(self.elevator_platform, -65. + i * 10.)
+
+        self.job_starter = job_starter
+        add_section_task(self.lower_panel, "lower_panel")
+
+    def create_support_structure(self):
+
+        root = self.model.find("**/support_structure")
+        corner_beam = self.model.find("**/support_corner")
+        vertical_beam = self.model.find("**/support_vertical")
+        horizontal_beam = self.model.find("**/support_horizontal")
+
+        anchor = self.model.find("**/support_anchor_front_left")
+        beam_left = corner_beam.copy_to(anchor)
+        anchor = self.model.find("**/support_anchor_front_right")
+        beam_right = corner_beam.find("**/+GeomNode").copy_to(anchor)
+        beam_right.set_sx(-1.)
+        beam_right.node().modify_geom(0).reverse_in_place()
+        anchor = self.model.find("**/support_anchor_back_left")
+        beam = beam_right.copy_to(anchor)
+        beam.set_h(180.)
+        anchor = self.model.find("**/support_anchor_back_right")
+        beam = beam_left.copy_to(anchor)
+        beam.set_h(180.)
+
+        for anchor in self.model.find_all_matches("**/support_anchor_vertical*"):
+            vertical_beam.copy_to(anchor)
+
+        for anchor in self.model.find_all_matches("**/support_anchor_horizontal*"):
+            horizontal_beam.copy_to(anchor)
+
+        corner_beam.detach_node()
+        vertical_beam.detach_node()
+        horizontal_beam.detach_node()
+        root.flatten_strong()
+
+    def destroy(self):
+
+        self.model.detach_node()
+        del Elevator.instances[:]
+
+    def pulsate_emitters(self, task):
+
+        from math import pi, sin
+
+        dt = globalClock.get_dt()
+        self.emission += 5. * self.emission_incr * dt
+
+        if self.emission_incr > 0. and self.emission >= pi * .5:
+            value = 1.
+            self.emission = pi * .5
+            self.emission_incr = -1.
+        elif self.emission_incr < 0. and self.emission <= 0.:
+            value = 0.
+            self.emission = 0.
+            self.emission_incr = 1.
+        else:
+            value = sin(self.emission)
+
+        for emitter in self.emitters:
+            emitter.set_color(value, value, 1., 1.)
+
+        return task.cont
+
+    def lower_panel(self, task):
+
+        dt = globalClock.get_dt()
+        start_z = self.sliding_panel_start_pos.z
+        z = self.sliding_panel.get_z() - 5. * dt
+        cont = True
+
+        if z <= start_z:
+            z = start_z
+            cont = False
+
+        self.sliding_panel.set_z(z)
+
+        if cont:
+            return task.cont
+
+        add_section_task(lambda task: self.slide_panel(task, -1.), "slide_panel")
+
+    def slide_panel(self, task, direction):
+
+        dt = globalClock.get_dt()
+        dest_x = self.sliding_panel_start_pos.x if direction < 0. else 0.
+        x = self.sliding_panel.get_x() + 5. * direction * dt
+        cont = True
+
+        if (direction < 0. and x <= dest_x) or (direction > 0. and x >= dest_x):
+            x = dest_x
+            cont = False
+
+        self.sliding_panel.set_x(x)
+
+        if cont:
+            return task.cont
+
+        if direction < 0.:
+            add_section_task(self.raise_elevator_platform, "raise_elevator_platform")
+        else:
+            add_section_task(self.raise_panel, "raise_panel")
+
+    def raise_elevator_platform(self, task):
+
+        dt = globalClock.get_dt()
+        z = self.elevator_platform.get_z() + 5. * dt
+        cont = True
+
+        if z >= 0.:
+            z = 0.
+            cont = False
+
+        self.elevator_platform.set_z(z)
+
+        if cont:
+            return task.cont
+
+        self.job_starter()
+
+    def deactivate_forcefield(self):
+
+        add_section_task(self.lower_elevator_platform, "lower_elevator_platform")
+
+    def lower_elevator_platform(self, task):
+
+        dt = globalClock.get_dt()
+        start_z = self.elevator_platform_start_z
+        z = self.elevator_platform.get_z() - 5. * dt
+        cont = True
+
+        if z <= start_z:
+            z = start_z
+            cont = False
+
+        self.elevator_platform.set_z(z)
+
+        if cont:
+            return task.cont
+
+        add_section_task(lambda task: self.slide_panel(task, 1.), "slide_panel")
+
+    def raise_panel(self, task):
+
+        dt = globalClock.get_dt()
+        z = self.sliding_panel.get_z() + 5. * dt
+        cont = True
+
+        if z >= 0.:
+            z = 0.
+            cont = False
+
+        self.sliding_panel.set_z(z)
+
+        if cont:
+            return task.cont
+
+        for light in self.lights:
+            light.set_color(0., 1., 0., 1.)
+
+        base.task_mgr.remove("pulsate_emitters")
+
+        for emitter in self.emitters:
+            emitter.set_color(0., 0., 0., 1.)
+
+        self.forcefield.hide()
+
+        stair_step = self.model.find("**/platform_stair_step1")
+        Elevator.cam_target.reparent_to(stair_step)
+        Elevator.cam_target.set_pos(74, 0., -4.)
+        Elevator.cam_target.children[0].set_y(-50.)
+        add_section_task(self.raise_stairs, "raise_stairs")
+
+    def raise_stairs(self, task):
+
+        dt = globalClock.get_dt()
+        cont = True
+
+        for s in self.stairs:
+            z = s.get_z() + .2 * dt
+            if z >= .7:
+                z = .7
+                cont = False
+            s.set_z(z)
+
+        if cont:
+            return task.cont
+
+
 class Section1:
 
     def __init__(self):
@@ -897,19 +1215,15 @@ class Section1:
 
         def use_orbital_cam():
             base.camera.reparent_to(self.cam_target)
-            base.camera.set_x(-50)
-            base.camera.set_y(-125.)
-            base.camera.set_z(2)
-            base.camera.look_at(0, 0, 0)
-#            base.cam.node().get_lens(0).fov = 70.#(70, 42.9957)
-            base.cam.node().get_lens(0).fov = 50.942
+            base.camera.set_y(-99.)
+            base.camLens.fov = (70, 42.9957)
             add_section_task(self.move_camera, "move_camera")
 
         def use_fp_cam():
             base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
-            base.camLens.set_fov(80)
+            base.camLens.fov = 80
             base.camLens.set_near_far(0.01, 90000)
-            base.camLens.set_focal_length(7)
+            base.camLens.focal_length = 7
             fp_ctrl.use_fp_camera()
 
         def cam_switch():
@@ -928,18 +1242,13 @@ class Section1:
         base.set_background_color(0.1, 0.1, 0.1, 1)
         self.setup_elevator_camera()
 
-        for i in range(20):
-            Elevator(-90. + i * 10.)
-
         add_section_task(Elevator.handle_requests, "handle_elevator_requests")
 
-        # add a shop floor
-        self.floor = floor = base.loader.load_model(ASSET_PATH + "models/shiny_floor.gltf")
-        floor.reparent_to(base.render)
-#        floor.set_shader(SCENE_SHADER)
-        floor.set_z(-0.3)
+        compartment = DroneCompartment()
+        compartment.model.set_pos(0., 0., 50.)
+        add_section_task(compartment.handle_next_request, "handle_compartment_requests")
 
-        self.holo_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
+        self.holo_ship = base.loader.load_model(ASSET_PATH + 'models/holo_starship_a.gltf')
         holo.apply_hologram(self.holo_ship, pos_adj = (0, 0, 0.4), scale_adj = (0.98, 1, 0.95))
         # wire_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
         # holo.make_wire(wire_ship, pos_adj = (0, 0, 0.35), scale_adj = (0.98, 1, 0.95))
@@ -947,9 +1256,8 @@ class Section1:
         starship_id = "starship_a"  # should be determined by user
         self.starship_components = {}
 
-        self.model_root = model_root = base.loader.load_model(ASSET_PATH + f"models/{starship_id}.bam")
+        self.model_root = model_root = base.loader.load_model(f"{ASSET_PATH}models/{starship_id}.bam")
         model_root.reparent_to(base.render)
-#        model_root.set_shader(SCENE_SHADER)
         # model_root.set_two_sided(True)
         model_root.set_color(1., 1., 1., 1.)
 
@@ -1017,6 +1325,12 @@ class Section1:
 
         # prune any invalid jobs
         self.jobs = [j for j in self.jobs if j]
+
+        self.hangar = Hangar(self.start_jobs)
+
+        add_section_task(self.check_workers_done, "check_workers_done")
+
+    def start_jobs(self):
 
         job = self.jobs[0]
         worker = IdleWorkers.pop(job.worker_type)
@@ -1086,9 +1400,9 @@ class Section1:
         dt = globalClock.get_dt()
         self.cam_heading -= 1.75 * dt
         self.cam_target.set_h(self.cam_heading)
-        if base.camera.get_z() < 50:
-            base.camera.set_z(base.camera.get_z() + 0.4 * dt)
-        base.camera.look_at(0, 0, 5)
+        if self.cam_target.get_z() < 40:
+            self.cam_target.set_z(self.cam_target.get_z() + 0.15 * dt)
+        base.camera.look_at(base.render, 0, 0, 15)
 
         return task.cont
 
@@ -1104,6 +1418,13 @@ class Section1:
         self.elevator_cam = cam = target.attach_new_node(cam_node)
         cam.set_y(-10.)
         dr.camera = cam
+
+        state_node = NodePath("state")
+        state_node.set_depth_test(False)
+        state_node.set_two_sided(True)
+        state = state_node.get_state()
+        cam_node.set_tag_state_key("render_state")
+        cam_node.set_tag_state("forcefield", state)
 
     def add_primitive(self, component, prim):
 
@@ -1154,9 +1475,21 @@ class Section1:
         if not job.done:
             return task.cont
 
-        if worker.type == "drone":
-            IdleWorkers.add(worker)
-            worker.generator.set_z(worker.generator_start_z)
+    def check_workers_done(self, task):
+
+        for job in self.jobs + list(self.mirror_jobs.values()):
+            if not job.worker_done:
+                return task.cont
+
+        self.hangar.deactivate_forcefield()
+        self.destroy_holo_ship()
+
+    def destroy_holo_ship(self):
+
+        if self.holo_ship:
+            self.holo_ship.detach_node()
+            self.holo_ship = None
+            holo.holo_cleanup()
 
     def destroy(self):
 
@@ -1185,25 +1518,12 @@ class Section1:
         while Worker.instances:
             Worker.instances.pop().destroy()
 
-#        DroneCompartment.instance.destroy()
-#        self.hangar.destroy()
+        DroneCompartment.instance.destroy()
+        self.hangar.destroy()
         self.model_root.detach_node()
         self.model_root = None
-        self.holo_ship.detach_node()
-        self.holo_ship = None
-        self.floor.detach_node()
-        self.floor = None
-
-        for distort_cam in base.render.find_all_matches("**/distort_cam"):
-            distort_cam.detach_node()
-            
+        self.destroy_holo_ship()
         fp_ctrl.fp_cleanup()
-        print('BulletCharacterControllerNode cleaned up.')
-
-        while Elevator.instances:
-            elevator = Elevator.instances.pop()
-            elevator.model.detach_node()
-            elevator.model = None
 
         for light in section_lights:
             base.render.set_light_off(light)
@@ -1216,7 +1536,6 @@ def initialise(data=None):
 
     base.render.set_antialias(AntialiasAttrib.MMultisample)
 
-#    base.accept("escape", sys.exit, [0])
     base.accept("escape", common.gameController.gameOver)
 
     for x in range(6):
