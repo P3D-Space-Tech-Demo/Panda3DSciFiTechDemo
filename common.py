@@ -27,6 +27,8 @@ frag_shader = "Assets/Section1/shaders/simplepbr_frag_mod_1.frag"
 scene_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 #base.render.set_shader(scene_shader)
 
+game_start_time = time.time()
+
 gameController = None
 
 currentSection = None
