@@ -48,6 +48,10 @@ def apply_hologram(input_model, pos_adj = Vec3(0, 0, 0), scale_adj = 1):
     # distortion tex
     noise_tex = loader.load_texture("Assets/Shared/tex/noise2.png")
     input_model.set_shader_input("waves", noise_tex)
+    # tex timer
+    section_1_start_time = time.time()
+    t_diff = section_1_start_time - game_start_time
+    input_model.set_shader_input("timer", t_diff)
 
     tex_distort = Texture()
     distort_buff.add_render_texture(tex_distort, GraphicsOutput.RTM_bind_or_copy, GraphicsOutput.RTP_color)
