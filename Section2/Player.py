@@ -281,6 +281,11 @@ class Player(GameObject, ArmedObject):
 
             self.root.setQuat(quat*rotQuat)
 
+            self.cockpit.setX(mousePos.x*0.1)
+            self.cockpit.setZ(-mousePos.y*0.05)
+            self.cockpit.setH(-mousePos.x*2)
+            self.cockpit.setP(mousePos.y*2)
+
         if not self.weaponSets[0][0].active:
             self.alterEnergy(math.sin(1.071*self.energy/self.maxEnergy + 0.5)*self.energyRechargeRate*dt)
 

@@ -26,14 +26,11 @@ class Game():
     #fancyFont = loader.loadFont("Assets/Shared/fonts/Excluded/ExcludedItalic.ttf")
     #italiciseFont = False
 
-    #fancyFont = loader.loadFont("Assets/Shared/fonts/SavingsBond/savings_bond/SAVINGSB_.TTF")
-    #italiciseFont = True
-
     fancyFont = loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf", pointSize = 8)
     italiciseFont = False
 
     @staticmethod
-    def makeButton(text, command, menu, size, extraArgs = None, leftAligned = True):
+    def makeButton(text, command, menu, size, extraArgs = None, leftAligned = True, textScale = 1):
         if size == Game.BUTTON_SIZE_LARGE:
             width = 20
         elif size == Game.BUTTON_SIZE_SMALL:
@@ -63,6 +60,7 @@ class Game():
                            parent = menu,
                            text_align = alignment,
                            text_font = Game.fancyFont,
+                           text_scale = textScale,
                            frameSize = frame,
                            frameColor = (1, 1, 1, 1),
                            pressEffect = False,
@@ -111,23 +109,23 @@ class Game():
 
         self.title1 = DirectLabel(text = "CAPTAIN PANDA",
                                  parent = self.mainMenuBackdrop,
+                                 scale = 0.1,
+                                 text_font = Game.fancyFont,
+                                 text_fg = (0.8, 0.9, 1, 1),
+                                 relief = None,
+                                 pos = (0, 0, 0.825),
+                                 text_align = TextNode.ALeft)
+        self.title2 = DirectLabel(text = "and the",
+                                 parent = self.mainMenuBackdrop,
                                  scale = 0.07,
                                  text_font = Game.fancyFont,
                                  text_fg = (0.8, 0.9, 1, 1),
                                  relief = None,
-                                 pos = (0, 0, 0.8),
-                                 text_align = TextNode.ALeft)
-        self.title2 = DirectLabel(text = "and the",
-                                 parent = self.mainMenuBackdrop,
-                                 scale = 0.05,
-                                 text_font = Game.fancyFont,
-                                 text_fg = (0.8, 0.9, 1, 1),
-                                 relief = None,
-                                 pos = (0, 0, 0.75),
+                                 pos = (0, 0, 0.7675),
                                  text_align = TextNode.ALeft)
         self.title3 = DirectLabel(text = "INVASION OF THE MECHANOIDS!",
                                  parent = self.mainMenuBackdrop,
-                                 scale = 0.1,
+                                 scale = 0.125,
                                  text_font = Game.fancyFont,
                                  text_fg = (0.8, 0.9, 1, 1),
                                  relief = None,
@@ -263,16 +261,16 @@ class Game():
 
         buttons = []
 
-        btn = Game.makeButton("Chapter 1 // A Warrior's Choice", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [0])
+        btn = Game.makeButton("Chapter 1 // A Warrior's Choice", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [0], textScale = 0.9)
         buttons.append(btn)
 
-        btn = Game.makeButton("Chapter 2 // Across the Night", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [1])
+        btn = Game.makeButton("Chapter 2 // Across the Night", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [1], textScale = 0.9)
         buttons.append(btn)
 
-        btn = Game.makeButton("Chapter 3 // Facing the Foe", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [2])
+        btn = Game.makeButton("Chapter 3 // Facing the Foe", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [2], textScale = 0.9)
         buttons.append(btn)
 
-        btn = Game.makeButton("Chapter 4 // The Escape", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [3])
+        btn = Game.makeButton("Chapter 4 // The Escape", self.startSection, self.sectionMenu, Game.BUTTON_SIZE_LARGE, extraArgs = [3], textScale = 0.9)
         buttons.append(btn)
 
         buttonSpacing = 0.25
@@ -362,14 +360,17 @@ class Game():
             label.setShear((0, 0.1, 0))
 
         btn = Game.makeButton("Light fighter", self.sectionSpecificMenuDone, self.shipSelectionMenu, Game.BUTTON_SIZE_LARGE,
+                              textScale = 0.9,
                               extraArgs = [self.shipSelectionMenu, 1, shipSpecs[0]])
         buttons.append(btn)
 
         btn = Game.makeButton("Medium Interceptor", self.sectionSpecificMenuDone, self.shipSelectionMenu, Game.BUTTON_SIZE_LARGE,
+                              textScale = 0.9,
                               extraArgs = [self.shipSelectionMenu, 1, shipSpecs[1]])
         buttons.append(btn)
 
         btn = Game.makeButton("Heavy Bombardment Platform", self.sectionSpecificMenuDone, self.shipSelectionMenu, Game.BUTTON_SIZE_LARGE,
+                              textScale = 0.9,
                               extraArgs = [self.shipSelectionMenu, 1, shipSpecs[2]])
         buttons.append(btn)
 
@@ -503,11 +504,15 @@ class Game():
     def addOptionSlider(self, text, rangeTuple, pageSize, optionID, sectionID, defaultValue, setCallback = None):
         self.setOptionData(optionID, sectionID, defaultValue, setCallback)
 
+        self.currentOptionsZ -= 0.0775
+
         slider = DirectSlider(text = text,
                               parent = self.optionsScroller.getCanvas(),
                               scale = 0.65,
-                              text_pos = (0, 0.1),
+                              text_pos = (0, 0.125),
                               text_scale = 0.1,
+                              text_font = Game.fancyFont,
+                              text_fg = (0.8, 0.9, 1, 1),
                               pos = (0, 0, self.currentOptionsZ),
                               command = self.setOptionValueFromSlider,
                               thumb_image = (

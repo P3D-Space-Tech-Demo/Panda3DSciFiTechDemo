@@ -17,6 +17,8 @@ import math, random
 FRICTION = 10.0
 
 class GameObject():
+    environmentalDamageScalar = 1
+
     def __init__(self, pos, modelName, modelAnims, maxHealth, maxSpeed, colliderName, weaponIntoMask, size):
         self.root = NodePath(PandaNode("obj"))
 
@@ -74,6 +76,10 @@ class GameObject():
     def physicalImpact(self, surfaceNormal):
         proj = self.velocity.project(surfaceNormal)
         self.velocity -= proj*2
+
+        damage = max(0, self.velocity.normalized().dot(surfaceNormal)) * GameObject.environmentalDamageScalar * self.velocity.length()
+
+        self.alterHealth(-damage, None, None, 0)
 
     def update(self, dt, fluid = False):
         speed = self.velocity.length()
