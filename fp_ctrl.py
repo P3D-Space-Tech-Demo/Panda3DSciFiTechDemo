@@ -28,12 +28,12 @@ keyMap = {"left": 0, "right": 0, "forward": 0, "backward": 0, "run": 0, "jump": 
 def setKey(key, value):
     keyMap[key] = value
 
-def fp_init():
+def fp_init(target_pos):
     # initialize player character physics the Bullet way
     shape_1 = BulletCapsuleShape(0.75, 0.5, ZUp)
     player_node = BulletCharacterControllerNode(shape_1, 0.1, 'Player')  # (shape, mass, player name)
     player = base.render.attach_new_node(player_node)
-    player.set_pos(150, 10, 15)
+    player.set_pos(target_pos)
     player.set_collide_mask(BitMask32.all_on())
     world.attach_character(player.node())
 
@@ -69,9 +69,9 @@ def use_fp_camera():
 
 def update_cam(Task):
     # the player movement speed
-    movementSpeedForward = 5
-    movementSpeedBackward = 5
-    striveSpeed = 6
+    movementSpeedForward = 10
+    movementSpeedBackward = 10
+    striveSpeed = 11
     static_pos_bool = False
     static_pos = Vec3()
 

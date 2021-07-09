@@ -12,9 +12,9 @@ import sys
 load_prc_file_data("",
 """
 sync-video false
-# win-size 1680 1050
+win-size 1680 1050
 # win-size 2560 1440
-# fullscreen true
+fullscreen false
 framebuffer-multisample 1
 multisamples 4
 """)
@@ -22,8 +22,8 @@ multisamples 4
 
 base = ShowBase()
 # load a scene shader
-vert_shader = "Assets/Section1/shaders/simplepbr_vert_mod_1.vert"
-frag_shader = "Assets/Section1/shaders/simplepbr_frag_mod_1.frag"
+vert_shader = "Assets/Shared/shaders/pbr_shader_v.vert"
+frag_shader = "Assets/Shared/shaders/pbr_shader_f.frag"
 scene_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 #base.render.set_shader(scene_shader)
 
