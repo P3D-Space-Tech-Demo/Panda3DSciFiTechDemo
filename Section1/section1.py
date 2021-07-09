@@ -976,7 +976,15 @@ class Hangar:
 
         self.model = base.loader.load_model(ASSET_PATH + "models/hangar.gltf")
         self.model.reparent_to(base.render)
-        self.model.set_shader_off()
+        ceiling = self.model.find('**/ceiling')
+        ceiling.set_light_off()
+        # self.model.set_shader_off()
+        
+        amb_light = AmbientLight('amblight')
+        amb_light.set_color((1, 1, 1, 0.5))
+        amb_light_node = self.model.attach_new_node(amb_light)
+        self.model.set_light(amb_light_node)
+        
         self.create_support_structure()
         self.stairs = self.model.find_all_matches("**/platform_stair_step*")
         self.lights = self.model.find_all_matches("**/forcefield_light*")
@@ -1206,7 +1214,7 @@ class Section1:
 
     def __init__(self):
         # set up camera control
-        fp_ctrl.fp_init()
+        fp_ctrl.fp_init((120, 10, 15))
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(10.)
@@ -1215,7 +1223,7 @@ class Section1:
 
         def use_orbital_cam():
             base.camera.reparent_to(self.cam_target)
-            base.camera.set_y(-99.)
+            base.camera.set_y(-140.)
             base.camLens.fov = (70, 42.9957)
             add_section_task(self.move_camera, "move_camera")
 
@@ -1548,9 +1556,17 @@ def initialise(data=None):
         base.render.set_light(plight_1_node)
         section_lights.append(plight_1_node)
 
-    make_simple_spotlight((200, 100, 900), (0, 5, 10), True)
+    plight_1 = PointLight('scene_light')
+    # add plight props here
+    plight_1_node = base.render.attach_new_node(plight_1)
+    plight_1_node.set_pos(20, 20, 20)
+    plight_1_node.node().set_color((1, 1, 1, 0.75))
+    # plight_1_node.node().set_attenuation((0.5, 0, 0.05))
+    base.render.set_light(plight_1_node)
+
+    make_simple_spotlight((0, 0, 900), (0, 5, 10), True)
     make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
-    make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
+    # make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
     # make_simple_spotlight((200, 100, 300), (0, 5, 10), False)
 
     section = Section1()
