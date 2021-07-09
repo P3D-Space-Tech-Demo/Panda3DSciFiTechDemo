@@ -324,6 +324,7 @@ class Worker:
         self.job = job
         part = job.generate_part()
         tmp_node = self.generator.attach_new_node("tmp_node")
+        tmp_node.set_compass()
         ext_z = self.generator_ext_z
 
         def deactivation_task(task):
@@ -410,46 +411,6 @@ class Worker:
 
         return nearest_elevator
 
-    def move(self):
-
-        model_pos = self.model.get_pos()
-        quat = Quat()
-        vec = self.target_point - model_pos
-        dist = max(0., vec.length() - 4.)
-        vec.normalize()
-        look_at(quat, vec, Vec3.up())
-        h, p, r = quat.get_hpr()
-
-        if self.type == "bot":
-            main_duration = dist * .139
-            hpr = (h, p, r)
-            blend_duration = .5
-        else:
-            main_duration = dist * .0695
-            hpr = (h, random.uniform(-10, 10), random.uniform(-15, 15))
-            blend_duration = .25
-
-        end_pos1 = model_pos + vec * 2.
-        end_pos2 = end_pos1 + vec * dist
-        end_pos3 = end_pos2 + vec * 2.
-        ease_in = LerpPosInterval(self.model, blend_duration, end_pos1, model_pos, blendType='easeIn')
-        no_blend = LerpPosInterval(self.model, main_duration, end_pos2, end_pos1, blendType='noBlend')
-        ease_out = LerpPosInterval(self.model, blend_duration, end_pos3, end_pos2, blendType='easeOut')
-        seq = Sequence()
-        seq.append(ease_in)
-        seq.append(no_blend)
-        seq.append(ease_out)
-        rot = LerpHprInterval(self.model, 0.5, hpr, self.model.get_hpr(), blendType='easeInOut')
-
-        par = Parallel()
-        par.append(seq)
-        par.append(rot)
-        job_func = Func(lambda: self._do_job())
-        self.interval_seq = seq = Sequence()
-        seq.append(par)
-        seq.append(job_func)
-        seq.start()
-
     def set_part(self, part):
 
         self.part = part
@@ -465,6 +426,37 @@ class WorkerBot(Worker):
 
         Worker.__init__(self, "bot", model, beam, beam_connector, .25, -.8875)
 
+    def move(self):
+
+        model_pos = self.model.get_pos()
+        quat = Quat()
+        vec = self.target_point - model_pos
+        dist = max(0., vec.length() - 4.)
+        vec.normalize()
+        look_at(quat, vec, Vec3.up())
+        hpr = quat.get_hpr()
+        main_duration = dist * .139
+        blend_duration = .5
+        end_pos1 = model_pos + vec * 2.
+        end_pos2 = end_pos1 + vec * dist
+        end_pos3 = end_pos2 + vec * 2.
+        ease_in = LerpPosInterval(self.model, blend_duration, end_pos1, model_pos, blendType='easeIn')
+        no_blend = LerpPosInterval(self.model, main_duration, end_pos2, end_pos1, blendType='noBlend')
+        ease_out = LerpPosInterval(self.model, blend_duration, end_pos3, end_pos2, blendType='easeOut')
+        seq = Sequence()
+        seq.append(ease_in)
+        seq.append(no_blend)
+        seq.append(ease_out)
+        rot = LerpHprInterval(self.model, 0.5, hpr, self.model.get_hpr(), blendType='easeInOut')
+        par = Parallel()
+        par.append(seq)
+        par.append(rot)
+        job_func = Func(lambda: self._do_job())
+        self.intervals = seq = Sequence()
+        seq.append(par)
+        seq.append(job_func)
+        seq.start()
+
 
 class WorkerDrone(Worker):
 
@@ -475,6 +467,7 @@ class WorkerDrone(Worker):
         Worker.__init__(self, "drone", model, beam, beam_connector, -.1)
 
         self.released = False
+        self.wobble_intervals = None
         self.rotor_intervals = []
 
         for p in self.model.find_all_matches("**/propeller_*"):
@@ -482,23 +475,65 @@ class WorkerDrone(Worker):
             interval.loop()
             self.rotor_intervals.append(interval)
 
+        self.pivot = NodePath("drone_pivot")
+        self.model.reparent_to(self.pivot)
+
     def destroy(self):
 
         for interval in self.rotor_intervals:
             interval.finish()
 
+        if self.wobble_intervals:
+            self.wobble_intervals.finish()
+            self.wobble_intervals.clear_intervals()
+
         Worker.destroy(self)
+
+    def wobble(self):
+
+        h, p, r = start_hpr = self.pivot.get_hpr()
+        hpr = (random.uniform(h - 2, h + 2), random.uniform(-3, 3), random.uniform(-3, 3))
+        hpr_lerp = LerpHprInterval(self.pivot, .5, hpr, start_hpr, blendType='easeInOut')
+        self.wobble_intervals = seq = Sequence()
+
+        if self in IdleWorkers.workers["drone"]:
+            d = .5
+            pos = (random.uniform(-d, d), random.uniform(-d, d), random.uniform(-d, d))
+            pos_lerp = LerpPosInterval(self.model, 1.5, pos, self.model.get_pos(), blendType='easeInOut')
+            par = Parallel()
+            par.append(pos_lerp)
+            par.append(hpr_lerp)
+            seq.append(par)
+        else:
+            seq.append(hpr_lerp)
+
+        seq.append(Func(self.wobble))
+        seq.start()
+
+    def stop_wobble(self):
+
+        if self.wobble_intervals:
+            pos = self.model.get_pos(base.render)
+            hpr = self.pivot.get_hpr()
+            self.wobble_intervals.finish()
+            self.wobble_intervals.clear_intervals()
+            self.wobble_intervals = None
+            self.model.set_pos(0., 0., 0.)
+            self.pivot.set_pos(pos)
+            self.pivot.set_hpr(hpr)
 
     def move(self):
 
-        model_pos = self.model.get_pos()
+        self.stop_wobble()
+        pivot_pos = self.pivot.get_pos()
         x1, y1, _ = self.target_point
-        x2, y2, _ = model_pos
+        x2, y2, _ = pivot_pos
         # tilt the drone by an angle (maximum of e.g. 20 degrees) depending
         # on the travel distance, relative to a reference distance (in this
         # case 20 units)
-        pitch = -20. * min(1., (Point3(x1, y1, 0.) - Point3(x2, y2, 0.)).length() / 20.)
-        vec = self.target_point - model_pos
+        f = min(1., (Point3(x1, y1, 0.) - Point3(x2, y2, 0.)).length() / 20.)
+        pitch = -20. * f
+        vec = self.target_point - pivot_pos
         dist = max(0., vec.length() - 4.)
         vec.normalize()
         quat = Quat()
@@ -508,32 +543,41 @@ class WorkerDrone(Worker):
         hpr_end = (h, 0., 0.)
         main_duration = dist * .0695
         blend_duration = .25
+        level_duration = .5 * f
 
-        end_pos1 = model_pos + vec * 2.
+        end_pos1 = pivot_pos + vec * 2.
         end_pos2 = end_pos1 + vec * dist
         end_pos3 = end_pos2 + vec * 2.
-        ease_in = LerpPosInterval(self.model, blend_duration, end_pos1, model_pos, blendType='easeIn')
-        no_blend = LerpPosInterval(self.model, main_duration, end_pos2, end_pos1, blendType='noBlend')
-        ease_out = LerpPosInterval(self.model, blend_duration, end_pos3, end_pos2, blendType='easeOut')
+        ease_in = LerpPosInterval(self.pivot, blend_duration, end_pos1, pivot_pos, blendType='easeIn')
+        no_blend = LerpPosInterval(self.pivot, main_duration, end_pos2, end_pos1, blendType='noBlend')
+        ease_out = LerpPosInterval(self.pivot, blend_duration, end_pos3, end_pos2, blendType='easeOut')
 
-        pitch = LerpHprInterval(self.model, blend_duration, hpr_start, self.model.get_hpr(), blendType='easeInOut')
-        level = LerpHprInterval(self.model, blend_duration, hpr_end, hpr_start, blendType='easeInOut')
-
-        ease_in_par = Parallel()
-        ease_in_par.append(ease_in)
-        ease_in_par.append(pitch)
-        ease_out_par = Parallel()
-        ease_out_par.append(ease_out)
-        ease_out_par.append(level)
+        pos_seq = Sequence()
+        pos_seq.append(ease_in)
+        pos_seq.append(no_blend)
+        pos_seq.append(ease_out)
 
         job_func = Func(lambda: self._do_job())
+        pos_seq.append(job_func)
+        pos_seq.append(Func(self.wobble))
 
-        self.interval_seq = seq = Sequence()
-        seq.append(ease_in_par)
-        seq.append(no_blend)
-        seq.append(ease_out_par)
-        seq.append(job_func)
-        seq.start()
+        pitch_down = LerpHprInterval(self.model, blend_duration, (h, pitch, 0.),
+            self.model.get_hpr(), blendType='easeInOut')
+        pitch_up = LerpHprInterval(self.model, .5, (h, -pitch * .5, 0.),
+            (h, pitch, 0.), blendType='easeInOut')
+        level = LerpHprInterval(self.model, level_duration, (h, 0., 0.),
+            (h, -pitch * .5, 0.), blendType='easeInOut')
+
+        hpr_seq = Sequence()
+        hpr_seq.append(pitch_down)
+        hpr_seq.append(Wait(max(0., main_duration - .25)))
+        hpr_seq.append(pitch_up)
+        hpr_seq.append(level)
+
+        self.intervals = par = Parallel()
+        par.append(pos_seq)
+        par.append(hpr_seq)
+        par.start()
 
     def exit_compartment(self):
 
@@ -551,7 +595,7 @@ class WorkerDrone(Worker):
     def fly_up(self):
 
         self._do_job = lambda: IdleWorkers.add(self)
-        x, y, z = self.model.get_pos()
+        x, y, z = self.pivot.get_pos()
         self.target_point = Point3(x, y, z + 20.)
         self.move()
 
@@ -694,11 +738,11 @@ class Elevator:
     instances = []
     cam_target = None
 
-    def __init__(self, elevator_platform, y):
+    def __init__(self, elevator_root, y):
 
         self.instances.append(self)
         self.model = base.loader.load_model(ASSET_PATH + "models/worker_bot_elevator.gltf")
-        self.model.reparent_to(elevator_platform)
+        self.model.reparent_to(elevator_root)
         self.model.set_y(y)
         self.model.set_shader_off()
         self.y = y
@@ -741,6 +785,7 @@ class Elevator:
 
             if self.bot:
                 self.bot.model.wrt_reparent_to(base.render)
+                self.bot.model.set_z(0.)
                 self.bot.start_job()
                 self.bot = None
                 add_section_task(set_ready, "set_ready", delay=1.5)
@@ -948,8 +993,8 @@ class DroneCompartment:
 
             self.drone = drone
             x, y, z = self.model.get_pos()
-            drone.model.reparent_to(base.render)
-            drone.model.set_pos(x, y, z + 1.)
+            drone.pivot.reparent_to(base.render)
+            drone.pivot.set_pos(x, y, z + 1.)
             drone.target_point = Point3(x, y, z - 5.)
             add_section_task(self.open_iris, "open_iris")
 
@@ -1019,9 +1064,11 @@ class Hangar:
         self.sliding_panel.set_pos(0., 0., 0.)
         self.elevator_platform = self.model.find("**/elevator_platform")
         self.elevator_platform_start_z = self.elevator_platform.get_z()
+        elevator_root = self.elevator_platform.attach_new_node("elevator_root")
+        elevator_root.set_light_off(amb_light_node)
 
         for i in range(14):
-            Elevator(self.elevator_platform, -65. + i * 10.)
+            Elevator(elevator_root, -65. + i * 10.)
 
         self.job_starter = job_starter
         add_section_task(self.lower_panel, "lower_panel")
@@ -1563,6 +1610,7 @@ def initialise(data=None):
     plight_1_node.node().set_color((1, 1, 1, 0.75))
     # plight_1_node.node().set_attenuation((0.5, 0, 0.05))
     base.render.set_light(plight_1_node)
+    section_lights.append(plight_1_node)
 
     make_simple_spotlight((0, 0, 900), (0, 5, 10), True)
     make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
