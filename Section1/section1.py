@@ -1612,7 +1612,7 @@ def initialise(data=None):
     base.render.set_light(plight_1_node)
     section_lights.append(plight_1_node)
 
-    make_simple_spotlight((0, 0, 900), (0, 5, 10), True)
+    make_simple_spotlight((0, 0, 900), (0, 5, 10), False)
     make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
     # make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
     # make_simple_spotlight((200, 100, 300), (0, 5, 10), False)
