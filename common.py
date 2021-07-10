@@ -2,6 +2,7 @@ from direct.showbase.ShowBase import ShowBase
 from panda3d.core import *
 from direct.interval.IntervalGlobal import *
 from direct.stdpy import threading2
+from direct.filter.CommonFilters import CommonFilters
 from direct.particles.ParticleEffect import ParticleEffect
 import random
 import array
@@ -26,6 +27,8 @@ vert_shader = "Assets/Shared/shaders/pbr_shader_v.vert"
 frag_shader = "Assets/Shared/shaders/pbr_shader_f.frag"
 scene_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 #base.render.set_shader(scene_shader)
+
+scene_filters = CommonFilters(base.win, base.cam)
 
 game_start_time = time.time()
 

@@ -198,6 +198,7 @@ class Worker:
         self.model = model
         self.model.set_shader_off()
         self.generator = model.find("**/generator")
+        # self.generator.set_transparency(TransparencyAttrib.M_alpha)
         self.generator_start_z = self.generator.get_z()
         self.generator_ext_z = generator_ext_z
         self.beam_root = self.generator.attach_new_node("beam_root")
@@ -893,7 +894,7 @@ class Elevator:
                 self.add_request(lower_platform)
                 self.add_request(open_iris)
 
-            self.cam_target.reparent_to(self.model)
+            Elevator.cam_target.look_at(self.model.get_pos())
 
         add_section_task(raise_if_none_waiting, "raise_if_none_waiting")
 
@@ -1237,7 +1238,7 @@ class Hangar:
 
         stair_step = self.model.find("**/platform_stair_step1")
         Elevator.cam_target.reparent_to(stair_step)
-        Elevator.cam_target.set_pos(74, 0., -4.)
+        Elevator.cam_target.set_pos(74, 0., 4.)
         Elevator.cam_target.children[0].set_y(-50.)
         add_section_task(self.raise_stairs, "raise_stairs")
 
@@ -1469,9 +1470,10 @@ class Section1:
         dr.set_clear_depth_active(True)
         cam_node = Camera("elevator_cam")
         Elevator.cam_target = target = base.render.attach_new_node("elevator_cam_target")
-        target.set_hpr(120., -30., 0.)
+        # target.set_hpr(120., -30., 0.)
         self.elevator_cam = cam = target.attach_new_node(cam_node)
-        cam.set_y(-10.)
+        cam.set_y(-40)
+        cam.set_z(2)
         dr.camera = cam
 
         state_node = NodePath("state")
@@ -1583,6 +1585,9 @@ class Section1:
         for light in section_lights:
             base.render.set_light_off(light)
             light.detach_node()
+            
+        scene_filters.del_blur_sharpen()
+        scene_filters.del_bloom()
 
         common.currentSection = None
 
@@ -1590,6 +1595,9 @@ class Section1:
 def initialise(data=None):
 
     base.render.set_antialias(AntialiasAttrib.MMultisample)
+    
+    scene_filters.set_blur_sharpen(0.8)
+    scene_filters.set_bloom()
 
     base.accept("escape", common.gameController.gameOver)
 
@@ -1606,7 +1614,7 @@ def initialise(data=None):
     plight_1 = PointLight('scene_light')
     # add plight props here
     plight_1_node = base.render.attach_new_node(plight_1)
-    plight_1_node.set_pos(20, 20, 20)
+    plight_1_node.set_pos(15, 15, 20)
     plight_1_node.node().set_color((1, 1, 1, 0.75))
     # plight_1_node.node().set_attenuation((0.5, 0, 0.05))
     base.render.set_light(plight_1_node)
