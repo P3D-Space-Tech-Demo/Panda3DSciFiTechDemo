@@ -58,6 +58,9 @@ class GameObject():
 
         self.walking = False
 
+        self.turnRate = 1
+        self.turnVector = Vec3(0, 0, 0)
+
         self.size = size
 
         if colliderName is not None:
@@ -128,6 +131,8 @@ class GameObject():
         else:
             self.alterHealth(self.healthRechargeRate*dt, None, 0, 0)
 
+        self.updateTurn(self.turnRate, dt)
+
     def alterHealth(self, dHealth, incomingImpulse, knockback, flinchValue, overcharge = False):
         previousHealth = self.health
 
@@ -152,22 +157,29 @@ class GameObject():
         if previousHealth > 0 and self.health <= 0 and self.deathSound is not None:
             self.deathSound.play()
 
-    def turnTowards(self, target, turnRate, dt):
+    def turnTowards(self, target, priority, dt):
         if isinstance(target, NodePath):
             target = target.getPos(common.base.render)
         elif isinstance(target, GameObject):
             target = target.root.getPos(common.base.render)
         diff = target - self.root.getPos(common.base.render)
+        diff.normalize()
+
+        self.turnVector += diff*priority*dt
+        self.turnVector.normalize()
+
+    def updateTurn(self, turnRate, dt):
+        diff = self.turnVector.normalized()
 
         selfQuat = self.root.getQuat(common.base.render)
         selfForward = selfQuat.getForward()
 
-        axis = selfForward.cross(diff.normalized())
+        axis = selfForward.cross(diff)
         axis.normalize()
         if axis.lengthSquared() < 0.1:
             return
 
-        angle = selfForward.signedAngleDeg(diff.normalized(), axis)
+        angle = selfForward.signedAngleDeg(diff, axis)
         quat = Quat()
         angle = math.copysign(min(abs(angle), turnRate*dt), angle)
         quat.setFromAxisAngle(angle, axis)

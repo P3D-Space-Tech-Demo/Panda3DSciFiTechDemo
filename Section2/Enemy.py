@@ -1,6 +1,6 @@
 
 from panda3d.core import Vec4, Vec3, Vec2, Plane, Point3, BitMask32
-from panda3d.core import CollisionSphere, CollisionNode, CollisionRay, CollisionSegment, CollisionHandlerQueue
+from panda3d.core import CollisionSphere, CollisionNode, CollisionRay, CollisionSegment, CollisionHandlerQueue, CollisionTraverser
 from panda3d.core import TextureStage
 from panda3d.core import ColorBlendAttrib
 
@@ -133,13 +133,16 @@ class FighterEnemy(Enemy):
 
         self.acceleration = 100.0
 
-        self.turnRate = 200.0
+        self.turnRate = 300.0
 
         self.yVector = Vec2(0, 1)
 
         self.steeringRayNPs = []
 
         self.steeringQueue = CollisionHandlerQueue()
+        self.steeringTraverser = CollisionTraverser()
+
+        self.steeringDistance = 40
 
         self.state = FighterEnemy.STATE_ATTACK
         self.breakAwayTimer = 0
@@ -150,22 +153,21 @@ class FighterEnemy(Enemy):
         self.evasionTimer = 0
         self.evasionDirection = (0, 0)
 
-        for i in range(4):
-            ray = CollisionSegment(0, 0, 0, 0, 1, 0)
+        steeringNode = CollisionNode("steering")
 
-            rayNode = CollisionNode("steering ray")
-            rayNode.addSolid(ray)
+        sphere = CollisionSphere(0, 0, 0, self.steeringDistance)
+        steeringNode.addSolid(sphere)
 
-            rayNode.setFromCollideMask(MASK_WALLS)
-            rayNode.setIntoCollideMask(0)
+        steeringNode.setFromCollideMask(MASK_WALLS)
+        steeringNode.setIntoCollideMask(0)
 
-            rayNodePath = self.actor.attachNewNode(rayNode)
+        steeringNodeNodePath = self.actor.attachNewNode(steeringNode)
 
-            #rayNodePath.show()
+        #steeringNodeNodePath.show()
 
-            self.steeringRayNPs.append(rayNodePath)
+        self.steeringRayNPs.append(steeringNodeNodePath)
 
-        common.currentSection.traverser.addCollider(rayNodePath, self.steeringQueue)
+        self.steeringTraverser.addCollider(steeringNodeNodePath, self.steeringQueue)
 
     def runLogic(self, player, dt):
         Enemy.runLogic(self, player, dt)
@@ -223,12 +225,16 @@ class FighterEnemy(Enemy):
 
         if self.inControl:
             self.walking = True
+
+            turned = False
+
             if self.state == FighterEnemy.STATE_ATTACK:
                 if distanceToPlayer < testWeapon.desiredRange*0.3:
                     self.state = FighterEnemy.STATE_BREAK_AWAY
                     self.breakAwayTimer = self.breakAwayMaxDuration
                 else:
-                    self.turnTowards(targetPt, self.turnRate, dt)
+                    self.turnTowards(targetPt, 2, dt)
+                    turned = True
             elif self.state == FighterEnemy.STATE_BREAK_AWAY:
                 self.evasionTimer -= dt
                 if self.evasionTimer <= 0:
@@ -236,13 +242,32 @@ class FighterEnemy(Enemy):
                     self.evasionDirection = random.choice([(0, 1), (0, -1), (1, 0), (-1, 0)])
                 self.breakAwayTimer -= dt
                 if angleFromPlayer > 150:
-                    self.turnTowards(selfPos + playerRight*self.evasionDirection[0] + playerUp*self.evasionDirection[1], self.turnRate, dt)
+                    self.turnTowards(selfPos + playerRight*self.evasionDirection[0] + playerUp*self.evasionDirection[1], 2, dt)
+                    turned = True
                 elif angleToPlayer < 120:
-                    self.turnTowards(selfPos - vectorToPlayer, self.turnRate, dt)
+                    self.turnTowards(selfPos - vectorToPlayer, 2, dt)
+                    turned = True
                 if distanceToPlayer > testWeapon.desiredRange*7 or self.breakAwayTimer <= 0:
                     self.state = FighterEnemy.STATE_ATTACK
             elif self.state == FighterEnemy.STATE_FLEE:
                 pass
+
+            self.steeringTraverser.traverse(common.base.render)
+
+            if self.steeringQueue.getNumEntries() > 0:
+                for hit in self.steeringQueue.getEntries():
+                    np = hit.getIntoNodePath()
+                    diff = np.getPos(common.base.render) - selfPos
+                    dist = max(0.0001, diff.length())
+                    r = diff.project(right)
+                    u = diff.project(up)
+                    offset = r + u
+                    offset.normalize()
+                    self.turnTowards(selfPos - offset, 5 * (1.0 - dist / self.steeringDistance) * max(0, (diff.normalized().dot(forward))), dt)
+                    turned = True
+
+            if not turned:
+                self.turnTowards(self.root.getPos(common.base.render) + self.root.getQuat(common.base.render).getForward(), 0.1, dt)
 
             self.velocity += forward*self.acceleration*dt
 
