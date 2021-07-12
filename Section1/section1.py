@@ -1032,7 +1032,6 @@ class Hangar:
         self.model.set_light(amb_light_node)
         
         self.create_support_structure()
-        self.stairs = self.model.find_all_matches("**/platform_stair_step*")
         self.lights = self.model.find_all_matches("**/forcefield_light*")
 
         for light in self.lights:
@@ -1236,27 +1235,51 @@ class Hangar:
 
         self.forcefield.hide()
 
-        stair_step = self.model.find("**/platform_stair_step1")
+        stair_step = self.model.find("**/platform_stair_step1*")
         Elevator.cam_target.reparent_to(stair_step)
         Elevator.cam_target.set_pos(74, 0., 4.)
+        Elevator.cam_target.look_at(stair_step)
         Elevator.cam_target.children[0].set_y(-50.)
-        add_section_task(self.raise_stairs, "raise_stairs")
+        # add_section_task(self.raise_stairs, "raise_stairs")
+        self.raise_stairs()
 
-    def raise_stairs(self, task):
-
-        dt = globalClock.get_dt()
-        cont = True
-
-        for s in self.stairs:
-            z = s.get_z() + .2 * dt
-            if z >= .7:
-                z = .7
-                cont = False
-            s.set_z(z)
-
-        if cont:
-            return task.cont
-
+    def raise_stairs(self):
+        stair_1 = self.model.find("**/platform_stair_step1")
+        stair_2 = self.model.find("**/platform_stair_step2")
+        stair_3 = self.model.find("**/platform_stair_step3")
+        stair_4 = self.model.find("**/platform_stair_step4")
+        stair_5 = self.model.find("**/platform_stair_step5")
+        
+        def move_stair_1():
+            for x in range(65):
+                time.sleep(0.01)
+                stair_1.set_z(stair_1.get_z() + 0.01)
+                
+        def move_stair_2():
+            for x in range(95):
+                time.sleep(0.01)
+                stair_2.set_z(stair_2.get_z() + 0.01)
+               
+        def move_stair_3():
+            for x in range(115):
+                time.sleep(0.01)
+                stair_3.set_z(stair_3.get_z() + 0.01)
+                
+        def move_stair_4():
+            for x in range(140):
+                time.sleep(0.01)
+                stair_4.set_z(stair_4.get_z() + 0.01)
+                
+        def move_stair_5():
+            for x in range(165):
+                time.sleep(0.01)
+                stair_5.set_z(stair_5.get_z() + 0.01)
+                
+        threading2._start_new_thread(move_stair_1, ())
+        threading2._start_new_thread(move_stair_2, ())
+        threading2._start_new_thread(move_stair_3, ())
+        threading2._start_new_thread(move_stair_4, ())
+        threading2._start_new_thread(move_stair_5, ())
 
 class Section1:
 
