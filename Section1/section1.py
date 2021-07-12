@@ -1288,14 +1288,16 @@ class Section1:
         fp_ctrl.fp_init((120, 10, 15))
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
-        self.cam_target.set_z(10.)
+        self.cam_target.set_z(4.)
         self.cam_target.set_h(self.cam_heading)
         self.cam_is_fps = False
 
         def use_orbital_cam():
             base.camera.reparent_to(self.cam_target)
-            base.camera.set_y(-140.)
-            base.camLens.fov = (70, 42.9957)
+            base.camera.set_y(-120.)
+            base.camLens.fov = (80)
+            base.camLens.set_near_far(0.01, 90000)
+            base.camLens.focal_length = 7
             add_section_task(self.move_camera, "move_camera")
 
         def use_fp_cam():
