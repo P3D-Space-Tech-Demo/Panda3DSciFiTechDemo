@@ -19,6 +19,17 @@ TAG_PREVIOUS_MENU = "predecessor"
 OPTION_FILE_DIR = "."
 OPTION_FILE_NAME = "options.dat"
 
+def buildOptionsMenu(gameRef):
+    gameRef.addOptionHeading("General")
+    gameRef.addOptionSlider("Music Volume", (0, 100), 1, "musicVolume", "general", 100, gameRef.setMusicVolume)
+    gameRef.addOptionSlider("Sound Volume", (0, 100), 1, "soundVolume", "general", 100, gameRef.setSoundVolume)
+    gameRef.addOptionMenu("Resolution", gameRef.resolutionList, "resolution", "general", "1024 768", gameRef.setResolution)
+    gameRef.addOptionHeading("Section 1")
+    gameRef.addOptionHeading("Section 2")
+    Section2.addOptions()
+    gameRef.addOptionHeading("Section 3")
+    gameRef.addOptionHeading("Section 4")
+
 class Game():
     BUTTON_SIZE_LARGE = 0
     BUTTON_SIZE_SMALL = 1
@@ -83,10 +94,6 @@ class Game():
     def __init__(self):
 
         common.gameController = self
-
-        properties = WindowProperties()
-        properties.setSize(1280, 720)
-        common.base.win.requestProperties(properties)
 
         common.base.win.setClearColor(Vec4(0, 0, 0, 1))
 
@@ -179,11 +186,25 @@ class Game():
 
         ### Options Menu
 
+        self.resolutionList = []
+        tempList = []
+        displayInformation = base.pipe.getDisplayInformation()
+        for index in range(displayInformation.getTotalDisplayModes()):
+            w = displayInformation.getDisplayModeWidth(index)
+            h = displayInformation.getDisplayModeHeight(index)
+            tempList.append((w, h))
+        for res in tempList:
+            if res not in self.resolutionList:
+                self.resolutionList.append(res)
+        self.resolutionList.sort(key = lambda x: x[0] * 10000 + x[1], reverse = True)
+        self.resolutionList = ["{0} x {1}".format(w, h) for (w, h) in self.resolutionList]
+
         self.optionsTop = 0.35
         self.currentOptionsZ = self.optionsTop
         self.optionSpacingHeading = 0.2
         self.optionCheckSpacing = 0.25
         self.optionSliderSpacing = 0.25
+        self.optionMenuSpacing = 0.7
 
         self.optionsMenu = DirectDialog(
                                         frameSize = (-1, 1, -0.85, 0.85),
@@ -220,14 +241,7 @@ class Game():
                                     )
         self.optionsScroller.horizontalScroll.hide()
 
-        self.addOptionHeading("General")
-        self.addOptionSlider("Music Volume", (0, 100), 1, "musicVolume", "general", 100, self.setMusicVolume)
-        self.addOptionSlider("Sound Volume", (0, 100), 1, "soundVolume", "general", 100, self.setSoundVolume)
-        self.addOptionHeading("Section 1")
-        self.addOptionHeading("Section 2")
-        Section2.addOptions()
-        self.addOptionHeading("Section 3")
-        self.addOptionHeading("Section 4")
+        buildOptionsMenu(self)
 
         self.readOptions()
 
@@ -415,6 +429,7 @@ class Game():
                 common.options[sectionID][optionID] = optionValue
                 setter = common.optionWidgets[sectionID][optionID][0]
                 setter(optionID, sectionID, optionValue)
+                #self.setOptionValue(optionValue, optionID, sectionID)
             fileObj.close()
         except FileNotFoundError as e:
             pass
@@ -427,6 +442,15 @@ class Game():
         check = common.optionWidgets[sectionID][optionID][1]
         check["indicatorValue"] = value
         check.setIndicatorValue()
+
+    def updateMenu(self, optionID, sectionID, value):
+        menu = common.optionWidgets[sectionID][optionID][1]
+        for index, btn in enumerate(menu.getPythonTag("items")):
+            if btn["text"] == value:
+                btn.commandFunc(None)
+                #menu.selectListItem(btn)
+                #menu.scrollTo(index)
+        #menu.selectListItem(value)
 
     def parseOptionVal(self, valueStr):
         result = 0
@@ -452,7 +476,7 @@ class Game():
                 try:
                     result = float(valueStr)
                 except ValueError:
-                    result = None
+                    result = valueStr
 
         return result
 
@@ -500,6 +524,18 @@ class Game():
         val = slider.getValue()
 
         self.setOptionValue(val, optionID, sectionID)
+
+    def setOptionValueFromMenu(self, val, optionID, sectionID, menu):
+        self.setOptionValue(val, optionID, sectionID)
+
+        markerLeft, markerRight = menu.getPythonTag("markers")
+
+        for index, btn in enumerate(menu.getPythonTag("items")):
+            if btn["text"] == val:
+                markerLeft.show()
+                markerLeft.setZ(btn.getZ())
+                markerRight.show()
+                markerRight.setZ(btn.getZ())
 
     def addOptionSlider(self, text, rangeTuple, pageSize, optionID, sectionID, defaultValue, setCallback = None):
         self.setOptionData(optionID, sectionID, defaultValue, setCallback)
@@ -590,6 +626,68 @@ class Game():
     def addOptionMenu(self, text, menuItems, optionID, sectionID, defaultValue, setCallback = None):
         self.setOptionData(optionID, sectionID, defaultValue, setCallback)
 
+        label = DirectLabel(parent = self.optionsScroller.getCanvas(),
+                            text = text,
+                            scale = 0.075,
+                            relief = None,
+                            pos = (0, 0, self.currentOptionsZ),
+                            text_font = Game.fancyFont,
+                            text_fg = (0.8, 0.9, 1, 1),)
+        menu = DirectScrolledFrame(parent = self.optionsScroller.getCanvas(),
+                                   pos = (0, 0, self.currentOptionsZ - 0.125),
+                                   frameSize = (-0.5, 0.58, -0.4, 0.075),
+                                   autoHideScrollBars = False,
+                                   relief = DGG.SUNKEN,
+                                   frameColor = (0.225*0.05, 0.325*0.1, 0.5*0.3, 0.75),
+                                  )
+        menu.horizontalScroll.hide()
+
+        btnList = []
+
+        for index, item in enumerate(menuItems):
+            btn = DirectButton(text = item,
+                               text_scale = 0.06,
+                               text_pos = (0, -0.015),
+                               text_font = Game.fancyFont,
+                               command = self.setOptionValueFromMenu,
+                               extraArgs = [item, optionID, sectionID, menu],
+                               parent = menu.getCanvas(),
+                               pos = (0, 0, -index*0.08),
+                               frameSize = (-0.3, 0.3, -0.0375, 0.0375),
+                               frameTexture = (
+                                        "Assets/Shared/tex/mainMenuBtnMenuItemNormal.png",
+                                        "Assets/Shared/tex/mainMenuBtnMenuItemClick.png",
+                                        "Assets/Shared/tex/mainMenuBtnMenuItemHighlight.png",
+                                        "Assets/Shared/tex/mainMenuBtnMenuItemNormal.png",
+                                      ),
+                               relief = DGG.FLAT,
+                               pressEffect = False)
+            btn.setTransparency(True)
+            btnList.append(btn)
+        menu["canvasSize"] = (-0.5, 0.5, -len(menuItems)*0.08, 0.075)
+        menu.setPythonTag("items", btnList)
+
+        markerLeft = DirectLabel(parent = menu.getCanvas(),
+                                 frameSize = (-0.0375, 0.0375, -0.0375, 0.0375),
+                                 pos = (-0.325, 0, 0),
+                                 relief = DGG.FLAT,
+                                 frameTexture = "Assets/Shared/tex/mainMenuMarkerLeft.png")
+        markerLeft.setTransparency(True)
+        markerLeft.hide()
+        markerRight = DirectLabel(parent = menu.getCanvas(),
+                                 frameSize = (-0.0375, 0.0375, -0.0375, 0.0375),
+                                  pos = (0.325, 0, 0),
+                                 relief = DGG.FLAT,
+                                 frameTexture = "Assets/Shared/tex/mainMenuMarkerRight.png")
+        markerRight.hide()
+        markerRight.setTransparency(True)
+        menu.setPythonTag("markers", (markerLeft, markerRight))
+
+        self.setOptionWidgets(optionID, sectionID, [self.updateMenu, menu])
+
+        self.currentOptionsZ -= self.optionMenuSpacing
+        self.updateOptionsCanvasSize()
+
     def addOptionHeading(self, text):
         self.currentOptionsZ -= self.optionSpacingHeading*0.5
         label = DirectLabel(text = text,
@@ -615,6 +713,14 @@ class Game():
 
     def setSoundVolume(self, vol):
         common.base.sfxManagerList[0].setVolume(vol)
+
+    def setResolution(self, res):
+        w, h = res.split(" x ")
+        w = self.parseOptionVal(w)
+        h = self.parseOptionVal(h)
+        properties = WindowProperties()
+        properties.setSize(w, h)
+        common.base.win.requestProperties(properties)
 
     def toggleFrameRateMeter(self):
         self.showFrameRateMeter = not self.showFrameRateMeter
@@ -719,6 +825,10 @@ class Game():
                 for widget in widgetList[1:]:
                     if "extraArgs" in [optTuple[0] for optTuple in widget.options()]:
                         widget["extraArgs"] = []
+                    if widget.hasPythonTag("items"):
+                        widget.clearPythonTag("items")
+                    if widget.hasPythonTag("markers"):
+                        widget.clearPythonTag("markers")
         common.options = {}
         common.optionWidgets = {}
         common.optionCallbacks = {}

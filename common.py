@@ -13,8 +13,6 @@ import sys
 load_prc_file_data("",
 """
 sync-video false
-win-size 1680 1050
-# win-size 2560 1440
 fullscreen false
 framebuffer-multisample 1
 multisamples 4
