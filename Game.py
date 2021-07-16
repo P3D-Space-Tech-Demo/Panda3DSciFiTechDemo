@@ -238,7 +238,21 @@ class Game():
                                         canvasSize = (-0.8, 0.8, -0.4, 0.5),
                                         frameTexture = gradient,
                                         autoHideScrollBars = False,
+                                        verticalScroll_frameColor = (0.225*0.05, 0.325*0.1, 0.5*0.3, 0.75),
+                                        verticalScroll_incButton_frameTexture = "Assets/Shared/tex/mainMenuScrollerDown.png",
+                                        verticalScroll_incButton_pressEffect = False,
+                                        verticalScroll_incButton_relief = DGG.FLAT,
+                                        verticalScroll_incButton_frameColor = (1, 1, 1, 1),
+                                        verticalScroll_decButton_frameTexture = "Assets/Shared/tex/mainMenuScrollerUp.png",
+                                        verticalScroll_decButton_pressEffect = False,
+                                        verticalScroll_decButton_relief = DGG.FLAT,
+                                        verticalScroll_decButton_frameColor = (1, 1, 1, 1),
+                                        verticalScroll_thumb_frameTexture = "Assets/Shared/tex/mainMenuScrollerThumb.png",
+                                        verticalScroll_thumb_pressEffect = False,
+                                        verticalScroll_thumb_relief = DGG.FLAT,
+                                        verticalScroll_thumb_frameColor = (1, 1, 1, 1)
                                     )
+        self.optionsScroller.verticalScroll.setTransparency(True)
         self.optionsScroller.horizontalScroll.hide()
 
         buildOptionsMenu(self)
@@ -639,7 +653,21 @@ class Game():
                                    autoHideScrollBars = False,
                                    relief = DGG.SUNKEN,
                                    frameColor = (0.225*0.05, 0.325*0.1, 0.5*0.3, 0.75),
+                                   verticalScroll_frameColor = (0.225*0.05, 0.325*0.1, 0.5*0.3, 0.75),
+                                   verticalScroll_incButton_frameTexture = "Assets/Shared/tex/mainMenuScrollerDown.png",
+                                   verticalScroll_incButton_pressEffect = False,
+                                   verticalScroll_incButton_relief = DGG.FLAT,
+                                   verticalScroll_incButton_frameColor = (1, 1, 1, 1),
+                                   verticalScroll_decButton_frameTexture = "Assets/Shared/tex/mainMenuScrollerUp.png",
+                                   verticalScroll_decButton_pressEffect = False,
+                                   verticalScroll_decButton_relief = DGG.FLAT,
+                                   verticalScroll_decButton_frameColor = (1, 1, 1, 1),
+                                   verticalScroll_thumb_frameTexture = "Assets/Shared/tex/mainMenuScrollerThumb.png",
+                                   verticalScroll_thumb_pressEffect = False,
+                                   verticalScroll_thumb_relief = DGG.FLAT,
+                                   verticalScroll_thumb_frameColor = (1, 1, 1, 1)
                                   )
+        menu.verticalScroll.setTransparency(True)
         menu.horizontalScroll.hide()
 
         btnList = []
