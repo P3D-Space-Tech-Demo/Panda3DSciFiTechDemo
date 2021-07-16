@@ -1720,7 +1720,7 @@ def initialise(data=None):
     plight_2_node = base.render.attach_new_node(plight_2)
     plight_2_node.set_pos(0, 0, 5)
     plight_2_node.node().set_color((1, 1, 1, 1))
-    plight_2_node.node().set_attenuation((0.5, 0, 0.05))
+    # plight_2_node.node().set_attenuation((0.5, 0, 0.05))
     base.render.set_light(plight_2_node)
     section_lights.append(plight_2_node)
 
