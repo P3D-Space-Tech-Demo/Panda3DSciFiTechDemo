@@ -9,18 +9,36 @@ from panda3d.bullet import BulletBoxShape
 from panda3d.bullet import BulletGhostNode
 from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletPlaneShape
+from panda3d.bullet import BulletDebugNode
 
-
-world = BulletWorld()
-world.set_gravity(Vec3(0, 0, -9.81))
+base.world = BulletWorld()
+base.world.set_gravity(Vec3(0, 0, -9.81))
 # the effective world-Z limit
 ground_plane = BulletPlaneShape(Vec3(0, 0, 1), 0)
 node = BulletRigidBodyNode('ground')
 node.add_shape(ground_plane)
 node.set_friction(0.1)
 np = base.render.attach_new_node(node)
-np.set_pos(0, 0, -0.3)
-world.attach_rigid_body(node)
+np.set_pos(0, 0, -4)
+base.world.attach_rigid_body(node)
+
+# Bullet debugger
+debug_node = BulletDebugNode('bullet_debug')
+debug_node.show_wireframe(True)
+debug_node.show_constraints(True)
+debug_node.show_bounding_boxes(False)
+debug_node.show_normals(False)
+debug_np = base.render.attach_new_node(debug_node)
+base.world.set_debug_node(debug_np.node())
+
+# debug toggle function
+def toggle_debug():
+    if debug_np.is_hidden():
+        debug_np.show()
+    else:
+        debug_np.hide()
+
+# base.accept('f1', toggle_debug)
 
 # 3D player movement system begins
 keyMap = {"left": 0, "right": 0, "forward": 0, "backward": 0, "run": 0, "jump": 0}
@@ -30,23 +48,31 @@ def setKey(key, value):
 
 def fp_init(target_pos):
     # initialize player character physics the Bullet way
-    shape_1 = BulletCapsuleShape(0.75, 0.5, ZUp)
-    player_node = BulletCharacterControllerNode(shape_1, 0.1, 'Player')  # (shape, mass, player name)
+    shape_1 = BulletCapsuleShape(2, 1, ZUp)
+    player_node = BulletCharacterControllerNode(shape_1, 1.5, 'Player')  # (shape, mass, player name)
     player = base.render.attach_new_node(player_node)
     player.set_pos(target_pos)
     player.set_collide_mask(BitMask32.all_on())
-    world.attach_character(player.node())
+    base.world.attach_character(player.node())
+    
+def do_jump(jump_speed = 16, max_height = 1, fall_speed = 150, gravity = 50):
+    player = base.render.find('Player')
+    player.node().set_jump_speed(jump_speed)
+    player.node().set_max_jump_height(max_height)
+    player.node().set_fall_speed(fall_speed)
+    player.node().set_gravity(gravity)
+    player.node().do_jump()
 
 def fp_cleanup():
     player = base.render.find('Player')
-    world.remove(player.node())
+    base.world.remove(player.node())
     player.detach_node()
 
 def use_fp_camera():
     player = base.render.find('Player')
     base.camera.reparent_to(player)
     base.camera.set_y(player, 0.03)
-    base.camera.set_z(player, 3.0)
+    base.camera.set_z(player, 5.0)
     base.task_mgr.add(update_cam, "update_cam")
     base.task_mgr.add(physics_update, "physics_update")
 
@@ -181,6 +207,27 @@ def update_cam(Task):
 
 def physics_update(Task):
     dt = globalClock.get_dt()
-    world.do_physics(dt)
+    base.world.do_physics(dt)
 
     return Task.cont
+    
+def make_collision(rigid_label, input_model, node_number, mass, target_pos = Vec3(0, 0, 0), hpr_adj = Vec3(0, 0, 0), scale_adj = 1):
+    # generic tristrip collision generator begins
+    geom_nodes = input_model.find_all_matches('**/+GeomNode')
+    geom_nodes = geom_nodes.get_path(node_number).node()
+    geom_target = geom_nodes.get_geom(0)
+    output_bullet_mesh = BulletTriangleMesh()
+    output_bullet_mesh.add_geom(geom_target)
+    tri_shape = BulletTriangleMeshShape(output_bullet_mesh, dynamic=False)
+
+    body = BulletRigidBodyNode(str(rigid_label))
+    np = base.render.attach_new_node(body)
+    np.node().add_shape(tri_shape)
+    np.node().set_mass(mass)
+    np.node().set_friction(0.01)
+    np.set_pos(target_pos)
+    np.set_scale(scale_adj)
+    np.set_hpr(hpr_adj)
+    np.set_collide_mask(BitMask32.allOn())
+    base.world.attach_rigid_body(np.node())
+
