@@ -1621,6 +1621,7 @@ class Section1:
 
         base.ignore("escape")
         base.ignore("\\")
+        base.ignore("mouse3")
 
         base.camera.reparent_to(base.render)
         self.cam_target.detach_node()
