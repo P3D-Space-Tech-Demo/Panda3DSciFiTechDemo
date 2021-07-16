@@ -1031,6 +1031,19 @@ class Hangar:
         amb_light_node = self.model.attach_new_node(amb_light)
         self.model.set_light(amb_light_node)
         
+        # make initial stair collision
+        stair_1 = self.model.find("**/platform_stair_step1")
+        stair_2 = self.model.find("**/platform_stair_step2")
+        stair_3 = self.model.find("**/platform_stair_step3")
+        stair_4 = self.model.find("**/platform_stair_step4")
+        stair_5 = self.model.find("**/platform_stair_step5")
+        
+        fp_ctrl.make_collision('stair_1_brbn', stair_1, 0, 0, stair_1.get_pos())
+        fp_ctrl.make_collision('stair_2_brbn', stair_2, 0, 0, stair_2.get_pos())
+        fp_ctrl.make_collision('stair_3_brbn', stair_3, 0, 0, stair_3.get_pos())
+        fp_ctrl.make_collision('stair_4_brbn', stair_4, 0, 0, stair_4.get_pos())
+        fp_ctrl.make_collision('stair_5_brbn', stair_5, 0, 0, stair_5.get_pos())
+        
         self.create_support_structure()
         self.lights = self.model.find_all_matches("**/forcefield_light*")
 
@@ -1251,29 +1264,44 @@ class Hangar:
         stair_5 = self.model.find("**/platform_stair_step5")
         
         def move_stair_1():
+            stair_1_brbn = base.render.find('**/stair_1_brbn')
+        
             for x in range(65):
                 time.sleep(0.01)
                 stair_1.set_z(stair_1.get_z() + 0.01)
+                stair_1_brbn.set_z(stair_1_brbn.get_z() + 0.01)
                 
         def move_stair_2():
+            stair_2_brbn = base.render.find('**/stair_2_brbn')
+        
             for x in range(95):
                 time.sleep(0.01)
                 stair_2.set_z(stair_2.get_z() + 0.01)
+                stair_2_brbn.set_z(stair_2_brbn.get_z() + 0.01)
                
         def move_stair_3():
+            stair_3_brbn = base.render.find('**/stair_3_brbn')
+        
             for x in range(115):
                 time.sleep(0.01)
                 stair_3.set_z(stair_3.get_z() + 0.01)
+                stair_3_brbn.set_z(stair_3_brbn.get_z() + 0.01)
                 
         def move_stair_4():
+            stair_4_brbn = base.render.find('**/stair_4_brbn')            
+            
             for x in range(140):
                 time.sleep(0.01)
                 stair_4.set_z(stair_4.get_z() + 0.01)
+                stair_4_brbn.set_z(stair_4_brbn.get_z() + 0.01)
                 
         def move_stair_5():
+            stair_5_brbn = base.render.find('**/stair_5_brbn')
+            
             for x in range(165):
                 time.sleep(0.01)
                 stair_5.set_z(stair_5.get_z() + 0.01)
+                stair_5_brbn.set_z(stair_5_brbn.get_z() + 0.01)
                 
         threading2._start_new_thread(move_stair_1, ())
         threading2._start_new_thread(move_stair_2, ())
@@ -1284,13 +1312,25 @@ class Hangar:
 class Section1:
 
     def __init__(self):
+        # initial collision
+        p_topper = base.loader.load_model(ASSET_PATH + "models/p_topper.gltf")
+        fp_ctrl.make_collision('brbn', p_topper, 0, 0)
+        
+        p_topper_out = base.loader.load_model(ASSET_PATH + "models/p_topper_out.gltf")
+        pto_p = p_topper_out.get_pos()
+        fp_ctrl.make_collision('brbn', p_topper_out, 0, 0, target_pos=(pto_p[0], pto_p[1], pto_p[2] -0.5))
+        
+        p_topper_force = base.loader.load_model(ASSET_PATH + "models/p_topper_force.gltf")
+        fp_ctrl.make_collision('brbn_force', p_topper_force, 0, 0)
+        
         # set up camera control
-        fp_ctrl.fp_init((120, 10, 15))
+        fp_ctrl.fp_init((120, 10, 1))
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(4.)
         self.cam_target.set_h(self.cam_heading)
         self.cam_is_fps = False
+        base.accept('mouse3', fp_ctrl.do_jump)
 
         def use_orbital_cam():
             base.camera.reparent_to(self.cam_target)
@@ -1567,6 +1607,10 @@ class Section1:
         self.destroy_holo_ship()
 
     def destroy_holo_ship(self):
+        p_topper_force_brbn = base.render.find('**/brbn_force')
+        if 'not found' not in str(p_topper_force_brbn):
+            base.world.remove(p_topper_force_brbn.node())
+            p_topper_force_brbn.detach_node()
 
         if self.holo_ship:
             self.holo_ship.detach_node()
@@ -1606,7 +1650,27 @@ class Section1:
         self.model_root = None
         self.destroy_holo_ship()
         fp_ctrl.fp_cleanup()
-
+        
+        rigid_list = base.render.find_all_matches('**/brbn*')
+        print(str(len(rigid_list)) + ' generic rigid bodies to remove.')
+        
+        for rigid_body in rigid_list:
+            base.world.remove(rigid_body.node())
+            rigid_body.detach_node()
+            
+        rigid_list = base.render.find_all_matches('**/brbn*')
+        print(str(len(rigid_list)) + ' generic rigid bodies remaining.')
+        
+        stair_list = base.render.find_all_matches('**/stair_*')
+        print(str(len(stair_list)) + ' stair rigid bodies to remove.')
+        
+        for rigid_body in stair_list:
+            base.world.remove(rigid_body.node())
+            rigid_body.detach_node()
+            
+        stair_list = base.render.find_all_matches('**/stair_*')
+        print(str(len(stair_list)) + ' stair rigid bodies remaining.')
+                  
         for light in section_lights:
             base.render.set_light_off(light)
             light.detach_node()
@@ -1625,30 +1689,46 @@ def initialise(data=None):
     scene_filters.set_bloom()
 
     base.accept("escape", common.gameController.gameOver)
+    
+    def print_player_pos():
+        print(base.camera.get_pos(base.render))
+    
+    base.accept('f4', print_player_pos)
 
     for x in range(6):
         plight_1 = PointLight('plight_1')
         # add plight props here
         plight_1_node = base.render.attach_new_node(plight_1)
         plight_1_node.set_pos(1000, 1000, 1000)
-        plight_1_node.node().set_color((0.1, 0.1, 0.9, 0.75))
+        plight_1_node.node().set_color((0.1, 0.1, 0.9, 1.0))
         plight_1_node.node().set_attenuation((0.5, 0, 0.05))
         base.render.set_light(plight_1_node)
         section_lights.append(plight_1_node)
 
-    plight_1 = PointLight('scene_light')
+    plight_1 = PointLight('scene_light_1')
     # add plight props here
     plight_1_node = base.render.attach_new_node(plight_1)
-    plight_1_node.set_pos(15, 15, 20)
-    plight_1_node.node().set_color((1, 1, 1, 0.75))
+    plight_1_node.set_pos(0, 0, 40)
+    plight_1_node.node().set_color((1, 1, 1, 1))
     # plight_1_node.node().set_attenuation((0.5, 0, 0.05))
     base.render.set_light(plight_1_node)
     section_lights.append(plight_1_node)
+    
+    plight_2 = PointLight('scene_light_2')
+    # add plight props here
+    plight_2_node = base.render.attach_new_node(plight_2)
+    plight_2_node.set_pos(0, 0, 5)
+    plight_2_node.node().set_color((1, 1, 1, 1))
+    plight_1_node.node().set_attenuation((0.5, 0, 0.05))
+    base.render.set_light(plight_2_node)
+    section_lights.append(plight_2_node)
 
     make_simple_spotlight((0, 0, 900), (0, 5, 10), False)
-    make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
-    # make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
-    # make_simple_spotlight((200, 100, 300), (0, 5, 10), False)
+    make_simple_spotlight((200, 100, 900), (0, 5, 10), True)
+    make_simple_spotlight((0, 0, 1300), (-90, 108, 10), False)
+    make_simple_spotlight((0, 0, 1300), (-90, -120, 10), False)
+    make_simple_spotlight((0, 0, 1300), (102, -145, 10), False)
+    make_simple_spotlight((0, 0, 1300), (94, 120, 10), False)
 
     section = Section1()
     common.currentSection = section
