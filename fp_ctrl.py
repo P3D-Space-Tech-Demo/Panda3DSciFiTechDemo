@@ -54,7 +54,7 @@ def fp_init(target_pos):
     player.set_pos(target_pos)
     player.set_collide_mask(BitMask32.all_on())
     base.world.attach_character(player.node())
-    
+
 def do_jump(jump_speed = 16, max_height = 1, fall_speed = 150, gravity = 50):
     player = base.render.find('Player')
     player.node().set_jump_speed(jump_speed)
@@ -67,12 +67,16 @@ def fp_cleanup():
     player = base.render.find('Player')
     base.world.remove(player.node())
     player.detach_node()
+    disable_fp_camera()
 
-def use_fp_camera():
+def enable_fp_camera():
     player = base.render.find('Player')
+    base.camLens.fov = 80
+    base.camLens.set_near_far(0.01, 90000)
+    base.camLens.focal_length = 7
     base.camera.reparent_to(player)
-    base.camera.set_y(player, 0.03)
-    base.camera.set_z(player, 5.0)
+    base.camera.set_pos(player, 0.0, 0.03, 5.0)
+    base.camera.set_hpr(0., 0., 0.)
     base.task_mgr.add(update_cam, "update_cam")
     base.task_mgr.add(physics_update, "physics_update")
 
@@ -90,8 +94,19 @@ def use_fp_camera():
     base.accept("space", setKey, ["jump", 1])
     base.accept("space-up", setKey, ["jump", 0])
 
+    base.accept('mouse3', do_jump)
+
     # disable mouse
     base.disable_mouse()
+
+def disable_fp_camera():
+    base.task_mgr.remove("update_cam")
+    base.task_mgr.remove("physics_update")
+    base.ignore("mouse3")
+
+    for key_id in ("w", "a", "s", "d", "shift", "space"):
+        base.ignore(key_id)
+        base.ignore(key_id + "-up")
 
 def update_cam(Task):
     # the player movement speed
