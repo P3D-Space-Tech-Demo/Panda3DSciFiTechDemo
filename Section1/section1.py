@@ -490,6 +490,8 @@ class WorkerDrone(Worker):
 
         Worker.destroy(self)
 
+        self.pivot.detach_node()
+
     def wobble(self):
 
         h, p, r = start_hpr = self.pivot.get_hpr()
@@ -1330,35 +1332,26 @@ class Section1:
         self.cam_target.set_z(4.)
         self.cam_target.set_h(self.cam_heading)
         self.cam_is_fps = False
-        base.accept('mouse3', fp_ctrl.do_jump)
 
-        def use_orbital_cam():
+        def enable_orbital_cam():
             base.camera.reparent_to(self.cam_target)
             base.camera.set_y(-120.)
-            base.camLens.fov = (80)
+            base.camLens.fov = 80
             base.camLens.set_near_far(0.01, 90000)
             base.camLens.focal_length = 7
             add_section_task(self.move_camera, "move_camera")
 
-        def use_fp_cam():
-            base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
-            base.camLens.fov = 80
-            base.camLens.set_near_far(0.01, 90000)
-            base.camLens.focal_length = 7
-            fp_ctrl.use_fp_camera()
-
         def cam_switch():
             if self.cam_is_fps:
-                base.task_mgr.remove("update_cam")
-                base.task_mgr.remove("physics_update")
-                use_orbital_cam()
+                fp_ctrl.disable_fp_camera()
+                enable_orbital_cam()
             else:
                 base.task_mgr.remove("move_camera")
-                use_fp_cam()
+                fp_ctrl.enable_fp_camera()
             self.cam_is_fps = not self.cam_is_fps
 
         base.accept("\\", cam_switch)
-        use_orbital_cam()
+        enable_orbital_cam()
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
         self.setup_elevator_camera()
@@ -1621,7 +1614,6 @@ class Section1:
 
         base.ignore("escape")
         base.ignore("\\")
-        base.ignore("mouse3")
 
         base.camera.reparent_to(base.render)
         self.cam_target.detach_node()
