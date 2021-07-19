@@ -1032,6 +1032,18 @@ class Hangar:
         amb_light.set_color((1, 1, 1, 0.5))
         amb_light_node = self.model.attach_new_node(amb_light)
         self.model.set_light(amb_light_node)
+
+        container = self.model.find("**/container_type_b")
+
+        for root in self.model.find_all_matches("**/container_root_*"):
+
+            for anchor in root.find_all_matches("**/container_b_anchor*"):
+                container.copy_to(anchor)
+
+            root.flatten_strong()
+            root.ls()
+
+        container.detach_node()
         
         # make initial stair collision
         stair_1 = self.model.find("**/platform_stair_step1")
@@ -1645,24 +1657,20 @@ class Section1:
         fp_ctrl.fp_cleanup()
         
         rigid_list = base.render.find_all_matches('**/brbn*')
-        print(str(len(rigid_list)) + ' generic rigid bodies to remove.')
         
         for rigid_body in rigid_list:
             base.world.remove(rigid_body.node())
             rigid_body.detach_node()
             
         rigid_list = base.render.find_all_matches('**/brbn*')
-        print(str(len(rigid_list)) + ' generic rigid bodies remaining.')
         
         stair_list = base.render.find_all_matches('**/stair_*')
-        print(str(len(stair_list)) + ' stair rigid bodies to remove.')
         
         for rigid_body in stair_list:
             base.world.remove(rigid_body.node())
             rigid_body.detach_node()
             
         stair_list = base.render.find_all_matches('**/stair_*')
-        print(str(len(stair_list)) + ' stair rigid bodies remaining.')
                   
         for light in section_lights:
             base.render.set_light_off(light)
