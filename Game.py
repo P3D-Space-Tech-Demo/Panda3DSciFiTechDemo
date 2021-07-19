@@ -1,7 +1,7 @@
 
 from direct.showbase.ShowBase import ShowBase
 
-from panda3d.core import WindowProperties, TextNode, Vec4, Vec3, Vec2, Filename, Texture
+from panda3d.core import WindowProperties, TextNode, Vec4, Vec3, Vec2, Filename, Texture, PandaNode
 from direct.stdpy.file import *
 from direct.gui.DirectGui import *
 
@@ -114,29 +114,41 @@ class Game():
                                             frameTexture = "Assets/Shared/tex/mainMenuBack.png"
                                            )
 
+        self.titleHolder = self.mainMenuBackdrop.attachNewNode(PandaNode("title holder"))
+        self.titleHolder.setPos(0, 0, 0.6)
+
+        self.underline = DirectLabel(frameTexture = "Assets/Shared/tex/underline.png",
+                                     parent = self.titleHolder,
+                                     relief = DGG.FLAT,
+                                     frameSize = (-1.778, 2.122, -0.0609, 0.0609),
+                                     frameColor = (1, 1, 1, 1),
+                                     pos = (0, 0, 0),
+                                     scale = -1)
+        self.underline.setTransparency(True)
+
         self.title1 = DirectLabel(text = "CAPTAIN PANDA",
-                                 parent = self.mainMenuBackdrop,
+                                 parent = self.titleHolder,
                                  scale = 0.1,
                                  text_font = Game.fancyFont,
                                  text_fg = (0.8, 0.9, 1, 1),
                                  relief = None,
-                                 pos = (0, 0, 0.825),
+                                 pos = (0, 0, 0.225),
                                  text_align = TextNode.ALeft)
         self.title2 = DirectLabel(text = "and the",
-                                 parent = self.mainMenuBackdrop,
+                                 parent = self.titleHolder,
                                  scale = 0.07,
                                  text_font = Game.fancyFont,
                                  text_fg = (0.8, 0.9, 1, 1),
                                  relief = None,
-                                 pos = (0, 0, 0.7675),
+                                 pos = (0, 0, 0.1675),
                                  text_align = TextNode.ALeft)
         self.title3 = DirectLabel(text = "INVASION OF THE MECHANOIDS!",
-                                 parent = self.mainMenuBackdrop,
+                                 parent = self.titleHolder,
                                  scale = 0.125,
                                  text_font = Game.fancyFont,
                                  text_fg = (0.8, 0.9, 1, 1),
                                  relief = None,
-                                 pos = (0, 0, 0.6625),
+                                 pos = (0, 0, 0.0625),
                                  text_align = TextNode.ALeft)
 
         if Game.italiciseFont:
@@ -148,15 +160,6 @@ class Game():
                                     frameSize = (0, 1.25, -1, 1),
                                     frameColor = (0, 0, 0, 0)
                                    )
-
-        self.underline = DirectLabel(frameTexture = "Assets/Shared/tex/underline.png",
-                                     parent = self.mainMenuPanel,
-                                     relief = DGG.FLAT,
-                                     frameSize = (0, 3.9, -0.0609, 0.0609),
-                                     frameColor = (1, 1, 1, 1),
-                                     pos = (3.5, 0, 0.6),
-                                     scale = -1)
-        self.underline.setTransparency(True)
 
         buttons = []
 
@@ -750,6 +753,19 @@ class Game():
         properties.setSize(w, h)
         common.base.win.requestProperties(properties)
 
+        self.updateTitleForWindowSize(w, h)
+
+    def updateTitleForWindowSize(self, w, h):
+        ratio = w / h
+        ratio = ratio / 1.777777777778
+        if ratio > 1:
+            self.titleHolder.setX(1/aspect2d.getSx() - 1.777777)
+            ratio = 1
+        else:
+            self.titleHolder.setX(0)
+        self.titleHolder.setScale(ratio)
+        self.titleHolder.setZ(0.6 + 0.4 - 0.4*ratio)
+
     def toggleFrameRateMeter(self):
         self.showFrameRateMeter = not self.showFrameRateMeter
 
@@ -763,6 +779,10 @@ class Game():
         self.mainMenuPanel["frameSize"] = (0, 1.25, -1/common.base.aspect2d.getSz(), 1/common.base.aspect2d.getSz())
         self.sectionMenu.setPos(common.base.render, -0.8, 0, 0)
         self.shipSelectionMenu.setPos(common.base.render, -0.6, 0, 0)
+
+        if window.hasSize():
+            size = window.getSize()
+            self.updateTitleForWindowSize(size[0], size[1])
 
     def openMenu(self):
         self.currentSectionIndex = 0
