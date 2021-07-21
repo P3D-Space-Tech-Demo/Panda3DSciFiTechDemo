@@ -935,6 +935,13 @@ class DroneCompartment:
 
         DroneCompartment.instance = self
         self.model = base.loader.load_model(ASSET_PATH + "models/worker_drone_compartment.gltf")
+        
+        amb_light = AmbientLight('drone_compartment_amblight')
+        amb_light.set_color((0.3, 0.3, 0.3, 0.5))
+        amb_light_node = self.model.attach_new_node(amb_light)
+        self.model.set_light(amb_light_node)
+        section_lights.append(amb_light_node)
+        
         self.model.reparent_to(base.render)
         self.model.set_shader_off()
         self.idle = True
@@ -1040,7 +1047,7 @@ class Hangar:
             for anchor in root.find_all_matches("**/container_b_anchor*"):
                 container.copy_to(anchor)
 
-            root.flatten_strong()
+            # root.flatten_strong()
             root.ls()
 
         container.detach_node()
