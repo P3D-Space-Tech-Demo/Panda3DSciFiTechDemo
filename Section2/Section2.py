@@ -21,6 +21,10 @@ import common
 import random
 
 class Section2():
+    STATE_PLAYING = 0
+    STATE_DEATH_CUTSCENE = 1
+    STATE_GAME_OVER = 2
+
     def __init__(self):
         common.currentSection = self
 
@@ -56,7 +60,7 @@ class Section2():
         common.base.accept("mouse3", self.updateKeyMap, ["shootSecondary", True])
         common.base.accept("mouse3-up", self.updateKeyMap, ["shootSecondary", False])
 
-        common.base.accept("\\", self.toggleFriction)
+        common.base.accept("\\", self.toggleThirdPerson)
 
         self.pusher = CollisionHandlerPusher()
         self.traverser = CollisionTraverser()
@@ -77,8 +81,10 @@ class Section2():
         self.currentLevel = None
         self.shipSpec = None
 
-    def toggleFriction(self):
-        common.setOption("section2", "useNewtonianFlight", not common.getOption("section2", "useNewtonianFlight"))
+        self.playState = Section2.STATE_PLAYING
+
+    def toggleThirdPerson(self):
+        self.player.toggleThirdPerson()
 
     def startGame(self, shipSpec):
         self.cleanupLevel()
@@ -89,6 +95,9 @@ class Section2():
 
         self.player = Player(shipSpec)
         self.player.root.setPos(self.currentLevel.playerSpawnPoint)
+        self.player.forceCameraPosition()
+
+        self.playState = Section2.STATE_PLAYING
 
     def updateKeyMap(self, controlName, controlState, callback = None):
         self.keyMap[controlName] = controlState
@@ -103,8 +112,16 @@ class Section2():
             self.currentLevel.update(self.player, self.keyMap, dt)
 
             if self.player is not None and self.player.health <= 0:
-                common.gameController.gameOver()
-                return Task.done
+                if self.playState == Section2.STATE_PLAYING:
+                    self.playState = Section2.STATE_DEATH_CUTSCENE
+                    self.deathTimer = 4.5
+                elif self.playState == Section2.STATE_DEATH_CUTSCENE:
+                    self.deathTimer -= dt
+                    if self.deathTimer <= 0:
+                        self.playState = Section2.STATE_GAME_OVER
+                        common.gameController.gameOver()
+                        return Task.done
+                return Task.cont
 
             self.traverser.traverse(common.base.render)
 

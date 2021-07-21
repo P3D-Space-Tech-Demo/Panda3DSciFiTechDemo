@@ -8,6 +8,7 @@ from panda3d.core import CardMaker
 from panda3d.core import TextureStage
 from panda3d.core import MeshDrawer
 from panda3d.core import ColorBlendAttrib
+from panda3d.core import CompassEffect
 from direct.actor.Actor import Actor
 
 from direct.gui.OnscreenText import OnscreenText
@@ -15,11 +16,12 @@ from direct.gui.DirectGui import DirectLabel
 
 from Section2.GameObject import GameObject, ArmedObject
 from Section2.PlayerWeapons import BlasterWeapon, RocketWeapon
+from Section2.Explosion import Explosion
 
 from Section2.CommonValues import *
 import common
 
-import math
+import math, random
 
 class Player(GameObject, ArmedObject):
     def __init__(self, shipSpec):
@@ -89,9 +91,15 @@ class Player(GameObject, ArmedObject):
         common.currentSection.pusher.addCollider(self.triggerDetectorNP, self.root)
         common.currentSection.traverser.addCollider(self.triggerDetectorNP, common.currentSection.pusher)
 
-        common.base.camera.reparentTo(self.actor)
-        common.base.camera.setPos(0, 0, 0)
-        common.base.camera.setHpr(0, 0, 0)
+        self.cameraTarget = self.actor.attachNewNode(PandaNode("camera target"))
+        self.cameraTarget.setPos(0, 0, 0)
+        self.cameraTarget.setHpr(0, 0, 0)
+
+        self.thirdPersonCameraPos = Vec3(0, -15, 5)
+
+        self.cameraSpeedScalar = 80
+
+        common.base.camera.reparentTo(common.currentSection.currentLevel.geometry)
 
         lens = common.base.camLens
 
@@ -160,6 +168,18 @@ class Player(GameObject, ArmedObject):
         self.cockpit = common.base.loader.loadModel("Assets/Section2/models/{0}".format(shipSpec.cockpitModelFile))
         self.cockpit.reparentTo(self.actor)
 
+        self.thirdPersonShip = common.base.loader.loadModel("Assets/Section2/models/{0}".format(shipSpec.shipModelFileLowPoly))
+        self.thirdPersonShip.reparentTo(self.actor)
+
+        bounds = self.thirdPersonShip.getTightBounds()
+        self.thirdPersonWidth = bounds[1][1] - bounds[0][1]
+        self.thirdPersonHeight = bounds[1][2] - bounds[0][2]
+        self.thirdPersonLength = bounds[1][0] - bounds[0][0]
+
+        self.thirdPersonShip.hide()
+
+        self.setThirdPerson(False)
+
         healthBarRoot = self.cockpit.find("**/healthBar")
         if healthBarRoot is None or healthBarRoot.isEmpty():
             healthBarRoot = self.uiRoot.attachNewNode(PandaNode("health bar root"))
@@ -227,8 +247,128 @@ class Player(GameObject, ArmedObject):
 
         self.updatingEffects = []
 
+        self.deathFireTimer = 2.5
+        self.deathFlameTimer = 0
+
+    def toggleThirdPerson(self):
+        self.setThirdPerson(not self.isThirdPerson)
+
+    def setThirdPerson(self, shouldBeThirdPerson):
+        self.isThirdPerson = shouldBeThirdPerson
+
+        if shouldBeThirdPerson:
+            self.cameraTarget.setPos(self.thirdPersonCameraPos)
+            common.base.camera.setPos(self.actor, -self.thirdPersonCameraPos*0.5)
+            self.cameraSpeedScalar = 10
+            self.thirdPersonShip.show()
+            self.cockpit.hide()
+        else:
+            self.cameraTarget.setY(0)
+            self.cameraTarget.setZ(0)
+            common.base.camera.setPos(self.actor, -self.thirdPersonCameraPos*0.5)
+            self.cameraSpeedScalar = 90
+            self.cockpit.show()
+            self.thirdPersonShip.hide()
+
+    def forceCameraPosition(self):
+        common.base.camera.setPos(self.cameraTarget, 0, 0, 0)
+        common.base.camera.setHpr(self.cameraTarget, 0, 0, 0)
+
+    def updateDeathCutscene(self, dt):
+        if not self.isThirdPerson:
+            self.setThirdPerson(True)
+        self.cameraTarget.setPos(self.thirdPersonCameraPos*3)
+
+        self.updateCamera(dt)
+
+        if self.deathFireTimer > 0:
+            self.deathFlameTimer -= dt
+            if self.deathFlameTimer <= 0:
+                self.deathFlameTimer = 0.1
+                shaderInputs = {
+                    "duration" : 0.8,
+                    "expansionFactor" : 2,
+                    "rotationRate" : 0.2,
+                    "fireballBittiness" : 0.01,
+                    "starDuration" : 0
+                }
+
+                randomVec1 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
+                randomVec2 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
+
+                explosion = Explosion(4, "explosion", shaderInputs, "noise", randomVec1, randomVec2)
+
+                dir = Vec3(random.uniform(-1, 1),
+                           random.uniform(-1, 1),
+                           random.uniform(-1, 1))
+                dir.normalize()
+                dir.x *= self.thirdPersonWidth*0.5
+                dir.y *= self.thirdPersonLength*0.5
+                dir.z *= self.thirdPersonHeight*0.5
+
+                explosion.activate(self.velocity, self.root.getPos(common.base.render) + dir)
+                common.currentSection.currentLevel.explosions.append(explosion)
+
+            self.deathFireTimer -= dt
+            if self.deathFireTimer <= 0:
+                self.thirdPersonShip.hide()
+
+                shaderInputs = {
+                    "duration" : 1.0,
+                    "expansionFactor" : 7,
+                    "rotationRate" : 0.2,
+                    "fireballBittiness" : 1.0,
+                    "starDuration" : 0
+                }
+
+                randomVec1 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
+                randomVec2 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
+
+                explosion = Explosion(25, "explosion", shaderInputs, "noise", randomVec1, randomVec2)
+
+                explosion.activate(self.velocity, self.root.getPos(common.base.render))
+                common.currentSection.currentLevel.explosions.append(explosion)
+
+
+                shaderInputs = {
+                    "duration" : 2,
+                    "expansionFactor" : 0,
+                    "rotationRate" : 0.2,
+                    "fireballBittiness" : 0.01,
+                    "starDuration" : 0
+                }
+
+                for i in range(20):
+                    randomVec1 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
+                    randomVec2 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
+
+                    dir = Vec3(random.uniform(-1, 1),
+                               random.uniform(-1, 1),
+                               random.uniform(-1, 1))
+                    dir.normalize()
+                    dir.x *= self.thirdPersonWidth
+                    dir.y *= self.thirdPersonLength
+                    dir.z *= self.thirdPersonHeight
+                    dir.normalize()
+                    dir *= 15
+
+                    explosion = Explosion(5, "explosion", shaderInputs, "noise", randomVec1, randomVec2)
+
+                    explosion.activate(self.velocity + dir, self.root.getPos(common.base.render))
+                    common.currentSection.currentLevel.explosions.append(explosion)
+
+    def updateCamera(self, dt):
+        camera = common.base.camera
+        cameraPos = camera.getPos(common.base.render)
+        diff = self.cameraTarget.getPos(common.base.render) - cameraPos
+        camera.setPos(common.base.render, cameraPos + diff*dt*self.cameraSpeedScalar)
+        camera.setHpr(self.cameraTarget, 0, 0, 0)
+
     def update(self, keys, dt):
-        GameObject.update(self, dt)
+        if self.health <= 0:
+            self.updateDeathCutscene(dt)
+            GameObject.update(self, dt)
+            return
 
         self.updateSpeedometer()
 
@@ -281,20 +421,12 @@ class Player(GameObject, ArmedObject):
 
             self.root.setQuat(quat*rotQuat)
 
-            self.cockpit.setX(mousePos.x*0.1)
-            self.cockpit.setZ(-mousePos.y*0.05)
-            self.cockpit.setH(-mousePos.x*2)
-            self.cockpit.setP(mousePos.y*2)
-
         if not self.weaponSets[0][0].active:
             self.alterEnergy(math.sin(1.071*self.energy/self.maxEnergy + 0.5)*self.energyRechargeRate*dt)
 
         self.updateEnergyUI()
         self.updateHealthUI()
         self.updateRadar()
-
-        #self.root.setH(self.root.getH() - mousePos.x*self.mouseSpeedHori*self.mouseSensitivity)
-        #self.actor.setP(self.actor.getP() + mousePos.y*self.mouseSpeedVert*self.mouseSensitivity)
 
         if keys["shoot"]:
             self.startFiringSet(0)
@@ -382,6 +514,10 @@ class Player(GameObject, ArmedObject):
                 self.directionIndicator.hide()
             if not self.lockMarkerRoot.isHidden():
                 self.lockMarkerRoot.hide()
+
+        self.updateCamera(dt)
+
+        GameObject.update(self, dt)
 
     def weaponReset(self, weapon):
         ArmedObject.weaponFired(self, weapon)

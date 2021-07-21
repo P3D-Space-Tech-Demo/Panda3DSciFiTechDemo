@@ -126,10 +126,11 @@ class GameObject():
         else:
             self.root.setPos(self.root.getPos() + self.velocity*dt)
 
-        if self.healthRechargeSuppressionTimer > 0:
-            self.healthRechargeSuppressionTimer -= dt
-        else:
-            self.alterHealth(self.healthRechargeRate*dt, None, 0, 0)
+        if self.health > 0:
+            if self.healthRechargeSuppressionTimer > 0:
+                self.healthRechargeSuppressionTimer -= dt
+            else:
+                self.alterHealth(self.healthRechargeRate*dt, None, 0, 0)
 
         self.updateTurn(self.turnRate, dt)
 

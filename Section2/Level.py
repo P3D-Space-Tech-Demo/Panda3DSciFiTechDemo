@@ -173,48 +173,47 @@ class Level():
     
     def update(self, player, keyMap, dt):
         if player is not None:
-            if player.health > 0:
-                # Player update
+            # Player update
 
-                player.update(keyMap, dt)
+            player.update(keyMap, dt)
 
-                # Enemy update
+            # Enemy update
 
-                [enemy.update(player, dt) for enemy in self.enemies]
+            [enemy.update(player, dt) for enemy in self.enemies]
 
-                newlyDeadEnemies = [enemy for enemy in self.enemies if enemy.health <= 0]
-                self.enemies = [enemy for enemy in self.enemies if enemy.health > 0]
+            newlyDeadEnemies = [enemy for enemy in self.enemies if enemy.health <= 0]
+            self.enemies = [enemy for enemy in self.enemies if enemy.health > 0]
 
-                for enemy in newlyDeadEnemies:
-                    enemy.onDeath()
+            for enemy in newlyDeadEnemies:
+                enemy.onDeath()
 
-                self.deadEnemies += newlyDeadEnemies
+            self.deadEnemies += newlyDeadEnemies
 
-                enemiesAnimatingDeaths = []
-                for enemy in self.deadEnemies:
-                    GameObject.update(enemy, dt)
-                    enemy.destroy()
-                self.deadEnemies = enemiesAnimatingDeaths
+            enemiesAnimatingDeaths = []
+            for enemy in self.deadEnemies:
+                GameObject.update(enemy, dt)
+                enemy.destroy()
+            self.deadEnemies = enemiesAnimatingDeaths
 
-                # Projectile update
+            # Projectile update
 
-                [proj.update(dt) for proj in self.projectiles]
+            [proj.update(dt) for proj in self.projectiles]
 
-                [proj.destroy() for proj in self.projectiles if proj.maxHealth > 0 and proj.health <= 0]
-                self.projectiles = [proj for proj in self.projectiles if proj.maxHealth <= 0 or proj.health > 0]
+            [proj.destroy() for proj in self.projectiles if proj.maxHealth > 0 and proj.health <= 0]
+            self.projectiles = [proj for proj in self.projectiles if proj.maxHealth <= 0 or proj.health > 0]
 
-                # Passive object update
+            # Passive object update
 
-                [obj.update(dt) for obj in self.passiveObjects]
+            [obj.update(dt) for obj in self.passiveObjects]
 
-                [blast.update(dt) for blast in self.blasts]
+            [blast.update(dt) for blast in self.blasts]
 
-                [blast.destroy() for blast in self.blasts if blast.timer <= 0]
-                self.blasts = [blast for blast in self.blasts if blast.timer > 0]
+            [blast.destroy() for blast in self.blasts if blast.timer <= 0]
+            self.blasts = [blast for blast in self.blasts if blast.timer > 0]
 
-                [explosion.update(dt) for explosion in self.explosions]
-                [explosion.destroy() for explosion in self.explosions if not explosion.isAlive()]
-                self.explosions = [explosion for explosion in self.explosions if explosion.isAlive()]
+            [explosion.update(dt) for explosion in self.explosions]
+            [explosion.destroy() for explosion in self.explosions if not explosion.isAlive()]
+            self.explosions = [explosion for explosion in self.explosions if explosion.isAlive()]
 
         [system.update(dt) for system in self.particleSystems]
 

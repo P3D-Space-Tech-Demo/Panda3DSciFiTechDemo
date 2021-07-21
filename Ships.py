@@ -27,6 +27,7 @@ shipSpec.maxSpeed = 25
 shipSpec.turnRate = 200
 shipSpec.acceleration = 60
 shipSpec.cockpitModelFile = "cockpit"
+shipSpec.shipModelFileLowPoly = "playerShip"
 
 shipSpecs.append(shipSpec)
 
@@ -50,6 +51,7 @@ shipSpec.maxSpeed = 18
 shipSpec.turnRate = 150
 shipSpec.acceleration = 40
 shipSpec.cockpitModelFile = "cockpit"
+shipSpec.shipModelFileLowPoly = "playerShip"
 
 shipSpecs.append(shipSpec)
 
@@ -73,5 +75,6 @@ shipSpec.maxSpeed = 14
 shipSpec.turnRate = 100
 shipSpec.acceleration = 20
 shipSpec.cockpitModelFile = "cockpit"
+shipSpec.shipModelFileLowPoly = "playerShip"
 
 shipSpecs.append(shipSpec)
