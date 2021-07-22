@@ -470,11 +470,15 @@ class WorkerDrone(Worker):
         self.released = False
         self.wobble_intervals = None
         self.rotor_intervals = []
+        
+        def rotor_thread():
 
-        for p in self.model.find_all_matches("**/propeller_*"):
-            interval = LerpHprInterval(p, 0.1, (360, 0, 0), (0, 0, 0))
-            interval.loop()
-            self.rotor_intervals.append(interval)
+            for p in self.model.find_all_matches("**/propeller_*"):
+                interval = LerpHprInterval(p, 0.1, (360, 0, 0), (0, 0, 0))
+                interval.loop()
+                self.rotor_intervals.append(interval)
+                
+        threading2._start_new_thread(rotor_thread, ())
 
         self.pivot = NodePath("drone_pivot")
         self.model.reparent_to(self.pivot)
@@ -1382,9 +1386,7 @@ class Section1:
         add_section_task(compartment.handle_next_request, "handle_compartment_requests")
 
         self.holo_ship = base.loader.load_model(ASSET_PATH + 'models/holo_starship_a.gltf')
-        holo.apply_hologram(self.holo_ship, pos_adj = (0, 0, 0.4), scale_adj = (0.98, 1, 0.95))
-        # wire_ship = base.loader.load_model('Assets/Section1/models/holo_starship_a.gltf')
-        # holo.make_wire(wire_ship, pos_adj = (0, 0, 0.35), scale_adj = (0.98, 1, 0.95))
+        threading2._start_new_thread(holo.apply_hologram, (self.holo_ship, (0, 0, 0.4), (0.98, 1, 0.95)))
 
         starship_id = "starship_a"  # should be determined by user
         self.starship_components = {}
