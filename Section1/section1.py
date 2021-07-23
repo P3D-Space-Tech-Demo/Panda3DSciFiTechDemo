@@ -331,7 +331,6 @@ class Worker:
         def deactivation_task(task):
 
             self.beam_root.hide()
-            tmp_node.wrt_reparent_to(base.render)
             add_section_task(deactivate_generator, "deactivate_generator")
 
             laser_plights = base.render.find_all_matches("**/plight*")
