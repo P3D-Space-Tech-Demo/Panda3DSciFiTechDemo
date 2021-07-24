@@ -68,6 +68,8 @@ class Player(GameObject, ArmedObject):
         self.numMissileSets = missileSetCounter - 1
         self.missileSetIndex = 0
 
+        self.maxRadarRange = 700
+
         light = PointLight("basic light")
         light.setColor(Vec4(1, 1, 1, 1))
         light.setAttenuation((1, 0.1, 0.01))
@@ -95,7 +97,7 @@ class Player(GameObject, ArmedObject):
         self.cameraTarget.setPos(0, 0, 0)
         self.cameraTarget.setHpr(0, 0, 0)
 
-        self.thirdPersonCameraPos = Vec3(0, -15, 5)
+        self.thirdPersonCameraPos = Vec3(0, -7.5, 2.5)
 
         self.cameraSpeedScalar = 80
 
@@ -128,7 +130,7 @@ class Player(GameObject, ArmedObject):
 
         common.currentSection.traverser.addCollider(self.targetingRayNP, self.targetingQueue)
 
-        #rayNodePath.show()
+        self.radarSize = 0.3
 
         self.uiRoot = common.base.aspect2d.attachNewNode(PandaNode("player UI"))
 
@@ -169,6 +171,7 @@ class Player(GameObject, ArmedObject):
         self.cockpit.reparentTo(self.actor)
 
         self.thirdPersonShip = common.base.loader.loadModel("Assets/Section2/models/{0}".format(shipSpec.shipModelFileLowPoly))
+        self.thirdPersonShip.setScale(0.5)
         self.thirdPersonShip.reparentTo(self.actor)
 
         bounds = self.thirdPersonShip.getTightBounds()
@@ -178,72 +181,112 @@ class Player(GameObject, ArmedObject):
 
         self.thirdPersonShip.hide()
 
-        self.setThirdPerson(False)
+        self.healthBarScalar = 0.00175
+        self.energyBarScalar = 0.00175
 
-        healthBarRoot = self.cockpit.find("**/healthBar")
-        if healthBarRoot is None or healthBarRoot.isEmpty():
-            healthBarRoot = self.uiRoot.attachNewNode(PandaNode("health bar root"))
+        self.healthBarRoot = self.cockpit.find("**/healthBar")
+        if self.healthBarRoot is None or self.healthBarRoot.isEmpty():
+            self.healthBarRoot = self.uiRoot.attachNewNode(PandaNode("health bar root"))
             print ("No health bar root found!")
 
-        energyBarRoot = self.cockpit.find("**/energyBar")
-        if energyBarRoot is None or energyBarRoot.isEmpty():
-            energyBarRoot = self.uiRoot.attachNewNode(PandaNode("energy bar root"))
+        self.energyBarRoot = self.cockpit.find("**/energyBar")
+        if self.energyBarRoot is None or self.energyBarRoot.isEmpty():
+            self.energyBarRoot = self.uiRoot.attachNewNode(PandaNode("energy bar root"))
             print ("No energy bar root found!")
             
-        missileCounterRoot = self.cockpit.find("**/missileCounter")
-        if missileCounterRoot is None or missileCounterRoot.isEmpty():
-            missileCounterRoot = self.uiRoot.attachNewNode(PandaNode("missile counter root"))
+        self.missileCounterRoot = self.cockpit.find("**/missileCounter")
+        if self.missileCounterRoot is None or self.missileCounterRoot.isEmpty():
+            self.missileCounterRoot = self.uiRoot.attachNewNode(PandaNode("missile counter root"))
             print ("No missile counter root found!")
 
-        radarRoot = self.cockpit.find("**/radar")
-        if radarRoot is None or radarRoot.isEmpty():
-            radarRoot = self.uiRoot.attachNewNode(PandaNode("radar root"))
+        self.radarRoot = self.cockpit.find("**/radar")
+        if self.radarRoot is None or self.radarRoot.isEmpty():
+            self.radarRoot = self.uiRoot.attachNewNode(PandaNode("radar root"))
             print ("No radar root found!")
             
-        speedometerRoot = self.cockpit.find("**/speedometer")
-        if speedometerRoot is None or speedometerRoot.isEmpty():
-            speedometerRoot = self.uiRoot.attachNewNode(PandaNode("speedometer root"))
+        self.speedometerRoot = self.cockpit.find("**/speedometer")
+        if self.speedometerRoot is None or self.speedometerRoot.isEmpty():
+            self.speedometerRoot = self.uiRoot.attachNewNode(PandaNode("speedometer root"))
             print ("No speedometer root found!")
+
+        self.healthBarRootThirdPerson = common.base.aspect2d.attachNewNode(PandaNode("health bar root 3rd person"))
+        self.healthBarRootThirdPerson.setPos(0.5, 0, -1)
+        barBacking = self.healthBarRootThirdPerson.attachNewNode(cardMaker.generate())
+        barBacking.setSz(self.maxHealth * self.healthBarScalar + 0.01)
+        barBacking.setSx(0.06)
+        barBacking.setColorScale(0.3, 0.3, 0.3, 1)
+        self.healthBarRootThirdPerson.hide()
+
+        self.energyBarRootThirdPerson = common.base.aspect2d.attachNewNode(PandaNode("energy bar root 3rd person"))
+        self.energyBarRootThirdPerson.setPos(-0.5, 0, -1)
+        barBacking = self.energyBarRootThirdPerson.attachNewNode(cardMaker.generate())
+        barBacking.setSz(self.maxEnergy * self.healthBarScalar + 0.01)
+        barBacking.setSx(0.06)
+        barBacking.setColorScale(0.3, 0.3, 0.3, 1)
+        self.energyBarRootThirdPerson.hide()
+
+        self.radarRootThirdPerson = common.base.aspect2d.attachNewNode(PandaNode("radar root 3rd person"))
+        self.radarRootThirdPerson.setPos(0, 0, -1 + self.radarSize)
+        radarBacking = common.base.loader.loadModel("Assets/Section2/models/uiRadar")
+        radarBacking.reparentTo(self.radarRootThirdPerson)
+        radarBacking.setColorScale(0.3, 0.3, 0.3, 0.5)
+        radarBacking.setScale(self.radarSize)
+        radarBacking.setTransparency(True)
+        self.radarRootThirdPerson.hide()
+
+        self.speedometerRootThirdPerson = common.base.aspect2d.attachNewNode(PandaNode("speedometer root 3rd person"))
+        self.speedometerRootThirdPerson.setPos(0.85, 0, -0.9)
+        barBacking = self.speedometerRootThirdPerson.attachNewNode(cardMaker.generate())
+        barBacking.setSz(0.18)
+        barBacking.setSx(0.2)
+        barBacking.setZ(-0.1)
+        barBacking.setColorScale(0.7, 0.7, 0.7, 1)
+        self.speedometerRootThirdPerson.hide()
+
+        self.missileCounterRootThirdPerson = common.base.aspect2d.attachNewNode(PandaNode("missile counter root 3rd person"))
+        self.missileCounterRootThirdPerson.setPos(-0.85, 0, -0.9)
+        barBacking = self.missileCounterRootThirdPerson.attachNewNode(cardMaker.generate())
+        barBacking.setSz(0.18)
+        barBacking.setSx(0.2)
+        barBacking.setZ(-0.1)
+        barBacking.setColorScale(0.7, 0.7, 0.7, 1)
+        self.missileCounterRootThirdPerson.hide()
 
         self.radarDrawer = MeshDrawer()
         self.radarDrawer.setBudget(4096)
 
         self.radarDrawerNP = self.radarDrawer.getRoot()
-        self.radarDrawerNP.reparentTo(radarRoot)
+        self.radarDrawerNP.reparentTo(self.radarRoot)
         self.radarDrawerNP.setTwoSided(True)
         self.radarDrawerNP.setLightOff()
         self.radarDrawerNP.setDepthWrite(False)
         self.radarDrawerNP.setTransparency(True)
 
-        self.healthBar = healthBarRoot.attachNewNode(cardMaker.generate())
+        self.healthBar = self.healthBarRoot.attachNewNode(cardMaker.generate())
         self.healthBar.setSx(0.05)
 
-        self.energyBar = energyBarRoot.attachNewNode(cardMaker.generate())
+        self.energyBar = self.energyBarRoot.attachNewNode(cardMaker.generate())
         self.energyBar.setSx(0.05)
-
-        self.healthBarScalar = 0.00175
-        self.energyBarScalar = 0.00175
 
         self.missileCounter = DirectLabel(text = "",
                                           text_mayChange = True,
                                           scale = 0.09,
                                           relief = None,
-                                          parent = missileCounterRoot)
-
-        self.maxRadarRange = 700
-        self.radarSize = 0.3
+                                          parent = self.missileCounterRoot)
 
         self.speedometer = DirectLabel(text = "",
                                        text_mayChange = True,
                                        scale = 0.09,
                                        relief = None,
-                                       parent = speedometerRoot)
+                                       parent = self.speedometerRoot)
 
         self.updateHealthUI()
         self.updateEnergyUI()
         self.updateMissileUI()
         self.updateRadar()
         self.updateSpeedometer()
+
+        self.setThirdPerson(False)
 
         self.updatingEffects = []
 
@@ -262,6 +305,18 @@ class Player(GameObject, ArmedObject):
             self.cameraSpeedScalar = 10
             self.thirdPersonShip.show()
             self.cockpit.hide()
+
+            self.radarRootThirdPerson.show()
+            self.healthBarRootThirdPerson.show()
+            self.energyBarRootThirdPerson.show()
+            self.missileCounterRootThirdPerson.show()
+            self.speedometerRootThirdPerson.show()
+
+            self.radarDrawerNP.reparentTo(self.radarRootThirdPerson)
+            self.healthBar.reparentTo(self.healthBarRootThirdPerson)
+            self.energyBar.reparentTo(self.energyBarRootThirdPerson)
+            self.missileCounter.reparentTo(self.missileCounterRootThirdPerson)
+            self.speedometer.reparentTo(self.speedometerRootThirdPerson)
         else:
             self.cameraTarget.setY(0)
             self.cameraTarget.setZ(0)
@@ -269,6 +324,18 @@ class Player(GameObject, ArmedObject):
             self.cameraSpeedScalar = 90
             self.cockpit.show()
             self.thirdPersonShip.hide()
+
+            self.radarRootThirdPerson.hide()
+            self.healthBarRootThirdPerson.hide()
+            self.energyBarRootThirdPerson.hide()
+            self.missileCounterRootThirdPerson.hide()
+            self.speedometerRootThirdPerson.hide()
+
+            self.radarDrawerNP.reparentTo(self.radarRoot)
+            self.healthBar.reparentTo(self.healthBarRoot)
+            self.energyBar.reparentTo(self.energyBarRoot)
+            self.missileCounter.reparentTo(self.missileCounterRoot)
+            self.speedometer.reparentTo(self.speedometerRoot)
 
     def forceCameraPosition(self):
         common.base.camera.setPos(self.cameraTarget, 0, 0, 0)
@@ -296,7 +363,7 @@ class Player(GameObject, ArmedObject):
                 randomVec1 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
                 randomVec2 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
 
-                explosion = Explosion(4, "explosion", shaderInputs, "noise", randomVec1, randomVec2)
+                explosion = Explosion(2, "explosion", shaderInputs, "noise", randomVec1, randomVec2)
 
                 dir = Vec3(random.uniform(-1, 1),
                            random.uniform(-1, 1),
@@ -314,7 +381,7 @@ class Player(GameObject, ArmedObject):
                 self.thirdPersonShip.hide()
 
                 shaderInputs = {
-                    "duration" : 1.0,
+                    "duration" : 1.125,
                     "expansionFactor" : 7,
                     "rotationRate" : 0.2,
                     "fireballBittiness" : 1.0,
@@ -324,7 +391,7 @@ class Player(GameObject, ArmedObject):
                 randomVec1 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
                 randomVec2 = Vec2(random.uniform(0, 1), random.uniform(0, 1))
 
-                explosion = Explosion(25, "explosion", shaderInputs, "noise", randomVec1, randomVec2)
+                explosion = Explosion(20, "explosion", shaderInputs, "noise", randomVec1, randomVec2)
 
                 explosion.activate(self.velocity, self.root.getPos(common.base.render))
                 common.currentSection.currentLevel.explosions.append(explosion)
@@ -352,7 +419,7 @@ class Player(GameObject, ArmedObject):
                     dir.normalize()
                     dir *= 15
 
-                    explosion = Explosion(5, "explosion", shaderInputs, "noise", randomVec1, randomVec2)
+                    explosion = Explosion(2.5, "explosion", shaderInputs, "noise", randomVec1, randomVec2)
 
                     explosion.activate(self.velocity + dir, self.root.getPos(common.base.render))
                     common.currentSection.currentLevel.explosions.append(explosion)
@@ -394,13 +461,13 @@ class Player(GameObject, ArmedObject):
         if self.walking:
             self.inControl = True
 
-        mouseWatcher = base.mouseWatcherNode
+        mouseWatcher = common.base.mouseWatcherNode
         if mouseWatcher.hasMouse():
-            xSize = base.win.getXSize()
-            ySize = base.win.getYSize()
+            xSize = common.base.win.getXSize()
+            ySize = common.base.win.getYSize()
             xPix = float(xSize % 2)/xSize
             yPix = float(ySize % 2)/ySize
-            mousePos = Vec2(base.mouseWatcherNode.getMouse())
+            mousePos = Vec2(common.base.mouseWatcherNode.getMouse())
             mousePos.addX(-xPix)
             mousePos.addY(-yPix)
             if abs(mousePos.x) < xPix:
