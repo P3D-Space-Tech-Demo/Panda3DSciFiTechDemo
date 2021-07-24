@@ -110,8 +110,8 @@ def disable_fp_camera():
 
 def update_cam(Task):
     # the player movement speed
-    movementSpeedForward = 10
-    movementSpeedBackward = 10
+    movementSpeedForward = 15
+    movementSpeedBackward = 15
     striveSpeed = 11
     static_pos_bool = False
     static_pos = Vec3()
