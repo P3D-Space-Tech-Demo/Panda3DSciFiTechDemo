@@ -1286,52 +1286,36 @@ class Hangar:
         stair_3 = self.model.find("**/platform_stair_step3")
         stair_4 = self.model.find("**/platform_stair_step4")
         stair_5 = self.model.find("**/platform_stair_step5")
+        stair_1_brbn = base.render.find('**/stair_1_brbn')
+        stair_2_brbn = base.render.find('**/stair_2_brbn')
+        stair_3_brbn = base.render.find('**/stair_3_brbn')
+        stair_4_brbn = base.render.find('**/stair_4_brbn')
+        stair_5_brbn = base.render.find('**/stair_5_brbn')
         
-        def move_stair_1():
-            stair_1_brbn = base.render.find('**/stair_1_brbn')
+        s1_inter = LerpPosInterval(stair_1, 0.75, (0, 0, -3.85), stair_1.get_pos(base.render))
+        s2_inter = LerpPosInterval(stair_2, 0.75, (0, 0, -3.25), stair_2.get_pos(base.render))
+        s3_inter = LerpPosInterval(stair_3, 0.75, (0, 0, -2.75), stair_3.get_pos(base.render))
+        s4_inter = LerpPosInterval(stair_4, 0.75, (0, 0, -2.2), stair_4.get_pos(base.render))
+        s5_inter = LerpPosInterval(stair_5, 0.75, (0, 0, -1.65), stair_5.get_pos(base.render))
         
-            for x in range(65):
-                time.sleep(0.01)
-                stair_1.set_z(stair_1.get_z() + 0.01)
-                stair_1_brbn.set_z(stair_1_brbn.get_z() + 0.01)
-                
-        def move_stair_2():
-            stair_2_brbn = base.render.find('**/stair_2_brbn')
+        s1_brbn_inter = LerpPosInterval(stair_1_brbn, 0.75, (0, 0, -3.85), stair_1_brbn.get_pos(base.render))
+        s2_brbn_inter = LerpPosInterval(stair_2_brbn, 0.75, (0, 0, -3.25), stair_2_brbn.get_pos(base.render))
+        s3_brbn_inter = LerpPosInterval(stair_3_brbn, 0.75, (0, 0, -2.75), stair_3_brbn.get_pos(base.render))
+        s4_brbn_inter = LerpPosInterval(stair_4_brbn, 0.75, (0, 0, -2.2), stair_4_brbn.get_pos(base.render))
+        s5_brbn_inter = LerpPosInterval(stair_5_brbn, 0.75, (0, 0, -1.65), stair_5_brbn.get_pos(base.render))
         
-            for x in range(95):
-                time.sleep(0.01)
-                stair_2.set_z(stair_2.get_z() + 0.01)
-                stair_2_brbn.set_z(stair_2_brbn.get_z() + 0.01)
-               
-        def move_stair_3():
-            stair_3_brbn = base.render.find('**/stair_3_brbn')
-        
-            for x in range(115):
-                time.sleep(0.01)
-                stair_3.set_z(stair_3.get_z() + 0.01)
-                stair_3_brbn.set_z(stair_3_brbn.get_z() + 0.01)
-                
-        def move_stair_4():
-            stair_4_brbn = base.render.find('**/stair_4_brbn')            
-            
-            for x in range(140):
-                time.sleep(0.01)
-                stair_4.set_z(stair_4.get_z() + 0.01)
-                stair_4_brbn.set_z(stair_4_brbn.get_z() + 0.01)
-                
-        def move_stair_5():
-            stair_5_brbn = base.render.find('**/stair_5_brbn')
-            
-            for x in range(165):
-                time.sleep(0.01)
-                stair_5.set_z(stair_5.get_z() + 0.01)
-                stair_5_brbn.set_z(stair_5_brbn.get_z() + 0.01)
-                
-        threading2._start_new_thread(move_stair_1, ())
-        threading2._start_new_thread(move_stair_2, ())
-        threading2._start_new_thread(move_stair_3, ())
-        threading2._start_new_thread(move_stair_4, ())
-        threading2._start_new_thread(move_stair_5, ())
+        stair_par = Parallel()
+        stair_par.append(s1_inter)
+        stair_par.append(s2_inter)
+        stair_par.append(s3_inter)
+        stair_par.append(s4_inter)
+        stair_par.append(s5_inter)
+        stair_par.append(s1_brbn_inter)
+        stair_par.append(s2_brbn_inter)
+        stair_par.append(s3_brbn_inter)
+        stair_par.append(s4_brbn_inter)
+        stair_par.append(s5_brbn_inter)
+        stair_par.start()
 
 class Section1:
 
