@@ -33,7 +33,7 @@ def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048
     lens = PerspectiveLens()
     lens.set_near_far(0.5, 5000)
     spotlight.set_lens(lens)
-    # spotlight.set_attenuation((0.5, 0, 0.0000005))
+    # spotlight.set_attenuation((0.5, 0, 0.005))
     spotlight = base.render.attach_new_node(spotlight)
     spotlight.set_pos(input_pos)
     spotlight.look_at(look_at)
@@ -1367,9 +1367,11 @@ class Section1:
             if self.cam_is_fps:
                 fp_ctrl.disable_fp_camera()
                 enable_orbital_cam()
+                
             else:
                 base.task_mgr.remove("move_camera")
                 fp_ctrl.enable_fp_camera()
+            
             self.cam_is_fps = not self.cam_is_fps
 
         base.accept("\\", cam_switch)
@@ -1636,8 +1638,8 @@ class Section1:
         base.ignore("\\")
 
         base.camera.reparent_to(base.render)
-        self.cam_target.detach_node()
-        self.cam_target = None
+        # self.cam_target.detach_node()
+        # self.cam_target = None
         base.win.remove_display_region(self.elevator_display_region)
         Elevator.cam_target.detach_node()
         Elevator.cam_target = None
