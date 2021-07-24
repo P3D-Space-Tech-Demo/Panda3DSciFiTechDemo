@@ -5,7 +5,7 @@
 #version 130
 
 #ifndef MAX_LIGHTS
-    #define MAX_LIGHTS 18
+    #define MAX_LIGHTS 11
 #endif
 
 uniform struct p3d_MaterialParameters {
@@ -109,7 +109,7 @@ void main() {
     vec3 spec_color = mix(F0, base_color.rgb, metallic);
 // Normal Mapping
     vec3 n = normalize(v_tbn * (2.0 * texture2D(p3d_Texture2, v_texcoord).rgb - 1.0));
-    vec3 v = normalize(-v_position);
+    vec3 v = normalize(v_position);
 
     float ambient_occlusion = metal_rough.r;
     vec3 emission = p3d_Material.emission.rgb * texture2D(p3d_Texture3, v_texcoord).rgb;
@@ -127,7 +127,7 @@ void main() {
         vec3 h = normalize(l + v);
         float dist = length(light_pos);
         vec3 att_const = p3d_LightSource[i].attenuation;
-        float attenuation_factor = 1.0 / (att_const.x + att_const.y * dist + att_const.z * dist * dist);
+        float attenuation_factor = 1.0 / (att_const.x + att_const.y + att_const.z * dist);
         float spotcos = dot(normalize(p3d_LightSource[i].spotDirection), -l);
         float spotcutoff = p3d_LightSource[i].spotCosCutoff;
         float shadowSpot = smoothstep(spotcutoff-SPOTSMOOTH, spotcutoff+SPOTSMOOTH, spotcos);
@@ -156,7 +156,7 @@ void main() {
         color.rgb += func_params.n_dot_l * lightcol * (diffuse_contrib + spec_contrib) * shadow;
     }
 
-    color.rgb += diffuse_color * p3d_LightModel.ambient.rgb * ambient_occlusion;
+    color.rgb += diffuse_color * (p3d_LightModel.ambient.rgb * 1.5) * ambient_occlusion;
     color.rgb += emission;
 
     // Exponential fog

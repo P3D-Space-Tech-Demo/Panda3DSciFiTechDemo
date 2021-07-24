@@ -33,7 +33,7 @@ def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048
     lens = PerspectiveLens()
     lens.set_near_far(0.5, 5000)
     spotlight.set_lens(lens)
-    spotlight.set_attenuation((0.5, 0, 0.0000005))
+    # spotlight.set_attenuation((0.5, 0, 0.0000005))
     spotlight = base.render.attach_new_node(spotlight)
     spotlight.set_pos(input_pos)
     spotlight.look_at(look_at)
@@ -1039,7 +1039,7 @@ class Hangar:
         # self.model.set_shader_off()
         
         amb_light = AmbientLight('amblight')
-        amb_light.set_color((1, 1, 1, 0.5))
+        amb_light.set_color((0.8, 0.8, 0.8, 0.9))
         amb_light_node = self.model.attach_new_node(amb_light)
         self.model.set_light(amb_light_node)
 
@@ -1694,6 +1694,8 @@ def initialise(data=None):
 
     base.render.set_antialias(AntialiasAttrib.MMultisample)
     
+    base.camera.set_pos(0, 0, -2)
+    
     scene_filters.set_blur_sharpen(0.8)
     scene_filters.set_bloom()
 
@@ -1704,22 +1706,22 @@ def initialise(data=None):
     
     base.accept('f4', print_player_pos)
 
-    for x in range(6):
+    for x in range(5):
         plight_1 = PointLight('plight_1')
         # add plight props here
         plight_1_node = base.render.attach_new_node(plight_1)
         plight_1_node.set_pos(1000, 1000, 1000)
         plight_1_node.node().set_color((0.1, 0.1, 0.9, 1.0))
-        plight_1_node.node().set_attenuation((0.5, 0, 0.05))
+        plight_1_node.node().set_attenuation((0.5, 0, 0.005))
         base.render.set_light(plight_1_node)
         section_lights.append(plight_1_node)
 
     plight_1 = PointLight('scene_light_1')
     # add plight props here
     plight_1_node = base.render.attach_new_node(plight_1)
-    plight_1_node.set_pos(0, 0, 40)
+    plight_1_node.set_pos(0, 0, 30)
     plight_1_node.node().set_color((1, 1, 1, 1))
-    plight_1_node.node().set_attenuation((0.5, 0, 0.05))
+    # plight_1_node.node().set_attenuation((0.5, 0, 0.05))
     base.render.set_light(plight_1_node)
     section_lights.append(plight_1_node)
     
@@ -1735,9 +1737,9 @@ def initialise(data=None):
     make_simple_spotlight((0, 0, 900), (0, 5, 10), False)
     make_simple_spotlight((200, 100, 900), (0, 5, 10), True)
     make_simple_spotlight((0, 0, 1300), (-90, 108, 10), False)
-    make_simple_spotlight((0, 0, 1300), (-90, -120, 10), False)
-    make_simple_spotlight((0, 0, 1300), (102, -145, 10), False)
-    make_simple_spotlight((0, 0, 1300), (94, 120, 10), False)
+    # make_simple_spotlight((0, 0, 1300), (-90, -120, 10), False)
+    # make_simple_spotlight((0, 0, 1300), (102, -145, 10), False)
+    # make_simple_spotlight((0, 0, 1300), (94, 120, 10), False)
 
     section = Section1()
     common.currentSection = section

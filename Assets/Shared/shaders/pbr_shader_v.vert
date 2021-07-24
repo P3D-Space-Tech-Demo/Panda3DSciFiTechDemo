@@ -4,7 +4,7 @@
 #version 130
 
 #ifndef MAX_LIGHTS
-    #define MAX_LIGHTS 18
+    #define MAX_LIGHTS 11
 #endif
 
 uniform struct p3d_LightSourceParameters {
