@@ -23,6 +23,9 @@ base = ShowBase()
 # load a scene shader
 vert_shader = "Assets/Shared/shaders/pbr_shader_v.vert"
 frag_shader = "Assets/Shared/shaders/pbr_shader_f.frag"
+invert_vert = "Assets/Shared/shaders/pbr_shader_v_invert.vert"
+invert_frag = "Assets/Shared/shaders/pbr_shader_f_invert.frag"
+metal_shader = Shader.load(Shader.SL_GLSL, invert_vert, invert_frag)
 scene_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 #base.render.set_shader(scene_shader)
 

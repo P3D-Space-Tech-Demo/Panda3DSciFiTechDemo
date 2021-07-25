@@ -1036,17 +1036,39 @@ class Hangar:
         self.model.reparent_to(base.render)
         ceiling = self.model.find('**/ceiling')
         ceiling.set_light_off()
-        # self.model.set_shader_off()
+        
+        # apply metalness effect shader
+        alcove = self.model.find('**/alcove')
+        alcove.set_shader_off()
+        alcove.set_shader(metal_shader)
+        
+        for w in self.model.find_all_matches('**/wall*'):
+            w.set_shader_off()
+            w.set_shader(metal_shader)
+            
+        for d in self.model.find_all_matches("**/entrance_door*"):
+            d.set_shader_off()
+            d.set_shader(metal_shader)
+            d.set_pos(157., 0., -4.)
+            
+        for d in self.model.find_all_matches("**/door_*"):
+            d.set_shader_off()
+            d.set_shader(metal_shader)
+            
+        for s in self.model.find_all_matches("**/support_anchor*"):
+            s.set_shader_off()
+            s.set_shader(metal_shader)
+            
+        for s in self.model.find_all_matches("**/platform_stair*"):
+            s.set_shader_off()
+            s.set_shader(metal_shader)
         
         amb_light = AmbientLight('amblight')
-        amb_light.set_color((0.8, 0.8, 0.8, 0.9))
+        amb_light.set_color((0.8, 0.8, 0.8, 1))
         amb_light_node = self.model.attach_new_node(amb_light)
         self.model.set_light(amb_light_node)
         entrance_floor = self.model.find("**/entrance_floor")
         entrance_floor.set_pos(157., 0., -4.)
-
-        for door in self.model.find_all_matches("**/entrance_door*"):
-            door.set_pos(157., 0., -4.)
         
         # make initial stair collision
         stair_1 = self.model.find("**/platform_stair_step1")
@@ -1146,6 +1168,11 @@ class Hangar:
     def create_corridor(self):
 
         model = base.loader.load_model(ASSET_PATH + "models/hangar_corridor.gltf")
+        
+        # apply metalness effect shader
+        model.set_shader_off()
+        model.set_shader(metal_shader)
+        
         door_frame = model.find("**/corridor_door_frame")
         doors = self.model.find_all_matches("**/entrance_door*")
         entrance_floor = self.model.find("**/entrance_floor")
@@ -1177,6 +1204,9 @@ class Hangar:
     def add_containers(self):
 
         container = self.model.find("**/container_type_b")
+        container.set_shader_off()
+        container.set_shader(metal_shader)
+        
         stack_dist = 18. + random.random() * 2.
 
         for root in self.model.find_all_matches("**/container_root_*"):
@@ -1792,9 +1822,9 @@ def initialise(data=None):
     base.render.set_light(plight_2_node)
     section_lights.append(plight_2_node)
 
-    make_simple_spotlight((0, 0, 900), (0, 5, 10), False)
     make_simple_spotlight((200, 100, 900), (0, 5, 10), True)
-    make_simple_spotlight((0, 0, 1300), (-90, 108, 10), False)
+    make_simple_spotlight((-200, 0, 2000), (146.4, -3.3, 5.7), False)
+    make_simple_spotlight((0, 0, 2000), (-90, 108, 10), False)
     # make_simple_spotlight((0, 0, 1300), (-90, -120, 10), False)
     # make_simple_spotlight((0, 0, 1300), (102, -145, 10), False)
     # make_simple_spotlight((0, 0, 1300), (94, 120, 10), False)
