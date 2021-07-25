@@ -1042,18 +1042,11 @@ class Hangar:
         amb_light.set_color((0.8, 0.8, 0.8, 0.9))
         amb_light_node = self.model.attach_new_node(amb_light)
         self.model.set_light(amb_light_node)
+        entrance_floor = self.model.find("**/entrance_floor")
+        entrance_floor.set_pos(157., 0., -4.)
 
-        container = self.model.find("**/container_type_b")
-
-        for root in self.model.find_all_matches("**/container_root_*"):
-
-            for anchor in root.find_all_matches("**/container_b_anchor*"):
-                container.copy_to(anchor)
-
-            # root.flatten_strong()
-            root.ls()
-
-        container.detach_node()
+        for door in self.model.find_all_matches("**/entrance_door*"):
+            door.set_pos(157., 0., -4.)
         
         # make initial stair collision
         stair_1 = self.model.find("**/platform_stair_step1")
@@ -1069,6 +1062,8 @@ class Hangar:
         fp_ctrl.make_collision('stair_5_brbn', stair_5, 0, 0, stair_5.get_pos())
         
         self.create_support_structure()
+        self.create_corridor()
+        self.add_containers()
         self.lights = self.model.find_all_matches("**/forcefield_light*")
 
         for light in self.lights:
@@ -1112,10 +1107,15 @@ class Hangar:
 
     def create_support_structure(self):
 
-        root = self.model.find("**/support_structure")
         corner_beam = self.model.find("**/support_corner")
         vertical_beam = self.model.find("**/support_vertical")
         horizontal_beam = self.model.find("**/support_horizontal")
+        roots = []
+        roots.append(self.model.find("**/support_anchor_root_back"))
+        roots.append(self.model.find("**/support_anchor_root_front"))
+        roots.append(self.model.find("**/support_anchor_root_left"))
+        roots.append(self.model.find("**/support_anchor_root_right"))
+        roots.extend(self.model.find_all_matches("**/support_anchor_root_ceiling*"))
 
         anchor = self.model.find("**/support_anchor_front_left")
         beam_left = corner_beam.copy_to(anchor)
@@ -1139,7 +1139,79 @@ class Hangar:
         corner_beam.detach_node()
         vertical_beam.detach_node()
         horizontal_beam.detach_node()
-        root.flatten_strong()
+
+        for root in roots:
+            root.flatten_strong()
+
+    def create_corridor(self):
+
+        model = base.loader.load_model(ASSET_PATH + "models/hangar_corridor.gltf")
+        door_frame = model.find("**/corridor_door_frame")
+        doors = self.model.find_all_matches("**/entrance_door*")
+        entrance_floor = self.model.find("**/entrance_floor")
+        segment_a = model.find("**/corridor_segment_a")
+        segment_b = model.find("**/corridor_segment_b")
+
+        for anchor in model.find_all_matches("**/door_frame_anchor*"):
+            entrance_floor_copy = entrance_floor.copy_to(anchor)
+            entrance_floor_copy.set_pos(0., 0., 0.)
+            for door in doors:
+                door_copy = door.copy_to(anchor)
+                door_copy.set_pos(0., 0., 0.)
+
+        for anchor in model.find_all_matches("**/door_frame_anchor*"):
+            door_frame.copy_to(anchor)
+
+        for anchor in model.find_all_matches("**/segment_a_anchor*"):
+            segment_a.copy_to(anchor)
+
+        for anchor in model.find_all_matches("**/segment_b_anchor*"):
+            segment_b.copy_to(anchor)
+
+        door_frame.detach_node()
+        segment_a.detach_node()
+        segment_b.detach_node()
+        model.set_pos(157., 0., -4.)
+        model.reparent_to(self.model)
+
+    def add_containers(self):
+
+        container = self.model.find("**/container_type_b")
+        stack_dist = 18. + random.random() * 2.
+
+        for root in self.model.find_all_matches("**/container_root_*"):
+
+            stack_count = random.randint(2, 4)
+            max_angle = 360. - 90. * stack_count
+            angle = 0.
+            root.set_h(random.random() * 360.)
+
+            for _ in range(stack_count):
+
+                stack_pivot = root.attach_new_node("stack_pivot")
+                angle = random.uniform(angle, max_angle)
+                stack_pivot.set_h(angle)
+                angle += 90.
+                max_angle += 90.
+                stack_root = stack_pivot.attach_new_node("stack_root")
+                stack_root.set_x(stack_dist)
+                stack_root.set_h(random.random() * 360.)
+
+                for i in range(random.randint(1, 5)):
+                    container_copy = container.copy_to(stack_root)
+                    container_copy.set_h(random.random() * 360.)
+                    container_copy.set_z(i * 10.)
+
+        '''
+        for root in self.model.find_all_matches("**/container_root_*"):
+
+            for anchor in root.find_all_matches("**/container_b_anchor*"):
+                container.copy_to(anchor)
+        '''
+
+#            root.flatten_strong()
+
+        container.detach_node()
 
     def destroy(self):
 
