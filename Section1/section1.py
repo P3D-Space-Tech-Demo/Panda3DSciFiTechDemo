@@ -940,13 +940,6 @@ class DroneCompartment:
 
         DroneCompartment.instance = self
         self.model = base.loader.load_model(ASSET_PATH + "models/worker_drone_compartment.gltf")
-        
-        amb_light = AmbientLight('drone_compartment_amblight')
-        amb_light.set_color((0.3, 0.3, 0.3, 0.5))
-        amb_light_node = self.model.attach_new_node(amb_light)
-        self.model.set_light(amb_light_node)
-        section_lights.append(amb_light_node)
-        
         self.model.reparent_to(base.render)
         self.model.set_shader_off()
         self.idle = True
@@ -1066,9 +1059,11 @@ class Hangar:
             s.set_shader(metal_shader)
         
         amb_light = AmbientLight('amblight')
+        amb_light.set_priority(50)
         amb_light.set_color((0.8, 0.8, 0.8, 1))
         amb_light_node = self.model.attach_new_node(amb_light)
         self.model.set_light(amb_light_node)
+        section_lights.append(amb_light_node)
         entrance_floor = self.model.find("**/entrance_floor")
         entrance_floor.set_pos(157., 0., -4.)
         
@@ -1084,6 +1079,29 @@ class Hangar:
         fp_ctrl.make_collision('stair_3_brbn', stair_3, 0, 0, stair_3.get_pos())
         fp_ctrl.make_collision('stair_4_brbn', stair_4, 0, 0, stair_4.get_pos())
         fp_ctrl.make_collision('stair_5_brbn', stair_5, 0, 0, stair_5.get_pos())
+        
+        self.alcove_toggle = False
+        
+        def open_entrance_doors():
+            if not self.alcove_toggle:
+                door_right = self.model.find('**/entrance_door_right')
+                dr_pos = door_right.get_pos(base.render)
+                door_left = self.model.find('**/entrance_door_left')
+                dl_pos = door_left.get_pos(base.render)
+        
+                pd_dist = (dr_pos - base.camera.get_pos(base.render)).length()
+        
+                if pd_dist < 30:
+                    self.alcove_toggle = True
+                    
+                    dr_inter = LerpPosInterval(door_right, 1.5, (dr_pos[0], dr_pos[1] - 6, dr_pos[2]), dr_pos, blendType='easeInOut')
+                    dl_inter = LerpPosInterval(door_left, 1.5, (dl_pos[0], dl_pos[1] + 6, dl_pos[2]), dl_pos, blendType='easeInOut')
+                    para = Parallel()
+                    para.append(dr_inter)
+                    para.append(dl_inter)
+                    para.start()
+                
+        base.accept('o', open_entrance_doors)
         
         self.create_support_structure()
         self.create_corridor()
@@ -1796,6 +1814,7 @@ def initialise(data=None):
 
     for x in range(5):
         plight_1 = PointLight('plight_1')
+        plight_1.set_priority(5)
         # add plight props here
         plight_1_node = base.render.attach_new_node(plight_1)
         plight_1_node.set_pos(1000, 1000, 1000)
@@ -1806,6 +1825,7 @@ def initialise(data=None):
 
     plight_1 = PointLight('scene_light_1')
     # add plight props here
+    plight_1.set_priority(10)
     plight_1_node = base.render.attach_new_node(plight_1)
     plight_1_node.set_pos(0, 0, 30)
     plight_1_node.node().set_color((1, 1, 1, 1))
@@ -1814,6 +1834,7 @@ def initialise(data=None):
     section_lights.append(plight_1_node)
     
     plight_2 = PointLight('scene_light_2')
+    plight_2.set_priority(10)
     # add plight props here
     plight_2_node = base.render.attach_new_node(plight_2)
     plight_2_node.set_pos(0, 0, 5)
@@ -1822,9 +1843,9 @@ def initialise(data=None):
     base.render.set_light(plight_2_node)
     section_lights.append(plight_2_node)
 
-    make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
-    make_simple_spotlight((-200, 0, 2000), (146.4, -3.3, 5.7), False)
-    make_simple_spotlight((0, 0, 2000), (-90, 108, 10), False)
+    make_simple_spotlight((200, 100, 900), (0, 5, 10), False, 15)
+    make_simple_spotlight((-200, 0, 2000), (146.4, -3.3, 5.7), False, 15)
+    make_simple_spotlight((0, 0, 2000), (-90, 108, 10), False, 15)
     # make_simple_spotlight((0, 0, 1300), (-90, -120, 10), False)
     # make_simple_spotlight((0, 0, 1300), (102, -145, 10), False)
     # make_simple_spotlight((0, 0, 1300), (94, 120, 10), False)
