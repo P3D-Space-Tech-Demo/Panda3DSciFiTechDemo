@@ -1708,15 +1708,13 @@ class Section1:
         self.destroy_holo_ship()
 
     def destroy_holo_ship(self):
-        p_topper_force_brbn = base.render.find('**/brbn_force')
-        if 'not found' not in str(p_topper_force_brbn):
-            base.world.remove(p_topper_force_brbn.node())
-            p_topper_force_brbn.detach_node()
-
         if self.holo_ship:
             self.holo_ship.detach_node()
             self.holo_ship = None
             holo.holo_cleanup()
+            p_topper_force_brbn = base.render.find('**/brbn_force')
+            base.world.remove(p_topper_force_brbn.node())
+            p_topper_force_brbn.detach_node()
 
     def destroy(self):
 
