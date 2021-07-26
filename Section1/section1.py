@@ -24,8 +24,10 @@ def add_section_task(task, task_id, *args, **kwargs):
 
 section_lights = []
 
-def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048):
+def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048, priority = 0):
     spotlight = Spotlight('random_light')
+    spotlight.set_priority(priority)
+    
     if shadows:
         spotlight.set_shadow_caster(True, shadow_res, shadow_res)
         spotlight.camera_mask = SHADOW_MASK
@@ -1820,7 +1822,7 @@ def initialise(data=None):
     base.render.set_light(plight_2_node)
     section_lights.append(plight_2_node)
 
-    make_simple_spotlight((200, 100, 900), (0, 5, 10), True)
+    make_simple_spotlight((200, 100, 900), (0, 5, 10), False)
     make_simple_spotlight((-200, 0, 2000), (146.4, -3.3, 5.7), False)
     make_simple_spotlight((0, 0, 2000), (-90, 108, 10), False)
     # make_simple_spotlight((0, 0, 1300), (-90, -120, 10), False)
