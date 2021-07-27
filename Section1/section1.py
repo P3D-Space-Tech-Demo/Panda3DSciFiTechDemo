@@ -27,7 +27,7 @@ section_lights = []
 def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048, priority = 0):
     spotlight = Spotlight('random_light')
     spotlight.set_priority(priority)
-    
+
     if shadows:
         spotlight.set_shadow_caster(True, shadow_res, shadow_res)
         spotlight.camera_mask = SHADOW_MASK
@@ -471,14 +471,14 @@ class WorkerDrone(Worker):
         self.released = False
         self.wobble_intervals = None
         self.rotor_intervals = []
-        
+
         def rotor_thread():
 
             for p in self.model.find_all_matches("**/propeller_*"):
                 interval = LerpHprInterval(p, 0.1, (360, 0, 0), (0, 0, 0))
                 interval.loop()
                 self.rotor_intervals.append(interval)
-                
+
         threading2._start_new_thread(rotor_thread, ())
 
         self.pivot = NodePath("drone_pivot")
@@ -1031,78 +1031,125 @@ class Hangar:
         self.model.reparent_to(base.render)
         ceiling = self.model.find('**/ceiling')
         ceiling.set_light_off()
-        
+
         # apply metalness effect shader
         alcove = self.model.find('**/alcove')
         alcove.set_shader_off()
         alcove.set_shader(metal_shader)
-        
+
         for w in self.model.find_all_matches('**/wall*'):
             w.set_shader_off()
             w.set_shader(metal_shader)
-            
-        for d in self.model.find_all_matches("**/entrance_door*"):
+
+        entrance_doors = list(self.model.find_all_matches("**/entrance_door*"))
+        entrance_door_root = self.model.attach_new_node("entrance_door_root")
+        self.entrance_pos = (157., 0., -4.)
+        entrance_door_root.set_pos(self.entrance_pos)
+
+        for d in entrance_doors:
             d.set_shader_off()
             d.set_shader(metal_shader)
-            d.set_pos(157., 0., -4.)
-            
+            d.reparent_to(entrance_door_root)
+
         for d in self.model.find_all_matches("**/door_*"):
             d.set_shader_off()
             d.set_shader(metal_shader)
-            
+
         for s in self.model.find_all_matches("**/support_anchor*"):
             s.set_shader_off()
             s.set_shader(metal_shader)
-            
+
         for s in self.model.find_all_matches("**/platform_stair*"):
             s.set_shader_off()
             s.set_shader(metal_shader)
-        
+
         amb_light = AmbientLight('amblight')
         amb_light.set_priority(50)
         amb_light.set_color((0.8, 0.8, 0.8, 1))
         amb_light_node = self.model.attach_new_node(amb_light)
         self.model.set_light(amb_light_node)
         section_lights.append(amb_light_node)
-        entrance_floor = self.model.find("**/entrance_floor")
-        entrance_floor.set_pos(157., 0., -4.)
-        
+
         # make initial stair collision
-        stair_1 = self.model.find("**/platform_stair_step1")
-        stair_2 = self.model.find("**/platform_stair_step2")
-        stair_3 = self.model.find("**/platform_stair_step3")
-        stair_4 = self.model.find("**/platform_stair_step4")
-        stair_5 = self.model.find("**/platform_stair_step5")
-        
-        fp_ctrl.make_collision('stair_1_brbn', stair_1, 0, 0, stair_1.get_pos())
-        fp_ctrl.make_collision('stair_2_brbn', stair_2, 0, 0, stair_2.get_pos())
-        fp_ctrl.make_collision('stair_3_brbn', stair_3, 0, 0, stair_3.get_pos())
-        fp_ctrl.make_collision('stair_4_brbn', stair_4, 0, 0, stair_4.get_pos())
-        fp_ctrl.make_collision('stair_5_brbn', stair_5, 0, 0, stair_5.get_pos())
-        
+        for i in range(len(self.model.find_all_matches("**/platform_stair_step*"))):
+            stair = self.model.find(f"**/platform_stair_step{i + 1}")
+            z = -4.55 + i * .15
+            stair.set_z(z)
+            fp_ctrl.make_collision(f'stair_{i + 1}_brbn', stair, 0, 0, stair.get_pos())
+
         self.alcove_toggle = False
-        
-        def open_entrance_doors():
+        self.door_close_intervals = None
+
+        def close_entrance_doors(task):
+            doors_right = self.model.find_all_matches('**/entrance_door_right*')
+            doors_left = self.model.find_all_matches('**/entrance_door_left*')
+
+            pos = entrance_door_root.get_pos(base.render)
+            pd_dist = (pos - base.camera.get_pos(base.render)).length()
+
+            if pd_dist > 30:
+                self.alcove_toggle = False
+                origin = (0., 0., 0.)
+                para = Parallel()
+                self.door_close_intervals = para
+
+                for door in doors_right:
+                    dr_inter = LerpPosInterval(door, 1.5, origin, (0., -6., 0.), blendType='easeInOut')
+                    para.append(dr_inter)
+
+                for door in doors_left:
+                    dl_inter = LerpPosInterval(door, 1.5, origin, (0., 6., 0.), blendType='easeInOut')
+                    para.append(dl_inter)
+
+                para.start()
+
+                return task.done
+
+            return task.cont
+
+        def open_entrance_doors(task=None):
             if not self.alcove_toggle:
-                door_right = self.model.find('**/entrance_door_right')
-                dr_pos = door_right.get_pos(base.render)
-                door_left = self.model.find('**/entrance_door_left')
-                dl_pos = door_left.get_pos(base.render)
-        
-                pd_dist = (dr_pos - base.camera.get_pos(base.render)).length()
-        
+                doors_right = self.model.find_all_matches('**/entrance_door_right*')
+                doors_left = self.model.find_all_matches('**/entrance_door_left*')
+
+                pos = entrance_door_root.get_pos(base.render)
+                pd_dist = (pos - base.camera.get_pos(base.render)).length()
+
                 if pd_dist < 30:
                     self.alcove_toggle = True
-                    
-                    dr_inter = LerpPosInterval(door_right, 1.5, (dr_pos[0], dr_pos[1] - 6, dr_pos[2]), dr_pos, blendType='easeInOut')
-                    dl_inter = LerpPosInterval(door_left, 1.5, (dl_pos[0], dl_pos[1] + 6, dl_pos[2]), dl_pos, blendType='easeInOut')
+
+                    origin = (0., 0., 0.)
                     para = Parallel()
-                    para.append(dr_inter)
-                    para.append(dl_inter)
-                    para.start()
-                
-        base.accept('o', open_entrance_doors)
-        
+                    pos_r = doors_right.get_path(0).get_pos()
+                    pos_l = doors_left.get_path(0).get_pos()
+                    d = 6. - abs(pos_r.y)
+                    dur = 1.5 * d / 6.
+
+                    for door in doors_right:
+                        dr_inter = LerpPosInterval(door, dur, (0., -6., 0.), pos_r, blendType='easeInOut')
+                        para.append(dr_inter)
+
+                    for door in doors_left:
+                        dl_inter = LerpPosInterval(door, dur, (0., 6., 0.), pos_l, blendType='easeInOut')
+                        para.append(dl_inter)
+
+                    if self.door_close_intervals and self.door_close_intervals.is_playing():
+                        self.door_close_intervals.finish()
+                        self.door_close_intervals.clear_intervals()
+                        self.door_close_intervals = None
+
+                    func = lambda: add_section_task(close_entrance_doors, "close_entrance_doors")
+                    seq = Sequence()
+                    seq.append(para)
+                    seq.append(Func(func))
+                    seq.start()
+
+            if task:
+                return task.cont
+
+#        base.accept('o', open_entrance_doors)
+        add_section_task(open_entrance_doors, "open_entrance_doors")
+
         self.create_support_structure()
         self.create_corridor()
         self.add_containers()
@@ -1188,26 +1235,32 @@ class Hangar:
     def create_corridor(self):
 
         model = base.loader.load_model(ASSET_PATH + "models/hangar_corridor.gltf")
-        
+
         # apply metalness effect shader
         model.set_shader_off()
         model.set_shader(metal_shader)
-        
+
         door_frame = model.find("**/corridor_door_frame")
-        doors = self.model.find_all_matches("**/entrance_door*")
+        door_left = self.model.find("**/entrance_door_left")
+        door_right = self.model.find("**/entrance_door_right")
+        doors = (door_left, door_right)
         entrance_floor = self.model.find("**/entrance_floor")
         segment_a = model.find("**/corridor_segment_a")
         segment_b = model.find("**/corridor_segment_b")
+        anchor1 = model.find("**/door_frame_anchor_01")
+        anchor2 = model.find("**/door_frame_anchor_02")
+        entrance_floor.copy_to(anchor1)
+        entrance_floor.copy_to(anchor2)
+        door_frame.copy_to(anchor1)
+        door_frame.copy_to(anchor2)
 
-        for anchor in model.find_all_matches("**/door_frame_anchor*"):
-            entrance_floor_copy = entrance_floor.copy_to(anchor)
-            entrance_floor_copy.set_pos(0., 0., 0.)
-            for door in doors:
-                door_copy = door.copy_to(anchor)
-                door_copy.set_pos(0., 0., 0.)
+        for door in doors:
+            door_copy = door.copy_to(anchor1)
+            door_copy.name = door.name + "_copy"
 
-        for anchor in model.find_all_matches("**/door_frame_anchor*"):
-            door_frame.copy_to(anchor)
+        for door in doors:
+            door_copy = door.copy_to(anchor2)
+            door_copy.name = door.name.replace("entrance", "corridor")
 
         for anchor in model.find_all_matches("**/segment_a_anchor*"):
             segment_a.copy_to(anchor)
@@ -1215,10 +1268,11 @@ class Hangar:
         for anchor in model.find_all_matches("**/segment_b_anchor*"):
             segment_b.copy_to(anchor)
 
+        entrance_floor.hide()
         door_frame.detach_node()
         segment_a.detach_node()
         segment_b.detach_node()
-        model.set_pos(157., 0., -4.)
+        model.set_pos(self.entrance_pos)
         model.reparent_to(self.model)
 
     def add_containers(self):
@@ -1226,7 +1280,7 @@ class Hangar:
         container = self.model.find("**/container_type_b")
         container.set_shader_off()
         container.set_shader(metal_shader)
-        
+
         stack_dist = 18. + random.random() * 2.
 
         for root in self.model.find_all_matches("**/container_root_*"):
@@ -1266,7 +1320,9 @@ class Hangar:
     def destroy(self):
 
         self.model.detach_node()
+        self.model = None
         del Elevator.instances[:]
+        base.ignore("o")
 
     def pulsate_emitters(self, task):
 
@@ -1399,44 +1455,22 @@ class Hangar:
         Elevator.cam_target.set_pos(74, 0., 4.)
         Elevator.cam_target.look_at(stair_step)
         Elevator.cam_target.children[0].set_y(-50.)
-        # add_section_task(self.raise_stairs, "raise_stairs")
         self.raise_stairs()
 
     def raise_stairs(self):
-        stair_1 = self.model.find("**/platform_stair_step1")
-        stair_2 = self.model.find("**/platform_stair_step2")
-        stair_3 = self.model.find("**/platform_stair_step3")
-        stair_4 = self.model.find("**/platform_stair_step4")
-        stair_5 = self.model.find("**/platform_stair_step5")
-        stair_1_brbn = base.render.find('**/stair_1_brbn')
-        stair_2_brbn = base.render.find('**/stair_2_brbn')
-        stair_3_brbn = base.render.find('**/stair_3_brbn')
-        stair_4_brbn = base.render.find('**/stair_4_brbn')
-        stair_5_brbn = base.render.find('**/stair_5_brbn')
-        
-        s1_inter = LerpPosInterval(stair_1, 0.75, (0, 0, -3.85), stair_1.get_pos(base.render))
-        s2_inter = LerpPosInterval(stair_2, 0.75, (0, 0, -3.25), stair_2.get_pos(base.render))
-        s3_inter = LerpPosInterval(stair_3, 0.75, (0, 0, -2.75), stair_3.get_pos(base.render))
-        s4_inter = LerpPosInterval(stair_4, 0.75, (0, 0, -2.2), stair_4.get_pos(base.render))
-        s5_inter = LerpPosInterval(stair_5, 0.75, (0, 0, -1.65), stair_5.get_pos(base.render))
-        
-        s1_brbn_inter = LerpPosInterval(stair_1_brbn, 0.75, (0, 0, -3.85), stair_1_brbn.get_pos(base.render))
-        s2_brbn_inter = LerpPosInterval(stair_2_brbn, 0.75, (0, 0, -3.25), stair_2_brbn.get_pos(base.render))
-        s3_brbn_inter = LerpPosInterval(stair_3_brbn, 0.75, (0, 0, -2.75), stair_3_brbn.get_pos(base.render))
-        s4_brbn_inter = LerpPosInterval(stair_4_brbn, 0.75, (0, 0, -2.2), stair_4_brbn.get_pos(base.render))
-        s5_brbn_inter = LerpPosInterval(stair_5_brbn, 0.75, (0, 0, -1.65), stair_5_brbn.get_pos(base.render))
-        
         stair_par = Parallel()
-        stair_par.append(s1_inter)
-        stair_par.append(s2_inter)
-        stair_par.append(s3_inter)
-        stair_par.append(s4_inter)
-        stair_par.append(s5_inter)
-        stair_par.append(s1_brbn_inter)
-        stair_par.append(s2_brbn_inter)
-        stair_par.append(s3_brbn_inter)
-        stair_par.append(s4_brbn_inter)
-        stair_par.append(s5_brbn_inter)
+
+        for i in range(len(self.model.find_all_matches("**/platform_stair_step*"))):
+            stair = self.model.find(f"**/platform_stair_step{i + 1}")
+            start_pos = stair.get_pos()
+            end_pos = Point3(start_pos)
+            end_pos.z += .55 * (i + 1)
+            s_inter = LerpPosInterval(stair, 2., end_pos, start_pos)
+            stair_par.append(s_inter)
+            stair_brbn = base.render.find(f'**/stair_{i + 1}_brbn')
+            s_brbn_inter = LerpPosInterval(stair_brbn, 2., end_pos, start_pos)
+            stair_par.append(s_brbn_inter)
+
         stair_par.start()
 
 class Section1:
@@ -1445,46 +1479,13 @@ class Section1:
         # initial collision
         p_topper = base.loader.load_model(ASSET_PATH + "models/p_topper.gltf")
         fp_ctrl.make_collision('brbn', p_topper, 0, 0)
-        
+
         p_topper_out = base.loader.load_model(ASSET_PATH + "models/p_topper_out.gltf")
         pto_p = p_topper_out.get_pos()
         fp_ctrl.make_collision('brbn', p_topper_out, 0, 0, target_pos=(pto_p[0], pto_p[1], pto_p[2] -0.5))
-        
+
         p_topper_force = base.loader.load_model(ASSET_PATH + "models/p_topper_force.gltf")
         fp_ctrl.make_collision('brbn_force', p_topper_force, 0, 0)
-        
-        # set up camera control
-        fp_ctrl.fp_init((120, 10, 1))
-        self.cam_heading = 180.
-        self.cam_target = base.render.attach_new_node("cam_target")
-        self.cam_target.set_z(4.)
-        self.cam_target.set_h(self.cam_heading)
-        self.cam_is_fps = False
-
-        def enable_orbital_cam():
-            base.camera.reparent_to(self.cam_target)
-            base.camera.set_y(-120.)
-            base.camLens.fov = 80
-            base.camLens.set_near_far(0.01, 90000)
-            base.camLens.focal_length = 7
-            add_section_task(self.move_camera, "move_camera")
-
-        def cam_switch():
-            if self.cam_is_fps:
-                fp_ctrl.disable_fp_camera()
-                enable_orbital_cam()
-                
-            else:
-                base.task_mgr.remove("move_camera")
-                fp_ctrl.enable_fp_camera()
-            
-            self.cam_is_fps = not self.cam_is_fps
-
-        base.accept("\\", cam_switch)
-        enable_orbital_cam()
-
-        base.set_background_color(0.1, 0.1, 0.1, 1)
-        self.setup_elevator_camera()
 
         add_section_task(Elevator.handle_requests, "handle_elevator_requests")
 
@@ -1571,6 +1572,41 @@ class Section1:
         self.hangar = Hangar(self.start_jobs)
 
         add_section_task(self.check_workers_done, "check_workers_done")
+
+        # set up camera control
+        entrance_pos = Point3(self.hangar.entrance_pos)
+        entrance_pos.x += 33
+        fp_ctrl.fp_init(entrance_pos)
+        self.cam_heading = 180.
+        self.cam_target = base.render.attach_new_node("cam_target")
+        self.cam_target.set_z(4.)
+        self.cam_target.set_h(self.cam_heading)
+        self.cam_is_fps = False
+
+        def enable_orbital_cam():
+            base.camera.reparent_to(self.cam_target)
+            base.camera.set_y(-120.)
+            base.camLens.fov = 80
+            base.camLens.set_near_far(0.01, 90000)
+            base.camLens.focal_length = 7
+            add_section_task(self.move_camera, "move_camera")
+
+        def cam_switch():
+            if self.cam_is_fps:
+                fp_ctrl.disable_fp_camera()
+                enable_orbital_cam()
+
+            else:
+                base.task_mgr.remove("move_camera")
+                fp_ctrl.enable_fp_camera()
+
+            self.cam_is_fps = not self.cam_is_fps
+
+        base.accept("\\", cam_switch)
+        enable_orbital_cam()
+
+        base.set_background_color(0.1, 0.1, 0.1, 1)
+        self.setup_elevator_camera()
 
     def start_jobs(self):
 
@@ -1765,31 +1801,32 @@ class Section1:
 
         DroneCompartment.instance.destroy()
         self.hangar.destroy()
+        self.hangar = None
         self.model_root.detach_node()
         self.model_root = None
         self.destroy_holo_ship()
         fp_ctrl.fp_cleanup()
-        
+
         rigid_list = base.render.find_all_matches('**/brbn*')
-        
+
         for rigid_body in rigid_list:
             base.world.remove(rigid_body.node())
             rigid_body.detach_node()
-            
+
         rigid_list = base.render.find_all_matches('**/brbn*')
-        
+
         stair_list = base.render.find_all_matches('**/stair_*')
-        
+
         for rigid_body in stair_list:
             base.world.remove(rigid_body.node())
             rigid_body.detach_node()
-            
+
         stair_list = base.render.find_all_matches('**/stair_*')
-                  
+
         for light in section_lights:
             base.render.set_light_off(light)
             light.detach_node()
-            
+
         scene_filters.del_blur_sharpen()
         scene_filters.del_bloom()
 
@@ -1799,17 +1836,17 @@ class Section1:
 def initialise(data=None):
 
     base.render.set_antialias(AntialiasAttrib.MMultisample)
-    
+
     base.camera.set_pos(0, 0, -2)
-    
+
     scene_filters.set_blur_sharpen(0.8)
     scene_filters.set_bloom()
 
     base.accept("escape", common.gameController.gameOver)
-    
+
     def print_player_pos():
         print(base.camera.get_pos(base.render))
-    
+
     base.accept('f4', print_player_pos)
 
     for x in range(5):
@@ -1832,7 +1869,7 @@ def initialise(data=None):
     # plight_1_node.node().set_attenuation((0.5, 0, 0.05))
     base.render.set_light(plight_1_node)
     section_lights.append(plight_1_node)
-    
+
     plight_2 = PointLight('scene_light_2')
     plight_2.set_priority(10)
     # add plight props here
