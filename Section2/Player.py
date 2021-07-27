@@ -209,47 +209,57 @@ class Player(GameObject, ArmedObject):
             self.speedometerRoot = self.uiRoot.attachNewNode(PandaNode("speedometer root"))
             print ("No speedometer root found!")
 
-        self.healthBarRootThirdPerson = common.base.aspect2d.attachNewNode(PandaNode("health bar root 3rd person"))
+        backingColourTop = Vec3(0.3, 0.3, 0.3)
+        backingColourBottom = Vec3(0.2, 0.2, 0.3)
+
+        self.healthBarRootThirdPerson = self.uiRoot.attachNewNode(PandaNode("health bar root 3rd person"))
         self.healthBarRootThirdPerson.setPos(0.5, 0, -1)
         barBacking = self.healthBarRootThirdPerson.attachNewNode(cardMaker.generate())
-        barBacking.setSz(self.maxHealth * self.healthBarScalar + 0.01)
+        barBacking.setSz(self.maxHealth * self.healthBarScalar + 0.11)
         barBacking.setSx(0.06)
-        barBacking.setColorScale(0.3, 0.3, 0.3, 1)
+        barBacking.setZ(-0.09)
+        barBacking.setTransparency(True)
+        self.applyUIShader(barBacking, backingColourTop, backingColourBottom, 0.2, 0.1, barBacking.getSx()*2 / barBacking.getSz())
         self.healthBarRootThirdPerson.hide()
 
-        self.energyBarRootThirdPerson = common.base.aspect2d.attachNewNode(PandaNode("energy bar root 3rd person"))
+        self.energyBarRootThirdPerson = self.uiRoot.attachNewNode(PandaNode("energy bar root 3rd person"))
         self.energyBarRootThirdPerson.setPos(-0.5, 0, -1)
         barBacking = self.energyBarRootThirdPerson.attachNewNode(cardMaker.generate())
-        barBacking.setSz(self.maxEnergy * self.healthBarScalar + 0.01)
+        barBacking.setSz(self.maxEnergy * self.healthBarScalar + 0.11)
         barBacking.setSx(0.06)
-        barBacking.setColorScale(0.3, 0.3, 0.3, 1)
+        barBacking.setZ(-0.09)
+        barBacking.setTransparency(True)
+        self.applyUIShader(barBacking, backingColourTop, backingColourBottom, 0.2, 0.1, barBacking.getSx()*2 / barBacking.getSz())
         self.energyBarRootThirdPerson.hide()
 
-        self.radarRootThirdPerson = common.base.aspect2d.attachNewNode(PandaNode("radar root 3rd person"))
+        self.radarRootThirdPerson = self.uiRoot.attachNewNode(PandaNode("radar root 3rd person"))
         self.radarRootThirdPerson.setPos(0, 0, -1 + self.radarSize)
         radarBacking = common.base.loader.loadModel("Assets/Section2/models/uiRadar")
         radarBacking.reparentTo(self.radarRootThirdPerson)
-        radarBacking.setColorScale(0.3, 0.3, 0.3, 0.5)
         radarBacking.setScale(self.radarSize)
         radarBacking.setTransparency(True)
+        radarBacking.setColorScale(0.3, 0.3, 0.4, 0.3)
+        #self.applyUIShader(radarBacking, backingColourTop, backingColourBottom, 0.2, 0.1, barBacking.getSx() / barBacking.getSz())
         self.radarRootThirdPerson.hide()
 
-        self.speedometerRootThirdPerson = common.base.aspect2d.attachNewNode(PandaNode("speedometer root 3rd person"))
-        self.speedometerRootThirdPerson.setPos(0.85, 0, -0.9)
+        self.speedometerRootThirdPerson = self.uiRoot.attachNewNode(PandaNode("speedometer root 3rd person"))
+        self.speedometerRootThirdPerson.setPos(0.85, 0, -0.875)
         barBacking = self.speedometerRootThirdPerson.attachNewNode(cardMaker.generate())
-        barBacking.setSz(0.18)
-        barBacking.setSx(0.2)
-        barBacking.setZ(-0.1)
-        barBacking.setColorScale(0.7, 0.7, 0.7, 1)
+        barBacking.setSz(0.3125)
+        barBacking.setSx(0.225)
+        barBacking.setZ(-0.2)
+        barBacking.setTransparency(True)
+        self.applyUIShader(barBacking, backingColourTop, backingColourBottom, 0.1, 0.1, barBacking.getSx()*2 / barBacking.getSz())
         self.speedometerRootThirdPerson.hide()
 
-        self.missileCounterRootThirdPerson = common.base.aspect2d.attachNewNode(PandaNode("missile counter root 3rd person"))
-        self.missileCounterRootThirdPerson.setPos(-0.85, 0, -0.9)
+        self.missileCounterRootThirdPerson = self.uiRoot.attachNewNode(PandaNode("missile counter root 3rd person"))
+        self.missileCounterRootThirdPerson.setPos(-0.85, 0, -0.875)
         barBacking = self.missileCounterRootThirdPerson.attachNewNode(cardMaker.generate())
-        barBacking.setSz(0.18)
-        barBacking.setSx(0.2)
-        barBacking.setZ(-0.1)
-        barBacking.setColorScale(0.7, 0.7, 0.7, 1)
+        barBacking.setSz(0.3125)
+        barBacking.setSx(0.225)
+        barBacking.setZ(-0.2)
+        barBacking.setTransparency(True)
+        self.applyUIShader(barBacking, backingColourTop, backingColourBottom, 0.1, 0.1, barBacking.getSx()*2 / barBacking.getSz())
         self.missileCounterRootThirdPerson.hide()
 
         self.radarDrawer = MeshDrawer()
@@ -261,22 +271,31 @@ class Player(GameObject, ArmedObject):
         self.radarDrawerNP.setLightOff()
         self.radarDrawerNP.setDepthWrite(False)
         self.radarDrawerNP.setTransparency(True)
+        self.applyUIShader(self.radarDrawerNP, Vec3(1, 1, 1), Vec3(1, 1, 1), 0.5, 0.2, 1)
 
         self.healthBar = self.healthBarRoot.attachNewNode(cardMaker.generate())
         self.healthBar.setSx(0.05)
+        self.healthBar.setTransparency(True)
+        self.applyUIShader(self.healthBar, backingColourTop, backingColourBottom, 0.2, 0.5, self.healthBar.getSx()*2 / barBacking.getSz())
 
         self.energyBar = self.energyBarRoot.attachNewNode(cardMaker.generate())
         self.energyBar.setSx(0.05)
+        self.energyBar.setTransparency(True)
+        self.applyUIShader(self.energyBar, backingColourTop, backingColourBottom, 0.2, 0.5, self.energyBar.getSx()*2 / barBacking.getSz())
 
         self.missileCounter = DirectLabel(text = "",
                                           text_mayChange = True,
+                                          text_font = common.fancyFont,
                                           scale = 0.09,
+                                          frameColor = (1, 1, 1, 1),
                                           relief = None,
                                           parent = self.missileCounterRoot)
 
         self.speedometer = DirectLabel(text = "",
                                        text_mayChange = True,
+                                       text_font = common.fancyFont,
                                        scale = 0.09,
+                                       frameColor = (1, 1, 1, 1),
                                        relief = None,
                                        parent = self.speedometerRoot)
 
@@ -292,6 +311,19 @@ class Player(GameObject, ArmedObject):
 
         self.deathFireTimer = 2.5
         self.deathFlameTimer = 0
+
+    def applyUIShader(self, uiObj, colourTop, colourBottom, cornerSize, edgeSoftness, aspectRatio):
+        uiShader = Shader.load(Shader.SL_GLSL,
+                             "Assets/Shared/shaders/uiBarVertex.glsl",
+                             "Assets/Shared/shaders/uiBarFragment.glsl")
+
+        uiObj.setShader(uiShader)
+
+        uiObj.setShaderInput("colourTop", colourTop)
+        uiObj.setShaderInput("colourBottom", colourBottom)
+        uiObj.setShaderInput("cornerSize", cornerSize)
+        uiObj.setShaderInput("edgeSoftness", edgeSoftness)
+        uiObj.setShaderInput("aspectRatio", aspectRatio)
 
     def toggleThirdPerson(self):
         self.setThirdPerson(not self.isThirdPerson)
@@ -623,17 +655,29 @@ class Player(GameObject, ArmedObject):
 
     def updateHealthUI(self):
         perc = self.health/self.maxHealth
+
         newVal = max(0.01, self.health * self.healthBarScalar)
         self.healthBar.setSz(newVal)
-        self.healthBar.setColorScale(1.0 - (perc - 0.5)/0.5, min(1, perc/0.5), 0, 1)
-        #self.healthCounter.setText("{0:-.0f}".format(self.health))
-        #self.healthCounter.setColorScale(1.0 - (perc - 0.5)/0.5, min(1, perc/0.5), 0, 1)
+
+        colourTop = Vec3(1.0 - (perc - 0.5)/0.5, min(1, perc/0.5), 0)
+        perc = max(0, perc - 0.2)
+        colourBottom = Vec3(1.0 - (perc - 0.5)/0.5, min(1, perc/0.5), 0)
+        self.healthBar.setShaderInput("colourTop", colourTop)
+        self.healthBar.setShaderInput("colourBottom", colourBottom)
+        self.healthBar.setShaderInput("aspectRatio", self.healthBar.getSx()*2 / self.healthBar.getSz())
 
     def updateEnergyUI(self):
         perc = self.energy/self.maxEnergy
+
         newVal = max(0.01, self.energy * self.energyBarScalar)
         self.energyBar.setSz(newVal)
-        self.energyBar.setColorScale(1.0 - (perc - 0.5)/0.5, min(1, perc/0.5), 0, 1)
+
+        colourTop = Vec3(1.0 - (perc - 0.5)/0.5, min(1, perc/0.5), 0)
+        perc = max(0, perc - 0.2)
+        colourBottom = Vec3(1.0 - (perc - 0.5)/0.5, min(1, perc/0.5), 0)
+        self.energyBar.setShaderInput("colourTop", colourTop)
+        self.energyBar.setShaderInput("colourBottom", colourBottom)
+        self.energyBar.setShaderInput("aspectRatio", self.energyBar.getSx()*2 / self.energyBar.getSz())
 
     def updateMissileUI(self):
         self.missileCounter["text"] = "Missiles:\n{0}".format(self.numMissiles)
@@ -651,16 +695,19 @@ class Player(GameObject, ArmedObject):
 
             self.radarDrawer.begin(common.base.cam, common.base.render)
 
-            uvs = Vec2(0, 0)
-            
+            uvsTL = Vec2(0, 1)
+            uvsTR = Vec2(1, 1)
+            uvsBL = Vec2(0, 0)
+            uvsBR = Vec2(1, 0)
+
             spotSize = 0.015
 
-            self.radarDrawer.tri(Vec3(-spotSize, 0, -spotSize), Vec4(0, 1, 0, 1), uvs,
-                                 Vec3(spotSize, 0, -spotSize), Vec4(0, 1, 0, 1), uvs,
-                                 Vec3(-spotSize, 0, spotSize), Vec4(0, 1, 0, 1), uvs)
-            self.radarDrawer.tri(Vec3(-spotSize, 0, spotSize), Vec4(0, 1, 0, 1), uvs,
-                                 Vec3(spotSize, 0, -spotSize), Vec4(0, 1, 0, 1), uvs,
-                                 Vec3(spotSize, 0, spotSize), Vec4(0, 1, 0, 1), uvs)
+            self.radarDrawer.tri(Vec3(-spotSize, 0, -spotSize), Vec4(0, 1, 0, 1), uvsBL,
+                                 Vec3(spotSize, 0, -spotSize), Vec4(0, 1, 0, 1), uvsBR,
+                                 Vec3(-spotSize, 0, spotSize), Vec4(0, 1, 0, 1), uvsTL)
+            self.radarDrawer.tri(Vec3(-spotSize, 0, spotSize), Vec4(0, 1, 0, 1), uvsTL,
+                                 Vec3(spotSize, 0, -spotSize), Vec4(0, 1, 0, 1), uvsBR,
+                                 Vec3(spotSize, 0, spotSize), Vec4(0, 1, 0, 1), uvsTR)
 
             exitPos = common.currentSection.currentLevel.exit.nodePath.getPos(self.root)
             exitPos.normalize()
@@ -669,12 +716,12 @@ class Player(GameObject, ArmedObject):
             exitPos.normalize()
             exitPos *= anglePerc * self.radarSize
             
-            self.radarDrawer.tri(Vec3(-spotSize, 0, -spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs,
-                                 Vec3(spotSize, 0, -spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs,
-                                 Vec3(-spotSize, 0, spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs)
-            self.radarDrawer.tri(Vec3(-spotSize, 0, spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs,
-                                 Vec3(spotSize, 0, -spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs,
-                                 Vec3(spotSize, 0, spotSize) + exitPos, Vec4(0, 0, 1, 1), uvs)
+            self.radarDrawer.tri(Vec3(-spotSize, 0, -spotSize) + exitPos, Vec4(0, 0, 1, 1), uvsBL,
+                                 Vec3(spotSize, 0, -spotSize) + exitPos, Vec4(0, 0, 1, 1), uvsBR,
+                                 Vec3(-spotSize, 0, spotSize) + exitPos, Vec4(0, 0, 1, 1), uvsTL)
+            self.radarDrawer.tri(Vec3(-spotSize, 0, spotSize) + exitPos, Vec4(0, 0, 1, 1), uvsTL,
+                                 Vec3(spotSize, 0, -spotSize) + exitPos, Vec4(0, 0, 1, 1), uvsBR,
+                                 Vec3(spotSize, 0, spotSize) + exitPos, Vec4(0, 0, 1, 1), uvsTR)
 
             for enemy in common.currentSection.currentLevel.enemies:
                 enemyPos = enemy.root.getPos(self.root)
@@ -688,12 +735,12 @@ class Player(GameObject, ArmedObject):
                     enemyPos *= anglePerc * self.radarSize
                     colour = Vec4(1, 0, 0, math.sin(max(0, 1 - distPerc)*1.571))
 
-                    self.radarDrawer.tri(Vec3(-spotSize, 0, 0) + enemyPos, colour, uvs,
-                                         Vec3(spotSize, 0, 0) + enemyPos, colour, uvs,
-                                         Vec3(0, 0, spotSize) + enemyPos, colour, uvs)
-                    self.radarDrawer.tri(Vec3(spotSize, 0, 0) + enemyPos, colour, uvs,
-                                         Vec3(-spotSize, 0, 0) + enemyPos, colour, uvs,
-                                         Vec3(0, 0, -spotSize) + enemyPos, colour, uvs)
+                    self.radarDrawer.tri(Vec3(-spotSize, 0, -spotSize) + enemyPos, colour, uvsBL,
+                                         Vec3(spotSize, 0, -spotSize) + enemyPos, colour, uvsBR,
+                                         Vec3(-spotSize, 0, spotSize) + enemyPos, colour, uvsTL)
+                    self.radarDrawer.tri(Vec3(-spotSize, 0, spotSize)+ enemyPos, colour, uvsTL,
+                                         Vec3(spotSize, 0, -spotSize) + enemyPos, colour, uvsBR,
+                                         Vec3(spotSize, 0, spotSize)  + enemyPos, colour, uvsTR)
 
             self.radarDrawer.end()
 

@@ -34,12 +34,6 @@ class Game():
     BUTTON_SIZE_LARGE = 0
     BUTTON_SIZE_SMALL = 1
 
-    #fancyFont = loader.loadFont("Assets/Shared/fonts/Excluded/ExcludedItalic.ttf")
-    #italiciseFont = False
-
-    fancyFont = loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf", pointSize = 8)
-    italiciseFont = False
-
     @staticmethod
     def makeButton(text, command, menu, size, extraArgs = None, leftAligned = True, textScale = 1):
         if size == Game.BUTTON_SIZE_LARGE:
@@ -70,7 +64,7 @@ class Game():
                            scale = 0.1,
                            parent = menu,
                            text_align = alignment,
-                           text_font = Game.fancyFont,
+                           text_font = common.fancyFont,
                            text_scale = textScale,
                            frameSize = frame,
                            frameColor = (1, 1, 1, 1),
@@ -84,7 +78,7 @@ class Game():
                                         "Assets/Shared/tex/mainMenuBtn{0}Normal.png".format(button),
                                       )
                            )
-        if Game.italiciseFont:
+        if common.italiciseFont:
             btn.setShear((0, 0.1, 0))
         btn.setTransparency(True)
         if extraArgs is not None:
@@ -94,6 +88,9 @@ class Game():
     def __init__(self):
 
         common.gameController = self
+        
+        common.fancyFont = common.base.loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf",
+                                                       pointSize = 8, lineHeight = 1)
 
         common.base.win.setClearColor(Vec4(0, 0, 0, 1))
 
@@ -129,7 +126,7 @@ class Game():
         self.title1 = DirectLabel(text = "CAPTAIN PANDA",
                                  parent = self.titleHolder,
                                  scale = 0.1,
-                                 text_font = Game.fancyFont,
+                                 text_font = common.fancyFont,
                                  text_fg = (0.8, 0.9, 1, 1),
                                  relief = None,
                                  pos = (0, 0, 0.225),
@@ -137,7 +134,7 @@ class Game():
         self.title2 = DirectLabel(text = "and the",
                                  parent = self.titleHolder,
                                  scale = 0.07,
-                                 text_font = Game.fancyFont,
+                                 text_font = common.fancyFont,
                                  text_fg = (0.8, 0.9, 1, 1),
                                  relief = None,
                                  pos = (0, 0, 0.1675),
@@ -145,13 +142,13 @@ class Game():
         self.title3 = DirectLabel(text = "INVASION OF THE MECHANOIDS!",
                                  parent = self.titleHolder,
                                  scale = 0.125,
-                                 text_font = Game.fancyFont,
+                                 text_font = common.fancyFont,
                                  text_fg = (0.8, 0.9, 1, 1),
                                  relief = None,
                                  pos = (0, 0, 0.0625),
                                  text_align = TextNode.ALeft)
 
-        if Game.italiciseFont:
+        if common.italiciseFont:
             self.title1.setShear((0, 0.1, 0))
             self.title2.setShear((0, 0.1, 0))
             self.title3.setShear((0, 0.1, 0))
@@ -221,7 +218,7 @@ class Game():
 
         label = DirectLabel(text = "Options",
                             parent = self.optionsMenu,
-                            text_font = Game.fancyFont,
+                            text_font = common.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),
                             frameColor = (0, 0, 0.225, 1),
                             pad = (0.9, 0.3),
@@ -229,7 +226,7 @@ class Game():
                             scale = 0.1,
                             pos = (0, 0, 0.65)
                             )
-        if Game.italiciseFont:
+        if common.italiciseFont:
             label.setShear((0, 0.1, 0))
 
         self.optionsScroller = DirectScrolledFrame(
@@ -280,14 +277,14 @@ class Game():
         label = DirectLabel(text = "Select a Chapter:",
                             parent = self.sectionMenu,
                             scale = 0.1,
-                            text_font = Game.fancyFont,
+                            text_font = common.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),
                             frameColor = (0, 0, 0.225, 1),
                             pad = (0.9, 0.3),
                             relief = DGG.FLAT,
                             pos = (0.1925, 0, 0.65),
                             text_align = TextNode.ALeft)
-        if Game.italiciseFont:
+        if common.italiciseFont:
             label.setShear((0, 0.1, 0))
 
         buttons = []
@@ -380,14 +377,14 @@ class Game():
         label = DirectLabel(text = "Select a Ship:",
                             parent = self.shipSelectionMenu,
                             scale = 0.1,
-                            text_font = Game.fancyFont,
+                            text_font = common.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),
                             frameColor = (0, 0, 0.225, 1),
                             pad = (0.9, 0.3),
                             relief = DGG.FLAT,
                             pos = (0.1925, 0, 0.65),
                             text_align = TextNode.ALeft)
-        if Game.italiciseFont:
+        if common.italiciseFont:
             label.setShear((0, 0.1, 0))
 
         btn = Game.makeButton("Light fighter", self.sectionSpecificMenuDone, self.shipSelectionMenu, Game.BUTTON_SIZE_LARGE,
@@ -564,7 +561,7 @@ class Game():
                               scale = 0.65,
                               text_pos = (0, 0.125),
                               text_scale = 0.1,
-                              text_font = Game.fancyFont,
+                              text_font = common.fancyFont,
                               text_fg = (0.8, 0.9, 1, 1),
                               pos = (0, 0, self.currentOptionsZ),
                               command = self.setOptionValueFromSlider,
@@ -588,7 +585,7 @@ class Game():
         slider.setTransparency(True)
         label1 = DirectLabel(text = str(rangeTuple[0]),
                              scale = 0.06,
-                             text_font = Game.fancyFont,
+                             text_font = common.fancyFont,
                              text_fg = (0.8, 0.9, 1, 1),
                              frameTexture = "Assets/Shared/tex/mainMenuSliderCapLeft.png",
                              frameSize = (-1.15, 0.85, -1, 1),
@@ -598,7 +595,7 @@ class Game():
         label1.setTransparency(True)
         label2 = DirectLabel(text = str(rangeTuple[1]),
                              scale = 0.06,
-                             text_font = Game.fancyFont,
+                             text_font = common.fancyFont,
                              text_fg = (0.8, 0.9, 1, 1),
                              frameTexture = "Assets/Shared/tex/mainMenuSliderCapRight.png",
                              frameSize = (-0.85, 1.15, -1, 1),
@@ -620,7 +617,7 @@ class Game():
                                   parent = self.optionsScroller.getCanvas(),
                                   pos = (0, 0, self.currentOptionsZ),
                                   command = self.setOptionValue,
-                                  text_font = Game.fancyFont,
+                                  text_font = common.fancyFont,
                                   text_fg = (0.8, 0.9, 1, 1),
                                   boxPlacement = "below",
                                   boxRelief = None,
@@ -648,7 +645,7 @@ class Game():
                             scale = 0.075,
                             relief = None,
                             pos = (0, 0, self.currentOptionsZ),
-                            text_font = Game.fancyFont,
+                            text_font = common.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),)
         menu = DirectScrolledFrame(parent = self.optionsScroller.getCanvas(),
                                    pos = (0, 0, self.currentOptionsZ - 0.125),
@@ -679,7 +676,7 @@ class Game():
             btn = DirectButton(text = item,
                                text_scale = 0.06,
                                text_pos = (0, -0.015),
-                               text_font = Game.fancyFont,
+                               text_font = common.fancyFont,
                                command = self.setOptionValueFromMenu,
                                extraArgs = [item, optionID, sectionID, menu],
                                parent = menu.getCanvas(),
@@ -723,7 +720,7 @@ class Game():
         self.currentOptionsZ -= self.optionSpacingHeading*0.5
         label = DirectLabel(text = text,
                             text_align = TextNode.ACenter,
-                            text_font = Game.fancyFont,
+                            text_font = common.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),
                             scale = 0.1,
                             frameColor = (0, 0, 0.225, 1),
@@ -731,7 +728,7 @@ class Game():
                             relief = DGG.FLAT,
                             parent = self.optionsScroller.getCanvas(),
                             pos = (0, 0, self.currentOptionsZ))
-        if Game.italiciseFont:
+        if common.italiciseFont:
             label.setShear((0, 0.1, 0))
         self.currentOptionsZ -= self.optionSpacingHeading
         self.updateOptionsCanvasSize()

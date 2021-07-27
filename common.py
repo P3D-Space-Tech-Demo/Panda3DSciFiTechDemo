@@ -33,6 +33,9 @@ scene_filters = CommonFilters(base.win, base.cam)
 
 game_start_time = time.time()
 
+fancyFont = None
+italiciseFont = False
+
 gameController = None
 
 currentSection = None
