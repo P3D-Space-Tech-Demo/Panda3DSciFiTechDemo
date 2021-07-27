@@ -1081,15 +1081,16 @@ class Hangar:
         self.door_close_intervals = None
 
         def close_entrance_doors(task):
-            doors_right = self.model.find_all_matches('**/entrance_door_right*')
-            doors_left = self.model.find_all_matches('**/entrance_door_left*')
-
             pos = entrance_door_root.get_pos(base.render)
             pd_dist = (pos - base.camera.get_pos(base.render)).length()
 
             if pd_dist > 30:
                 self.alcove_toggle = False
+
+                doors_right = self.model.find_all_matches('**/entrance_door_right*')
+                doors_left = self.model.find_all_matches('**/entrance_door_left*')
                 origin = (0., 0., 0.)
+
                 para = Parallel()
                 self.door_close_intervals = para
 
@@ -1109,16 +1110,15 @@ class Hangar:
 
         def open_entrance_doors(task=None):
             if not self.alcove_toggle:
-                doors_right = self.model.find_all_matches('**/entrance_door_right*')
-                doors_left = self.model.find_all_matches('**/entrance_door_left*')
-
                 pos = entrance_door_root.get_pos(base.render)
                 pd_dist = (pos - base.camera.get_pos(base.render)).length()
 
                 if pd_dist < 30:
                     self.alcove_toggle = True
 
-                    origin = (0., 0., 0.)
+                    doors_right = self.model.find_all_matches('**/entrance_door_right*')
+                    doors_left = self.model.find_all_matches('**/entrance_door_left*')
+
                     para = Parallel()
                     pos_r = doors_right.get_path(0).get_pos()
                     pos_l = doors_left.get_path(0).get_pos()
