@@ -1043,7 +1043,7 @@ class Hangar:
 
         entrance_doors = list(self.model.find_all_matches("**/entrance_door*"))
         entrance_door_root = self.model.attach_new_node("entrance_door_root")
-        self.entrance_pos = (157., 0., -4.)
+        self.entrance_pos = Point3(157., 0., -4.)
         entrance_door_root.set_pos(self.entrance_pos)
 
         for d in entrance_doors:
@@ -1080,6 +1080,10 @@ class Hangar:
         self.alcove_toggle = False
         self.door_close_intervals = None
 
+        def hide_corridor():
+            if base.camera.get_pos(base.render).x < self.entrance_pos.x:
+                self.corridor_model.hide()
+
         def close_entrance_doors(task):
             pos = entrance_door_root.get_pos(base.render)
             pd_dist = (pos - base.camera.get_pos(base.render)).length()
@@ -1092,7 +1096,6 @@ class Hangar:
                 origin = (0., 0., 0.)
 
                 para = Parallel()
-                self.door_close_intervals = para
 
                 for door in doors_right:
                     dr_inter = LerpPosInterval(door, 1.5, origin, (0., -6., 0.), blendType='easeInOut')
@@ -1102,7 +1105,11 @@ class Hangar:
                     dl_inter = LerpPosInterval(door, 1.5, origin, (0., 6., 0.), blendType='easeInOut')
                     para.append(dl_inter)
 
-                para.start()
+                seq = Sequence()
+                seq.append(para)
+                seq.append(Func(hide_corridor))
+                self.door_close_intervals = seq
+                seq.start()
 
                 return task.done
 
@@ -1115,6 +1122,7 @@ class Hangar:
 
                 if pd_dist < 30:
                     self.alcove_toggle = True
+                    self.corridor_model.show()
 
                     doors_right = self.model.find_all_matches('**/entrance_door_right*')
                     doors_left = self.model.find_all_matches('**/entrance_door_left*')
@@ -1274,6 +1282,7 @@ class Hangar:
         segment_b.detach_node()
         model.set_pos(self.entrance_pos)
         model.reparent_to(self.model)
+        self.corridor_model = model
 
     def add_containers(self):
 
