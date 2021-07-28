@@ -99,6 +99,15 @@ class Section2():
 
         self.playState = Section2.STATE_PLAYING
 
+        self.activated()
+
+    def activated(self):
+        properties = WindowProperties()
+        properties.setMouseMode(WindowProperties.M_confined)
+        properties.setCursorHidden(True)
+        #properties.setCursorFilename("Assets/Section2/tex/shipCursor.cur")
+        common.base.win.requestProperties(properties)
+
     def updateKeyMap(self, controlName, controlState, callback = None):
         self.keyMap[controlName] = controlState
 

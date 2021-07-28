@@ -144,6 +144,24 @@ class Player(GameObject, ArmedObject):
         self.centreSpot.setScale(0.01)
         self.centreSpot.setAlphaScale(0.5)
 
+        self.cursor = self.uiRoot.attachNewNode(cardMaker.generate())
+        self.cursor.setTexture(common.base.loader.loadTexture("Assets/Section2/tex/shipCursor.png"))
+        self.cursor.setTransparency(True)
+        self.cursor.setPos(0, 0, 0)
+        self.cursor.setScale(0.035)
+        #self.cursor.setAlphaScale(0.75)
+
+        cardMaker.setFrame(0, 1, -1, 1)
+
+        self.cursorLine = self.uiRoot.attachNewNode(cardMaker.generate())
+        self.cursorLine.setTexture(common.base.loader.loadTexture("Assets/Section2/tex/shipCursorLine.png"))
+        self.cursorLine.setTransparency(True)
+        self.cursorLine.setPos(0, 0, 0)
+        self.cursorLine.setScale(0.005)
+        self.cursorLine.setAlphaScale(0.25)
+
+        cardMaker.setFrame(-1, 1, -1, 1)
+
         self.directionIndicator = self.uiRoot.attachNewNode(cardMaker.generate())
         self.directionIndicator.setTexture(common.base.loader.loadTexture("Assets/Section2/tex/directionIndicator.png"))
         self.directionIndicator.setTransparency(True)
@@ -509,6 +527,11 @@ class Player(GameObject, ArmedObject):
 
         else:
             mousePos = self.lastMousePos
+
+        self.cursor.setPos(common.base.render2d, mousePos.x, 0, mousePos.y)
+        self.cursorLine.setR(math.degrees(math.atan2(-mousePos.y, mousePos.x/common.base.aspect2d.getSx())))
+        lineVec = Vec2(mousePos.x/common.base.aspect2d.getSx(), mousePos.y)
+        self.cursorLine.setSx(max(0.00001, lineVec.length()))
 
         if mousePos.length() > 0.01:
             axis = right*(mousePos.y) + up*(-mousePos.x)
