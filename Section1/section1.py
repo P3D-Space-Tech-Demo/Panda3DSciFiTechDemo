@@ -1078,6 +1078,7 @@ class Hangar:
             fp_ctrl.make_collision(f'stair_{i + 1}_brbn', stair, 0, 0, stair.get_pos())
 
         self.alcove_toggle = False
+        self.door_open_intervals = None
         self.door_close_intervals = None
 
         def hide_corridor():
@@ -1122,7 +1123,6 @@ class Hangar:
 
                 if pd_dist < 30:
                     self.alcove_toggle = True
-                    self.corridor_model.show()
 
                     doors_right = self.model.find_all_matches('**/entrance_door_right*')
                     doors_left = self.model.find_all_matches('**/entrance_door_left*')
@@ -1150,7 +1150,9 @@ class Hangar:
                     seq = Sequence()
                     seq.append(para)
                     seq.append(Func(func))
+                    self.door_open_intervals = seq
                     seq.start()
+                    self.corridor_model.show()
 
             if task:
                 return task.cont
@@ -1327,6 +1329,18 @@ class Hangar:
         container.detach_node()
 
     def destroy(self):
+
+        if self.door_open_intervals:
+            if self.door_open_intervals.is_playing():
+                self.door_open_intervals.finish()
+                self.door_open_intervals.clear_intervals()
+            self.door_open_intervals = None
+
+        if self.door_close_intervals:
+            if self.door_close_intervals.is_playing():
+                self.door_close_intervals.finish()
+                self.door_close_intervals.clear_intervals()
+            self.door_close_intervals = None
 
         self.model.detach_node()
         self.model = None
@@ -1787,8 +1801,8 @@ class Section1:
         base.ignore("\\")
 
         base.camera.reparent_to(base.render)
-        # self.cam_target.detach_node()
-        # self.cam_target = None
+        self.cam_target.detach_node()
+        self.cam_target = None
         base.win.remove_display_region(self.elevator_display_region)
         Elevator.cam_target.detach_node()
         Elevator.cam_target = None
@@ -1796,12 +1810,6 @@ class Section1:
 
         for tmp_node in base.render.find_all_matches("**/tmp_node"):
             tmp_node.detach_node()
-
-        section_task_ids.add("update_cam")
-        section_task_ids.add("physics_update")
-
-        for task_id in section_task_ids:
-            base.task_mgr.remove(task_id)
 
         IdleWorkers.clear()
 
@@ -1816,21 +1824,23 @@ class Section1:
         self.destroy_holo_ship()
         fp_ctrl.fp_cleanup()
 
+        section_task_ids.add("update_cam")
+        section_task_ids.add("physics_update")
+
+        for task_id in section_task_ids:
+            base.task_mgr.remove(task_id)
+
         rigid_list = base.render.find_all_matches('**/brbn*')
 
         for rigid_body in rigid_list:
             base.world.remove(rigid_body.node())
             rigid_body.detach_node()
 
-        rigid_list = base.render.find_all_matches('**/brbn*')
-
         stair_list = base.render.find_all_matches('**/stair_*')
 
         for rigid_body in stair_list:
             base.world.remove(rigid_body.node())
             rigid_body.detach_node()
-
-        stair_list = base.render.find_all_matches('**/stair_*')
 
         for light in section_lights:
             base.render.set_light_off(light)
