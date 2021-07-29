@@ -218,6 +218,10 @@ class Level():
         [system.update(dt) for system in self.particleSystems]
 
     def destroy(self):
+        for explosion in self.explosions:
+            explosion.destroy()
+        self.explosions = []
+
         if self.lightNP is not None:
             if self.geometry is not None:
                 self.geometry.clearLight(self.lightNP)

@@ -61,6 +61,7 @@ class Section2():
         common.base.accept("mouse3-up", self.updateKeyMap, ["shootSecondary", False])
 
         common.base.accept("\\", self.toggleThirdPerson)
+        common.base.accept("escape", common.gameController.openPauseMenu)
 
         self.pusher = CollisionHandlerPusher()
         self.traverser = CollisionTraverser()
@@ -101,6 +102,9 @@ class Section2():
 
         self.activated()
 
+    def resumeGame(self):
+        self.activated()
+
     def activated(self):
         properties = WindowProperties()
         properties.setMouseMode(WindowProperties.M_confined)
@@ -116,6 +120,9 @@ class Section2():
 
     def update(self, task):
         dt = globalClock.getDt()
+
+        if not common.gameController.pauseMenu.isHidden():
+            return Task.cont
 
         if self.currentLevel is not None:
             self.currentLevel.update(self.player, self.keyMap, dt)
@@ -187,6 +194,7 @@ class Section2():
         common.base.ignore("mouse1-up")
         common.base.ignore("mouse3")
         common.base.ignore("mouse3-up")
+        common.base.ignore("escape")
         common.base.ignore("\\")
         common.base.ignore("projectile-into")
         common.base.ignore("projectile-again-into")

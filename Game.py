@@ -87,6 +87,10 @@ class Game():
 
     def __init__(self):
 
+        properties = WindowProperties()
+        properties.setCursorFilename("Assets/Shared/tex/cursor.cur")
+        common.base.win.requestProperties(properties)
+
         common.gameController = self
         
         common.fancyFont = common.base.loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf",
@@ -352,6 +356,56 @@ class Game():
                            command = self.quit,
                            pos = (0, 0, -0.25),
                            parent = self.gameOverScreen,
+                           scale = 0.1,
+                           #text_font = self.font,
+                           frameSize = (-4, 4, -1, 1),
+                           text_scale = 0.75,
+                           #relief = DGG.FLAT,
+                           text_pos = (0, -0.2))
+        btn.setTransparency(True)
+        
+        ### Pause menu
+
+        self.pauseMenu = DirectDialog(frameSize = (-0.5, 0.5, -0.7, 0.7),
+                                           fadeScreen = 0.4,
+                                           relief = DGG.FLAT)
+        self.pauseMenu.hide()
+
+        label = DirectLabel(text = "Paused...",
+                            parent = self.pauseMenu,
+                            scale = 0.1,
+                            pos = (0, 0, 0.55),
+                            #text_font = self.font,
+                            relief = None)
+
+        btn = DirectButton(text = "Resume",
+                           command = self.returnToGame,
+                           pos = (0, 0, 0.25),
+                           parent = self.pauseMenu,
+                           scale = 0.1,
+                           #text_font = self.font,
+                           frameSize = (-4, 4, -1, 1),
+                           text_scale = 0.75,
+                           #relief = DGG.FLAT,
+                           text_pos = (0, -0.2))
+        btn.setTransparency(True)
+
+        btn = DirectButton(text = "Exit to Menu",
+                           command = self.openMenu,
+                           pos = (0, 0, 0),
+                           parent = self.pauseMenu,
+                           scale = 0.1,
+                           #text_font = self.font,
+                           frameSize = (-4, 4, -1, 1),
+                           text_scale = 0.75,
+                           #relief = DGG.FLAT,
+                           text_pos = (0, -0.2))
+        btn.setTransparency(True)
+
+        btn = DirectButton(text = "Quit",
+                           command = self.quit,
+                           pos = (0, 0, -0.25),
+                           parent = self.pauseMenu,
                            scale = 0.1,
                            #text_font = self.font,
                            frameSize = (-4, 4, -1, 1),
@@ -782,10 +836,18 @@ class Game():
             self.updateTitleForWindowSize(size[0], size[1])
 
     def openMenu(self):
+        self.cleanupCurrentSection()
+
+        properties = WindowProperties()
+        properties.setCursorHidden(False)
+        properties.setCursorFilename("Assets/Shared/tex/cursor.cur")
+        common.base.win.requestProperties(properties)
+
         self.currentSectionIndex = 0
         self.currentSectionData = None
 
         self.gameOverScreen.hide()
+        self.pauseMenu.hide()
         self.mainMenuBackdrop.show()
         self.mainMenuPanel.show()
 
@@ -794,6 +856,19 @@ class Game():
     def openOptions(self):
         self.optionsMenu.show()
         self.currentMenu = self.optionsMenu
+        
+    def openPauseMenu(self):
+        properties = WindowProperties()
+        properties.setCursorHidden(False)
+        properties.setCursorFilename("Assets/Shared/tex/cursor.cur")
+        common.base.win.requestProperties(properties)
+
+        self.pauseMenu.show()
+
+    def returnToGame(self):
+        self.pauseMenu.hide()
+        if self.currentSectionObject is not None:
+            self.currentSectionObject.resumeGame()
 
     def startGame(self):
         self.startSection(0)
@@ -813,8 +888,7 @@ class Game():
         self.startSectionInternal(sectionIndex, data)
 
     def startSectionInternal(self, index, data):
-        if self.currentSectionObject is not None:
-            self.currentSectionObject.destroy()
+        self.cleanupCurrentSection()
 
         self.mainMenuPanel.hide()
         self.mainMenuBackdrop.hide()
@@ -838,13 +912,10 @@ class Game():
 
     def restartCurrentSection(self):
         self.gameOverScreen.hide()
+        self.pauseMenu.hide()
         self.startSectionInternal(self.currentSectionIndex, self.currentSectionData)
 
     def gameOver(self):
-        if self.currentSectionObject is not None:
-            self.currentSectionObject.destroy()
-            self.currentSectionObject = None
-
         if self.gameOverScreen.isHidden():
             self.gameOverScreen.show()
 
@@ -862,7 +933,14 @@ class Game():
             else:
                 self.currentMenu = None
 
+    def cleanupCurrentSection(self):
+        if self.currentSectionObject is not None:
+            self.currentSectionObject.destroy()
+            self.currentSectionObject = None
+
     def destroy(self):
+        self.cleanupCurrentSection()
+
         self.shipSelectionMenu.clearPythonTag(TAG_PREVIOUS_MENU)
 
         for section in common.optionWidgets.values():
