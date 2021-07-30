@@ -33,12 +33,15 @@ def buildOptionsMenu(gameRef):
 class Game():
     BUTTON_SIZE_LARGE = 0
     BUTTON_SIZE_SMALL = 1
+    BUTTON_SIZE_MED = 2
 
     @staticmethod
     def makeButton(text, command, menu, size, extraArgs = None, leftAligned = True, textScale = 1):
         if size == Game.BUTTON_SIZE_LARGE:
             width = 20
         elif size == Game.BUTTON_SIZE_SMALL:
+            width = 10
+        elif size == Game.BUTTON_SIZE_MED:
             width = 10
         height = 2.5
 
@@ -48,6 +51,8 @@ class Game():
             textPos = (0.9, -0.2)
             if size == Game.BUTTON_SIZE_LARGE:
                 button = ""
+            elif size == Game.BUTTON_SIZE_MED:
+                button = "Med"
             else:
                 button = "Small"
         else:
@@ -56,6 +61,8 @@ class Game():
             textPos = (0, -0.2)
             if size == Game.BUTTON_SIZE_LARGE:
                 button = "SmallCentred"
+            elif size == Game.BUTTON_SIZE_MED:
+                button = "MedCentred"
             else:
                 button = "SmallCentred"
 
@@ -317,101 +324,63 @@ class Game():
         ### Game-over menu
 
         self.gameOverScreen = DirectDialog(frameSize = (-0.5, 0.5, -0.7, 0.7),
+                                           frameColor = (0.225, 0.325, 0.5, 0.75),
                                            fadeScreen = 0.4,
-                                           relief = DGG.FLAT)
+                                           relief = DGG.FLAT,
+                                           frameTexture = gradient)
         self.gameOverScreen.hide()
 
         label = DirectLabel(text = "Game Over!",
                             parent = self.gameOverScreen,
                             scale = 0.1,
                             pos = (0, 0, 0.55),
-                            #text_font = self.font,
-                            relief = None)
+                            text_font = common.fancyFont,
+                            text_fg = (0.8, 0.9, 1, 1),
+                            frameColor = (0, 0, 0.225, 1),
+                            pad = (0.9, 0.3),
+                            relief = DGG.FLAT)
 
-        btn = DirectButton(text = "Retry",
-                           command = self.restartCurrentSection,
-                           pos = (0, 0, 0.25),
-                           parent = self.gameOverScreen,
-                           scale = 0.1,
-                           #text_font = self.font,
-                           frameSize = (-4, 4, -1, 1),
-                           text_scale = 0.75,
-                           #relief = DGG.FLAT,
-                           text_pos = (0, -0.2))
+        btn = Game.makeButton("Retry", self.restartCurrentSection, self.gameOverScreen, Game.BUTTON_SIZE_MED, leftAligned = False)
+        btn.setPos(0, 0, 0.25)
         btn.setTransparency(True)
 
-        btn = DirectButton(text = "Return to Menu",
-                           command = self.openMenu,
-                           pos = (0, 0, 0),
-                           parent = self.gameOverScreen,
-                           scale = 0.1,
-                           #text_font = self.font,
-                           frameSize = (-4, 4, -1, 1),
-                           text_scale = 0.75,
-                           #relief = DGG.FLAT,
-                           text_pos = (0, -0.2))
+        btn = Game.makeButton("Return to Menu", self.openMenu, self.gameOverScreen, Game.BUTTON_SIZE_MED, leftAligned = False)
+        btn.setPos(0, 0, 0)
         btn.setTransparency(True)
 
-        btn = DirectButton(text = "Quit",
-                           command = self.quit,
-                           pos = (0, 0, -0.25),
-                           parent = self.gameOverScreen,
-                           scale = 0.1,
-                           #text_font = self.font,
-                           frameSize = (-4, 4, -1, 1),
-                           text_scale = 0.75,
-                           #relief = DGG.FLAT,
-                           text_pos = (0, -0.2))
+        btn = Game.makeButton("Quit", self.quit, self.gameOverScreen, Game.BUTTON_SIZE_MED, leftAligned = False)
+        btn.setPos(0, 0, -0.25)
         btn.setTransparency(True)
         
         ### Pause menu
 
         self.pauseMenu = DirectDialog(frameSize = (-0.5, 0.5, -0.7, 0.7),
-                                           fadeScreen = 0.4,
-                                           relief = DGG.FLAT)
+                                      frameColor = (0.225, 0.325, 0.5, 0.75),
+                                      fadeScreen = 0.4,
+                                      relief = DGG.FLAT,
+                                      frameTexture = gradient)
         self.pauseMenu.hide()
 
         label = DirectLabel(text = "Paused...",
                             parent = self.pauseMenu,
                             scale = 0.1,
                             pos = (0, 0, 0.55),
-                            #text_font = self.font,
-                            relief = None)
+                            text_font = common.fancyFont,
+                            text_fg = (0.8, 0.9, 1, 1),
+                            frameColor = (0, 0, 0.225, 1),
+                            pad = (0.9, 0.3),
+                            relief = DGG.FLAT)
 
-        btn = DirectButton(text = "Resume",
-                           command = self.returnToGame,
-                           pos = (0, 0, 0.25),
-                           parent = self.pauseMenu,
-                           scale = 0.1,
-                           #text_font = self.font,
-                           frameSize = (-4, 4, -1, 1),
-                           text_scale = 0.75,
-                           #relief = DGG.FLAT,
-                           text_pos = (0, -0.2))
+        btn = Game.makeButton("Resume", self.returnToGame, self.pauseMenu, Game.BUTTON_SIZE_MED, leftAligned = False)
+        btn.setPos(0, 0, 0.25)
         btn.setTransparency(True)
 
-        btn = DirectButton(text = "Exit to Menu",
-                           command = self.openMenu,
-                           pos = (0, 0, 0),
-                           parent = self.pauseMenu,
-                           scale = 0.1,
-                           #text_font = self.font,
-                           frameSize = (-4, 4, -1, 1),
-                           text_scale = 0.75,
-                           #relief = DGG.FLAT,
-                           text_pos = (0, -0.2))
+        btn = Game.makeButton("Return to Menu", self.openMenu, self.pauseMenu, Game.BUTTON_SIZE_MED, leftAligned = False)
+        btn.setPos(0, 0, 0)
         btn.setTransparency(True)
 
-        btn = DirectButton(text = "Quit",
-                           command = self.quit,
-                           pos = (0, 0, -0.25),
-                           parent = self.pauseMenu,
-                           scale = 0.1,
-                           #text_font = self.font,
-                           frameSize = (-4, 4, -1, 1),
-                           text_scale = 0.75,
-                           #relief = DGG.FLAT,
-                           text_pos = (0, -0.2))
+        btn = Game.makeButton("Quit", self.quit, self.pauseMenu, Game.BUTTON_SIZE_MED, leftAligned = False)
+        btn.setPos(0, 0, -0.25)
         btn.setTransparency(True)
 
         ### Section 2 ship-selection menu
@@ -916,6 +885,11 @@ class Game():
         self.startSectionInternal(self.currentSectionIndex, self.currentSectionData)
 
     def gameOver(self):
+        properties = WindowProperties()
+        properties.setCursorHidden(False)
+        properties.setCursorFilename("Assets/Shared/tex/cursor.cur")
+        common.base.win.requestProperties(properties)
+
         if self.gameOverScreen.isHidden():
             self.gameOverScreen.show()
 
