@@ -15,6 +15,7 @@ from Section2.GameObject import *
 from Section2.Player import *
 from Section2.Enemy import *
 from Section2.Level import Level
+from Section2.EndPortal import SphericalPortalSystem
 
 import common
 
@@ -97,6 +98,12 @@ class Section2():
         self.player = Player(shipSpec)
         self.player.root.setPos(self.currentLevel.playerSpawnPoint)
         self.player.forceCameraPosition()
+
+        exit_sphere = self.currentLevel.geometry.find("**/=exit").find("**/+GeomNode")
+        pos = exit_sphere.get_pos(self.currentLevel.geometry)
+        exit_sphere.detach_node()
+        lights = [self.currentLevel.lightNP, self.player.lightNP]
+        self.portalSys = SphericalPortalSystem(self.currentLevel.geometry, lights, pos)
 
         self.playState = Section2.STATE_PLAYING
 
@@ -202,6 +209,8 @@ class Section2():
         common.base.ignore("enemy-into")
 
         self.cleanupLevel()
+        self.portalSys.destroy()
+        self.portalSys = None
         common.base.taskMgr.remove(self.updateTask)
         self.updateTask = None
 
