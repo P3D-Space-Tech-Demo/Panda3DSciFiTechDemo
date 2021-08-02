@@ -11,7 +11,6 @@ pbr_clip_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 
 
 def create_sphere(segments):
-    import array
     from math import pi, sin, cos
 
     v_format = GeomVertexFormat.get_v3()
@@ -93,6 +92,7 @@ class SphericalPortalSystem:
 
         self.portal_node_0 = level_model.attach_new_node("portal_node_0")
         self.portal_node_1 = NodePath("portal_node_1")
+#        self.portal_node_1.set_shader_auto()
 
         for light in lights:
             self.portal_node_1.set_light(light)
@@ -140,8 +140,10 @@ class SphericalPortalSystem:
         self.tunnel_model_1 = self.tunnel_model_0.copy_to(self.portal_node_1)
         self.tunnel_model_1.set_shader(scene_shader)
         plane = Plane(Vec3(0., -1., 0.), Point3(0., 0., 0.))
+#        plane_np = self.portal_sphere.attach_new_node(PlaneNode("plane", plane))
         plane_np = self.portal_sphere.attach_new_node("clip_plane")
         plane_np.set_hpr(-90., -40., 0.)
+#        self.tunnel_model_0.set_clip_plane(plane_np)
         plane_normal = plane_np.get_quat(base.render).get_forward()
         plane_point = plane_np.get_pos(base.render)
         plane_dist = plane_point.dot(plane_normal)
@@ -149,14 +151,18 @@ class SphericalPortalSystem:
         self.tunnel_model_0.set_shader(pbr_clip_shader)
         self.tunnel_model_0.set_shader_input("clip_plane_def", plane_def)
 
-        skybox = loader.load_model("Assets/Section2/models/portal_skybox.gltf")
+#        skybox = loader.load_model("Assets/Section2/models/portal_skybox.gltf")
+        cube_map_name = 'Assets/Section2/tex/portal_skybox_#.png'
+        skybox = common.create_skybox(cube_map_name)
         skybox.reparent_to(self.portal_cam)
-        skybox.set_scale(50.)
         skybox.set_compass()
+        '''
+        skybox.set_scale(50.)
         skybox.set_light_off()
         skybox.set_shader_off()
         skybox.set_bin("background", 0)
         skybox.set_depth_write(False)
+        '''
 
         base.task_mgr.add(self.update_portal_cam, "update_portal_cam", sort=45)
 

@@ -71,3 +71,62 @@ def loadParticles(fileName):
     particleEffect = ParticleEffect()
     particleEffect.loadConfig(fileName)
     return particleEffect
+
+def create_skybox(cube_map_name):
+
+    coords = (
+        (-1., 1., -1.), (1., 1., -1.), (1., 1., 1.), (-1., 1., 1.),
+        (1., -1., -1.), (-1., -1., -1.), (-1., -1., 1.), (1., -1., 1.)
+    )
+    pos_data = array.array("f", [])
+
+    for coord in coords:
+        pos_data.extend(coord * 2)
+
+    idx_data = array.array("H", [
+        0, 1, 2,
+        0, 2, 3,
+        5, 0, 3,
+        5, 3, 6,
+        1, 4, 7,
+        1, 7, 2,
+        4, 5, 6,
+        4, 6, 7,
+        3, 2, 7,
+        3, 7, 6,
+        5, 4, 1,
+        5, 1, 0
+    ])
+
+    array_format = GeomVertexArrayFormat()
+    array_format.add_column(InternalName.make("vertex"), 3, Geom.NT_float32, Geom.C_point)
+    array_format.add_column(InternalName.make("texcoord"), 3, Geom.NT_float32, Geom.C_texcoord)
+    vertex_format = GeomVertexFormat()
+    vertex_format.add_array(array_format)
+    vertex_format = GeomVertexFormat.register_format(vertex_format)
+
+    v_data = GeomVertexData("side_data", vertex_format, Geom.UH_static)
+    v_data.unclean_set_num_rows(8)
+    view = memoryview(v_data.modify_array(0)).cast("B").cast("f")
+    view[:] = pos_data
+
+    prim = GeomTriangles(Geom.UH_static)
+    idx_array = prim.modify_vertices()
+    idx_array.unclean_set_num_rows(len(idx_data))
+    view = memoryview(idx_array).cast("B").cast("H")
+    view[:] = idx_data
+
+    geom = Geom(v_data)
+    geom.add_primitive(prim)
+    node = GeomNode("sky_box")
+    node.add_geom(geom)
+    skybox = NodePath(node)
+    skybox.set_light_off()
+    skybox.set_material_off()
+    skybox.set_shader_off()
+    skybox.set_bin("background", 0)
+    skybox.set_depth_write(False)
+    skybox.set_scale(10.)
+    skybox.set_texture(base.loader.load_cube_map(cube_map_name))
+
+    return skybox
