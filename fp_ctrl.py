@@ -11,6 +11,10 @@ from panda3d.bullet import BulletRigidBodyNode
 from panda3d.bullet import BulletPlaneShape
 from panda3d.bullet import BulletDebugNode
 
+
+base.static_frames = 0
+base.static_pos = Vec3()
+
 base.world = BulletWorld()
 base.world.set_gravity(Vec3(0, 0, -9.81))
 # the effective world-Z limit
@@ -69,13 +73,13 @@ def fp_cleanup():
     player.detach_node()
     disable_fp_camera()
 
-def enable_fp_camera():
+def enable_fp_camera(fp_height = 1):
     player = base.render.find('Player')
     base.camLens.fov = 80
     base.camLens.set_near_far(0.01, 90000)
     base.camLens.focal_length = 7
     base.camera.reparent_to(player)
-    base.camera.set_pos(player, 0.0, 0.03, 5.0)
+    base.camera.set_pos(player, 0, 0, fp_height)
     base.camera.set_hpr(0., 0., 0.)
     base.task_mgr.add(update_cam, "update_cam")
     base.task_mgr.add(physics_update, "physics_update")
@@ -113,9 +117,7 @@ def update_cam(Task):
     movementSpeedForward = 15
     movementSpeedBackward = 15
     striveSpeed = 11
-    static_pos_bool = False
-    static_pos = Vec3()
-
+    
     player = base.render.find('Player')
 
     # get mouse data
@@ -171,52 +173,33 @@ def update_cam(Task):
             camViewTarget.set_x(h)
 
     if keyMap["left"]:
-        if static_pos_bool:
-            static_pos_bool = False
-
+        base.static_frames = 0
         player.set_x(player, -striveSpeed * globalClock.get_dt())
 
-    if not keyMap["left"]:
-        if not static_pos_bool:
-            static_pos_bool = True
-            static_pos = player.get_pos()
-
-        player.set_x(static_pos[0])
-        player.set_y(static_pos[1])
-
     if keyMap["right"]:
-        if static_pos_bool:
-            static_pos_bool = False
-
+        base.static_frames = 0
         player.set_x(player, striveSpeed * globalClock.get_dt())
 
-    if not keyMap["right"]:
-        if not static_pos_bool:
-            static_pos_bool = True
-            static_pos = player.get_pos()
-
-        player.set_x(static_pos[0])
-        player.set_y(static_pos[1])
-
     if keyMap["forward"]:
-        if static_pos_bool:
-            static_pos_bool = False
-
+        base.static_frames = 0
         player.set_y(player, movementSpeedForward * globalClock.get_dt())
 
-    if keyMap["forward"] != 1:
-        if not static_pos_bool:
-            static_pos_bool = True
-            static_pos = player.get_pos()
-
-        player.set_x(static_pos[0])
-        player.set_y(static_pos[1])
-
     if keyMap["backward"]:
-        if static_pos_bool:
-            static_pos_bool = False
-
+        base.static_frames = 0
         player.set_y(player, -movementSpeedBackward * globalClock.get_dt())
+        
+    if not keyMap["left"]:
+        if not keyMap["right"]:
+            if not keyMap["forward"]:
+                if not keyMap["backward"]:
+                    if player.node().is_on_ground():
+                        base.static_frames += 1
+                    
+                        if base.static_frames == 1:
+                            base.static_pos = player.get_pos()
+                            base.static_frames = 0
+                                            
+                        player.set_pos(base.static_pos)
 
     return Task.cont
 

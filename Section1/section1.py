@@ -1599,7 +1599,7 @@ class Section1:
         # set up camera control
         entrance_pos = Point3(self.hangar.entrance_pos)
         entrance_pos.x += 33
-        fp_ctrl.fp_init(entrance_pos)
+        fp_ctrl.fp_init(entrance_pos)            
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(4.)
@@ -1621,7 +1621,7 @@ class Section1:
 
             else:
                 base.task_mgr.remove("move_camera")
-                fp_ctrl.enable_fp_camera()
+                fp_ctrl.enable_fp_camera(fp_height = 5)
 
             self.cam_is_fps = not self.cam_is_fps
 
