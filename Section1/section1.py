@@ -1615,15 +1615,26 @@ class Section1:
             add_section_task(self.move_camera, "move_camera")
 
         def cam_switch():
-            if self.cam_is_fps:
-                fp_ctrl.disable_fp_camera()
-                enable_orbital_cam()
+            forward_key = KeyboardButton.ascii_key('w')
+            backward_key = KeyboardButton.ascii_key('s')
+            left_key = KeyboardButton.ascii_key('a')
+            right_key = KeyboardButton.ascii_key('d')            
+            is_down = base.mouseWatcherNode.is_button_down
+            
+            if not is_down(forward_key):
+                if not is_down(backward_key):
+                    if not is_down(left_key):
+                        if not is_down(right_key):
+                        
+                            if self.cam_is_fps:
+                                fp_ctrl.disable_fp_camera()
+                                enable_orbital_cam()
 
-            else:
-                base.task_mgr.remove("move_camera")
-                fp_ctrl.enable_fp_camera(fp_height = 5)
+                            else:
+                                base.task_mgr.remove("move_camera")
+                                fp_ctrl.enable_fp_camera(fp_height = 5)
 
-            self.cam_is_fps = not self.cam_is_fps
+                            self.cam_is_fps = not self.cam_is_fps
 
         base.accept("\\", cam_switch)
         enable_orbital_cam()
