@@ -74,6 +74,12 @@ def fp_cleanup():
     disable_fp_camera()
 
 def enable_fp_camera(fp_height = 1):
+    base_props = base.win.get_properties()
+    bp_hide = base_props.get_cursor_hidden()
+    toggle_props = WindowProperties()
+    toggle_props.set_cursor_hidden(not bp_hide)
+    base.win.request_properties(toggle_props)
+    
     player = base.render.find('Player')
     base.camLens.fov = 80
     base.camLens.set_near_far(0.01, 90000)
@@ -104,6 +110,12 @@ def enable_fp_camera(fp_height = 1):
     base.disable_mouse()
 
 def disable_fp_camera():
+    base_props = base.win.get_properties()
+    bp_hide = base_props.get_cursor_hidden()
+    toggle_props = WindowProperties()
+    toggle_props.set_cursor_hidden(not bp_hide)
+    base.win.request_properties(toggle_props)
+
     base.task_mgr.remove("update_cam")
     base.task_mgr.remove("physics_update")
     base.ignore("mouse3")
