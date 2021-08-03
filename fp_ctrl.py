@@ -42,7 +42,7 @@ def toggle_debug():
     else:
         debug_np.hide()
 
-base.accept('f1', toggle_debug)
+# base.accept('f1', toggle_debug)
 
 # 3D player movement system begins
 keyMap = {"left": 0, "right": 0, "forward": 0, "backward": 0, "run": 0, "jump": 0}
@@ -205,6 +205,9 @@ def update_cam(Task):
 def physics_update(Task):
     dt = globalClock.get_dt()
     base.world.do_physics(dt)
+    
+    if base.static_frames > 60:
+        base.static_frames = 0
 
     return Task.cont
     
