@@ -1,20 +1,19 @@
 
 from panda3d.core import Vec4, Vec3, Vec2, Plane, Point3, BitMask32
 from panda3d.core import CollisionSphere, CollisionNode, CollisionRay, CollisionSegment, CollisionHandlerQueue, CollisionTraverser
-from panda3d.core import TextureStage
-from panda3d.core import ColorBlendAttrib
 
-from Section2.GameObject import GameObject, ArmedObject
+from Section2.GameObject import GameObject, ArmedObject, ShieldedObject
 from Section2.CommonValues import *
 import common
 
 import random, math
 
-class Enemy(GameObject, ArmedObject):
+class Enemy(GameObject, ArmedObject, ShieldedObject):
     def __init__(self, pos, modelName, maxHealth, maxSpeed, colliderName, size):
         GameObject.__init__(self, pos, modelName, None, maxHealth, maxSpeed, colliderName,
                             MASK_INTO_ENEMY | MASK_FROM_PLAYER | MASK_FROM_ENEMY, size)
         ArmedObject.__init__(self)
+        ShieldedObject.__init__(self, self.root, Vec4(0.2, 1, 0.3, 1))
 
         self.colliderNP.node().setFromCollideMask(MASK_WALLS | MASK_FROM_ENEMY)
 
@@ -37,9 +36,6 @@ class Enemy(GameObject, ArmedObject):
         self.flinchAnims = []
         self.flinchTimer = 0
 
-        self.shields = []
-        self.shieldDuration = 0.5
-
         self.movementNames = ["walk"]
 
         self.setupExplosion()
@@ -58,22 +54,12 @@ class Enemy(GameObject, ArmedObject):
 
     def alterHealth(self, dHealth, incomingImpulse, knockback, flinchValue, overcharge = False):
         GameObject.alterHealth(self, dHealth, incomingImpulse, knockback, flinchValue, overcharge)
+        ShieldedObject.alterHealth(self, dHealth, incomingImpulse, knockback, flinchValue, overcharge)
 
         self.flinchCounter -= flinchValue
         if self.flinchCounter <= 0:
             self.resetFlinchCounter()
             self.flinch()
-
-        if dHealth < 0 and incomingImpulse is not None:
-            shield = common.base.loader.loadModel("Assets/Section2/models/shield")
-            shield.setScale(self.size)
-            shield.reparentTo(self.root)
-            shield.setAttrib(ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne))
-            shield.lookAt(common.base.render,
-                          self.root.getPos(common.base.render) + incomingImpulse)
-            shield.setBin("unsorted", 1)
-            shield.setDepthWrite(False)
-            self.shields.append([shield, 0])
 
     def flinch(self):
         if len(self.flinchAnims) > 0 and self.flinchTimer <= 0:
@@ -87,20 +73,13 @@ class Enemy(GameObject, ArmedObject):
     def update(self, player, dt):
         GameObject.update(self, dt)
         ArmedObject.update(self, dt)
+        ShieldedObject.update(self, dt)
 
         if self.flinchTimer > 0:
             self.flinchTimer -= dt
 
         if self.inControl and self.flinchTimer <= 0:
             self.runLogic(player, dt)
-
-        for index, (shield, timer) in enumerate(self.shields):
-            timer += dt
-            perc = timer / self.shieldDuration
-            shield.setTexOffset(TextureStage.getDefault(), perc*3)
-            shield.setAlphaScale(1.0 - perc)
-            self.shields[index][1] = timer
-        self.shields = [[shield, timer] for shield, timer in self.shields if timer < self.shieldDuration]
 
     def runLogic(self, player, dt):
         pass
@@ -122,6 +101,7 @@ class Enemy(GameObject, ArmedObject):
         self.lockColliderNP.clearPythonTag(TAG_OWNER)
         ArmedObject.destroy(self)
         GameObject.destroy(self)
+        ShieldedObject.destroy(self)
 
 class FighterEnemy(Enemy):
     STATE_ATTACK = 0

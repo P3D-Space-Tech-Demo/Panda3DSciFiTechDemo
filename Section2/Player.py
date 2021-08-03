@@ -14,7 +14,7 @@ from direct.actor.Actor import Actor
 from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import DirectLabel
 
-from Section2.GameObject import GameObject, ArmedObject
+from Section2.GameObject import GameObject, ArmedObject, ShieldedObject
 from Section2.PlayerWeapons import BlasterWeapon, RocketWeapon
 from Section2.Explosion import Explosion
 
@@ -23,7 +23,7 @@ import common
 
 import math, random
 
-class Player(GameObject, ArmedObject):
+class Player(GameObject, ArmedObject, ShieldedObject):
     def __init__(self, shipSpec):
         GameObject.__init__(self,
                             Vec3(0, 0, 0),
@@ -35,6 +35,12 @@ class Player(GameObject, ArmedObject):
                             MASK_INTO_PLAYER,
                             2)
         ArmedObject.__init__(self)
+
+        self.thirdPersonShip = common.base.loader.loadModel("Assets/Section2/models/{0}".format(shipSpec.shipModelFileLowPoly))
+        self.thirdPersonShip.setScale(0.5)
+        self.thirdPersonShip.reparentTo(self.actor)
+
+        ShieldedObject.__init__(self, self.thirdPersonShip, Vec4(1, 0.3, 0.3, 1), 2.5)
 
         self.root.reparentTo(common.currentSection.currentLevel.geometry)
 
@@ -187,10 +193,6 @@ class Player(GameObject, ArmedObject):
 
         self.cockpit = common.base.loader.loadModel("Assets/Section2/models/{0}".format(shipSpec.cockpitModelFile))
         self.cockpit.reparentTo(self.actor)
-
-        self.thirdPersonShip = common.base.loader.loadModel("Assets/Section2/models/{0}".format(shipSpec.shipModelFileLowPoly))
-        self.thirdPersonShip.setScale(0.5)
-        self.thirdPersonShip.reparentTo(self.actor)
 
         bounds = self.thirdPersonShip.getTightBounds()
         self.thirdPersonWidth = bounds[1][1] - bounds[0][1]
@@ -371,7 +373,7 @@ class Player(GameObject, ArmedObject):
             self.cameraTarget.setY(0)
             self.cameraTarget.setZ(0)
             common.base.camera.setPos(self.actor, -self.thirdPersonCameraPos*0.5)
-            self.cameraSpeedScalar = 90
+            self.cameraSpeedScalar = 50
             self.cockpit.show()
             self.thirdPersonShip.hide()
 
@@ -478,7 +480,10 @@ class Player(GameObject, ArmedObject):
         camera = common.base.camera
         cameraPos = camera.getPos(common.base.render)
         diff = self.cameraTarget.getPos(common.base.render) - cameraPos
-        camera.setPos(common.base.render, cameraPos + diff*dt*self.cameraSpeedScalar)
+        scalar = dt*self.cameraSpeedScalar
+        if scalar > 1:
+            scalar = 1
+        camera.setPos(common.base.render, cameraPos + diff*scalar)
         camera.setHpr(self.cameraTarget, 0, 0, 0)
 
     def update(self, keys, dt):
@@ -486,6 +491,8 @@ class Player(GameObject, ArmedObject):
             self.updateDeathCutscene(dt)
             GameObject.update(self, dt)
             return
+
+        ShieldedObject.update(self, dt)
 
         self.updateSpeedometer()
 
@@ -658,8 +665,14 @@ class Player(GameObject, ArmedObject):
 
     def alterHealth(self, dHealth, incomingImpulse, knockback, flinchValue, overcharge = False):
         GameObject.alterHealth(self, dHealth, incomingImpulse, knockback, flinchValue, overcharge)
+        ShieldedObject.alterHealth(self, dHealth, incomingImpulse, knockback, flinchValue, overcharge)
 
         self.updateHealthUI()
+
+        if self.health <= 0:
+            for shield, timer in self.shields:
+                shield.removeNode()
+            self.shields = []
 
         #self.hurtSound.play()
 
@@ -793,3 +806,4 @@ class Player(GameObject, ArmedObject):
 
         ArmedObject.destroy(self)
         GameObject.destroy(self)
+        ShieldedObject.destroy(self)

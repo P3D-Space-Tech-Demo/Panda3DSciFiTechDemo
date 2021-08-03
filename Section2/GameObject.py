@@ -8,6 +8,8 @@ from panda3d.core import AudioSound
 from panda3d.core import PointLight
 from panda3d.core import NodePath, PandaNode
 from panda3d.core import Quat
+from panda3d.core import TextureStage, Texture
+from panda3d.core import ColorBlendAttrib
 
 from Section2.CommonValues import *
 import common
@@ -82,7 +84,7 @@ class GameObject():
 
         damage = max(0, self.velocity.normalized().dot(surfaceNormal)) * GameObject.environmentalDamageScalar * self.velocity.length()
 
-        self.alterHealth(-damage, None, None, 0)
+        self.alterHealth(-damage, surfaceNormal, 0, 0)
 
     def update(self, dt, fluid = False):
         speed = self.velocity.length()
@@ -258,6 +260,45 @@ class ArmedObject():
         self.weaponSets = []
 
         self.weaponNPs = {}
+
+class ShieldedObject():
+    def __init__(self, shieldRoot, colour, shieldScalar = 1):
+        self.shieldRoot = shieldRoot
+        self.colour = colour
+        self.shieldScalar = shieldScalar
+
+        self.shields = []
+        self.shieldDuration = 0.5
+
+    def alterHealth(self, dHealth, incomingImpulse, knockback, flinchValue, overcharge = False):
+        if dHealth < 0 and incomingImpulse is not None and self.health > 0:
+            shield = common.base.loader.loadModel("Assets/Section2/models/shield")
+            tex = shield.findTexture(TextureStage.getDefault())
+            tex.setWrapV(Texture.WM_clamp)
+            shield.setScale(self.size*self.shieldScalar)
+            shield.reparentTo(self.root)
+            shield.setColorScale(self.colour)
+            shield.setAttrib(ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne))
+            shield.lookAt(common.base.render,
+                          self.root.getPos(common.base.render) + incomingImpulse)
+            shield.setBin("unsorted", 1)
+            shield.setDepthWrite(False)
+            shield.setTwoSided(True)
+            self.shields.append([shield, 0])
+
+    def update(self, dt):
+        for index, (shield, timer) in enumerate(self.shields):
+            timer += dt
+            perc = timer / self.shieldDuration
+            shield.setTexOffset(TextureStage.getDefault(), 0, perc*3)
+            shield.setAlphaScale(1.0 - perc)
+            self.shields[index][1] = timer
+        self.shields = [[shield, timer] for shield, timer in self.shields if timer < self.shieldDuration]
+
+    def destroy(self):
+        for shield, timer in self.shields:
+            shield.removeNode()
+        self.shields = []
 
 class Blast():
     def __init__(self, model, minSize, maxSize, duration):
