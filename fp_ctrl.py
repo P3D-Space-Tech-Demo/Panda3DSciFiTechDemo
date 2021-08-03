@@ -129,6 +129,7 @@ def update_cam(Task):
     movementSpeedForward = 15
     movementSpeedBackward = 15
     striveSpeed = 11
+    movement_init = False
     
     player = base.render.find('Player')
 
@@ -185,18 +186,22 @@ def update_cam(Task):
             camViewTarget.set_x(h)
 
     if keyMap["left"]:
+        movement_init = True
         base.static_frames = 0
         player.set_x(player, -striveSpeed * globalClock.get_dt())
 
     if keyMap["right"]:
+        movement_init = True
         base.static_frames = 0
         player.set_x(player, striveSpeed * globalClock.get_dt())
 
     if keyMap["forward"]:
+        movement_init = True
         base.static_frames = 0
         player.set_y(player, movementSpeedForward * globalClock.get_dt())
 
     if keyMap["backward"]:
+        movement_init = True
         base.static_frames = 0
         player.set_y(player, -movementSpeedBackward * globalClock.get_dt())
         
@@ -210,7 +215,8 @@ def update_cam(Task):
                         if base.static_frames == 1:
                             base.static_pos = player.get_pos()
 
-                        player.set_pos(base.static_pos)
+                        if movement_init:
+                            player.set_pos(base.static_pos)
 
     return Task.cont
 
