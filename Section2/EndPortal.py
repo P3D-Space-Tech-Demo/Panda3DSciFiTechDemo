@@ -92,13 +92,12 @@ class SphericalPortalSystem:
 
         self.portal_node_0 = level_model.attach_new_node("portal_node_0")
         self.portal_node_1 = NodePath("portal_node_1")
-#        self.portal_node_1.set_shader_auto()
 
         for light in lights:
             self.portal_node_1.set_light(light)
 
         portal_generator = loader.load_model("Assets/Section2/models/portal_generator.gltf")
-        portal_generator.set_scale(27.)
+        portal_generator.set_scale(135.)
         portal_generator.set_shader(scene_shader)
         portal_generator.reparent_to(self.portal_node_0)
         portal_generator.set_pos(portal_pos)
@@ -112,7 +111,7 @@ class SphericalPortalSystem:
         portal_generator.set_light(self.light_np)
 
         self.portal_sphere = self.portal_node_0.attach_new_node(create_sphere(segments=48))
-        self.portal_sphere.set_scale(26.8)
+        self.portal_sphere.set_scale(134.)
         self.portal_sphere.set_transparency(TransparencyAttrib.M_alpha)
         self.portal_sphere.set_light_off()
         self.portal_sphere.set_material_off()
@@ -135,15 +134,13 @@ class SphericalPortalSystem:
         self.tunnel_model_0.reparent_to(self.portal_node_0)
         self.tunnel_model_0.set_hpr(-90., -40., 0.)
         self.tunnel_model_0.set_pos(portal_pos)
-        self.tunnel_model_0.set_scale(10.)
+        self.tunnel_model_0.set_scale(50.)
 
         self.tunnel_model_1 = self.tunnel_model_0.copy_to(self.portal_node_1)
         self.tunnel_model_1.set_shader(scene_shader)
         plane = Plane(Vec3(0., -1., 0.), Point3(0., 0., 0.))
-#        plane_np = self.portal_sphere.attach_new_node(PlaneNode("plane", plane))
         plane_np = self.portal_sphere.attach_new_node("clip_plane")
         plane_np.set_hpr(-90., -40., 0.)
-#        self.tunnel_model_0.set_clip_plane(plane_np)
         plane_normal = plane_np.get_quat(base.render).get_forward()
         plane_point = plane_np.get_pos(base.render)
         plane_dist = plane_point.dot(plane_normal)
@@ -151,18 +148,10 @@ class SphericalPortalSystem:
         self.tunnel_model_0.set_shader(pbr_clip_shader)
         self.tunnel_model_0.set_shader_input("clip_plane_def", plane_def)
 
-#        skybox = loader.load_model("Assets/Section2/models/portal_skybox.gltf")
         cube_map_name = 'Assets/Section2/tex/portal_skybox_#.png'
         skybox = common.create_skybox(cube_map_name)
         skybox.reparent_to(self.portal_cam)
         skybox.set_compass()
-        '''
-        skybox.set_scale(50.)
-        skybox.set_light_off()
-        skybox.set_shader_off()
-        skybox.set_bin("background", 0)
-        skybox.set_depth_write(False)
-        '''
 
         base.task_mgr.add(self.update_portal_cam, "update_portal_cam", sort=45)
 
