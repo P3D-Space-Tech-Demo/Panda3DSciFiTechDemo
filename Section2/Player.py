@@ -354,7 +354,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         if shouldBeThirdPerson:
             self.cameraTarget.setPos(self.thirdPersonCameraPos)
             common.base.camera.setPos(self.actor, -self.thirdPersonCameraPos*0.5)
-            self.cameraSpeedScalar = 10
+            self.cameraSpeedScalar = 20
             self.thirdPersonShip.show()
             self.cockpit.hide()
 
@@ -373,7 +373,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
             self.cameraTarget.setY(0)
             self.cameraTarget.setZ(0)
             common.base.camera.setPos(self.actor, -self.thirdPersonCameraPos*0.5)
-            self.cameraSpeedScalar = 50
+            self.cameraSpeedScalar = 90
             self.cockpit.show()
             self.thirdPersonShip.hide()
 
@@ -644,9 +644,20 @@ class Player(GameObject, ArmedObject, ShieldedObject):
             if not self.lockMarkerRoot.isHidden():
                 self.lockMarkerRoot.hide()
 
-        self.updateCamera(dt)
+        timeStep = 0.001
+        newDt = dt
+        while newDt > timeStep:
+            GameObject.update(self, timeStep)
 
-        GameObject.update(self, dt)
+            self.updateCamera(timeStep)
+
+            newDt -= timeStep
+
+        GameObject.update(self, newDt)
+
+        self.updateCamera(newDt)
+
+        #print (self.cameraTarget.getY(render), common.base.camera.getY(render))
 
     def weaponReset(self, weapon):
         ArmedObject.weaponFired(self, weapon)
