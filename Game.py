@@ -834,6 +834,9 @@ class Game():
 
         self.pauseMenu.show()
 
+        if self.currentSectionObject is not None:
+            self.currentSectionObject.pauseGame()
+
     def returnToGame(self):
         self.pauseMenu.hide()
         if self.currentSectionObject is not None:

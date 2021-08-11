@@ -87,6 +87,8 @@ class Section2():
 
         self.playState = Section2.STATE_PLAYING
 
+        self.paused = False
+
     def toggleThirdPerson(self):
         self.player.toggleThirdPerson()
 
@@ -113,6 +115,10 @@ class Section2():
 
     def resumeGame(self):
         self.activated()
+        self.paused = False
+
+    def pauseGame(self):
+        self.paused = True
 
     def activated(self):
         properties = WindowProperties()
@@ -130,7 +136,7 @@ class Section2():
     def update(self, task):
         dt = globalClock.getDt()
 
-        if not common.gameController.pauseMenu.isHidden():
+        if self.paused:
             return Task.cont
 
         if self.currentLevel is not None:
