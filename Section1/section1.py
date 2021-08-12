@@ -8,20 +8,54 @@ ASSET_PATH = "Assets/Section1/"
 SHADOW_MASK = BitMask32.bit(1)
 
 
-# Keep track of all tasks that could be running, such that they can be removed
-# when this section gets cleaned up.
+# keep track of all tasks and intervals that could be running, such that they
+# can be paused, resumed and removed when this section gets cleaned up
+section_tasks = []
+section_intervals = []
 
-section_task_ids = set()
+def add_section_task(task_func, task_id, *args, **kwargs):
 
-def add_section_task(task, task_id, *args, **kwargs):
+    cleanup = lambda task_obj: section_tasks.remove(task_obj)
+    task_obj = ResumableTask(task_func, task_id, uponDeath=cleanup, *args, **kwargs)
+    base.task_mgr.add(task_obj)
+    section_tasks.append(task_obj)
 
-    base.task_mgr.add(task, task_id, *args, **kwargs)
-    section_task_ids.add(task_id)
+    return task_obj
+
+def remove_section_tasks():
+
+    for task_obj in section_tasks[:]:
+        base.task_mgr.remove(task_obj)
+
+    del section_tasks[:]
+
+def pause_section_tasks():
+
+    tmp_tasks = section_tasks[:]
+
+    for task_obj in tmp_tasks:
+        task_obj.pause()
+
+    section_tasks[:] = tmp_tasks[:]
+
+def resume_section_tasks():
+
+    for task_obj in section_tasks:
+        task_obj.resume()
+
+def pause_section_intervals():
+
+    for interval in section_intervals:
+        interval.pause()
+
+def resume_section_intervals():
+
+    for interval in section_intervals:
+        interval.resume()
 
 
-# Keep track of all lights that have been created, such that they can be removed
-# when this section gets cleaned up.
-
+# keep track of all lights that have been created, such that they can be removed
+# when this section gets cleaned up
 section_lights = []
 
 def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048, priority = 0):
@@ -213,7 +247,7 @@ class Worker:
         self.start_job = lambda: None
         self.target_point = None
         self.pivot_offset = pivot_offset  # pivot offset from model center
-        self.interval_seq = None
+        self.intervals = None
 
     def destroy(self):
 
@@ -221,9 +255,11 @@ class Worker:
         self.model = None
         self._do_job = lambda: None
 
-        if self.interval_seq and not self.interval_seq.is_stopped():
-            self.interval_seq.finish()
-            self.interval_seq.clear_intervals()
+        if self.intervals and not self.intervals.is_stopped():
+            self.intervals.finish()
+            self.intervals.clear_intervals()
+            if self.intervals in section_intervals:
+                section_intervals.remove()
 
     def reset_energy_beams(self):
 
@@ -325,7 +361,7 @@ class Worker:
     def do_job(self, job, start=False):
 
         self.job = job
-        part = job.generate_part()
+        part = job.get_next_part()
         tmp_node = self.generator.attach_new_node("tmp_node")
         tmp_node.set_compass()
         ext_z = self.generator_ext_z
@@ -340,7 +376,7 @@ class Worker:
                 if round(l.get_pos()[0], 0) == round(self.beam_root.get_pos(base.render)[0], 0):
                     l.set_pos(1000, 1000, 1000)
 
-        def do_job():
+        def generate_part():
 
             part.model.reparent_to(base.render)
             part.model.wrt_reparent_to(tmp_node)
@@ -362,7 +398,7 @@ class Worker:
 
             if (z - end_z) * (-1. if ext_z < 0. else 1.) >= 0.:
                 self.generator.set_z(end_z)
-                do_job()
+                generate_part()
                 return
 
             self.generator.set_z(z)
@@ -453,11 +489,20 @@ class WorkerBot(Worker):
         par = Parallel()
         par.append(seq)
         par.append(rot)
-        job_func = Func(lambda: self._do_job())
+
+        def job_func():
+
+            if self.intervals in section_intervals:
+                section_intervals.remove(self.intervals)
+
+            self._do_job()
+
+        job_func = Func(job_func)
         self.intervals = seq = Sequence()
         seq.append(par)
         seq.append(job_func)
         seq.start()
+        section_intervals.append(self.intervals)
 
 
 class WorkerDrone(Worker):
@@ -478,6 +523,7 @@ class WorkerDrone(Worker):
                 interval = LerpHprInterval(p, 0.1, (360, 0, 0), (0, 0, 0))
                 interval.loop()
                 self.rotor_intervals.append(interval)
+                section_intervals.append(interval)
 
         threading2._start_new_thread(rotor_thread, ())
 
@@ -487,11 +533,16 @@ class WorkerDrone(Worker):
     def destroy(self):
 
         for interval in self.rotor_intervals:
+            if interval in section_intervals:
+                section_intervals.remove(interval)
             interval.finish()
 
         if self.wobble_intervals:
+            if self.wobble_intervals in section_intervals:
+                section_intervals.remove(self.wobble_intervals)
             self.wobble_intervals.finish()
             self.wobble_intervals.clear_intervals()
+            self.wobble_intervals = None
 
         Worker.destroy(self)
 
@@ -499,10 +550,14 @@ class WorkerDrone(Worker):
 
     def wobble(self):
 
+        if self.wobble_intervals and self.wobble_intervals in section_intervals:
+            section_intervals.remove(self.wobble_intervals)
+
         h, p, r = start_hpr = self.pivot.get_hpr()
         hpr = (random.uniform(h - 2, h + 2), random.uniform(-3, 3), random.uniform(-3, 3))
         hpr_lerp = LerpHprInterval(self.pivot, .5, hpr, start_hpr, blendType='easeInOut')
         self.wobble_intervals = seq = Sequence()
+        section_intervals.append(self.wobble_intervals)
 
         if self in IdleWorkers.workers["drone"]:
             d = .5
@@ -523,6 +578,8 @@ class WorkerDrone(Worker):
         if self.wobble_intervals:
             pos = self.model.get_pos(base.render)
             hpr = self.pivot.get_hpr()
+            if self.wobble_intervals in section_intervals:
+                section_intervals.remove(self.wobble_intervals)
             self.wobble_intervals.finish()
             self.wobble_intervals.clear_intervals()
             self.wobble_intervals = None
@@ -565,7 +622,14 @@ class WorkerDrone(Worker):
         pos_seq.append(no_blend)
         pos_seq.append(ease_out)
 
-        job_func = Func(lambda: self._do_job())
+        def job_func():
+
+            if self.intervals in section_intervals:
+                section_intervals.remove(self.intervals)
+
+            self._do_job()
+
+        job_func = Func(job_func)
         pos_seq.append(job_func)
         pos_seq.append(Func(self.wobble))
 
@@ -586,6 +650,7 @@ class WorkerDrone(Worker):
         par.append(pos_seq)
         par.append(hpr_seq)
         par.start()
+        section_intervals.append(self.intervals)
 
     def exit_compartment(self):
 
@@ -676,7 +741,7 @@ class Job:
 
         self.parts_done += 1
 
-    def generate_part(self):
+    def get_next_part(self):
         if not self.primitives:
             return
 
@@ -713,8 +778,7 @@ class Part:
 
     def solidify(self, task, duration):
 
-        t = task.time
-
+        t = task.cont_time
         self.model.set_alpha_scale(t / duration)
 
         if t < duration:
@@ -726,7 +790,7 @@ class Part:
 
     def reset_size(self, task, node, duration):
 
-        t = task.time
+        t = task.cont_time
         scale = .1 + (t / duration) * .9
 
         if t < duration:
@@ -981,6 +1045,10 @@ class DroneCompartment:
 
     def close_iris(self, task):
 
+        # the delay needs to be set to zero explicitly, or resumption of the
+        # task will use the initial delay of 2.0, despite the return value of
+        # `task.cont` instead of `task.again`
+        task.delay_time = 0.
         dt = globalClock.get_dt()
         self.blade_angle += self.blade_speed * dt
         r = task.cont
@@ -1081,6 +1149,14 @@ class Hangar:
         self.door_open_intervals = None
         self.door_close_intervals = None
 
+        def remove_door_open_intervals():
+            if self.door_open_intervals and self.door_open_intervals in section_intervals:
+                section_intervals.remove(self.door_open_intervals)
+
+        def remove_door_close_intervals():
+            if self.door_close_intervals and self.door_close_intervals in section_intervals:
+                section_intervals.remove(self.door_close_intervals)
+
         def hide_corridor():
             if base.camera.get_pos(base.render).x < self.entrance_pos.x:
                 self.corridor_model.hide()
@@ -1106,11 +1182,16 @@ class Hangar:
                     dl_inter = LerpPosInterval(door, 1.5, origin, (0., 6., 0.), blendType='easeInOut')
                     para.append(dl_inter)
 
+                if self.door_close_intervals and self.door_close_intervals in section_intervals:
+                    section_intervals.remove(self.door_close_intervals)
+
                 seq = Sequence()
                 seq.append(para)
                 seq.append(Func(hide_corridor))
+                seq.append(Func(remove_door_close_intervals))
                 self.door_close_intervals = seq
                 seq.start()
+                section_intervals.append(self.door_close_intervals)
 
                 return task.done
 
@@ -1142,22 +1223,28 @@ class Hangar:
                         para.append(dl_inter)
 
                     if self.door_close_intervals and self.door_close_intervals.is_playing():
+                        if self.door_close_intervals in section_intervals:
+                            section_intervals.remove(self.door_close_intervals)
                         self.door_close_intervals.finish()
                         self.door_close_intervals.clear_intervals()
                         self.door_close_intervals = None
+
+                    if self.door_open_intervals and self.door_open_intervals in section_intervals:
+                        section_intervals.remove(self.door_open_intervals)
 
                     func = lambda: add_section_task(close_entrance_doors, "close_entrance_doors")
                     seq = Sequence()
                     seq.append(para)
                     seq.append(Func(func))
+                    seq.append(Func(remove_door_open_intervals))
                     self.door_open_intervals = seq
                     seq.start()
+                    section_intervals.append(self.door_open_intervals)
                     self.corridor_model.show()
 
             if task:
                 return task.cont
 
-#        base.accept('o', open_entrance_doors)
         add_section_task(open_entrance_doors, "open_entrance_doors")
 
         self.create_support_structure()
@@ -1334,12 +1421,16 @@ class Hangar:
             if self.door_open_intervals.is_playing():
                 self.door_open_intervals.finish()
                 self.door_open_intervals.clear_intervals()
+            if self.door_open_intervals in section_intervals:
+                section_intervals.remove(self.door_open_intervals)
             self.door_open_intervals = None
 
         if self.door_close_intervals:
             if self.door_close_intervals.is_playing():
                 self.door_close_intervals.finish()
                 self.door_close_intervals.clear_intervals()
+            if self.door_close_intervals in section_intervals:
+                section_intervals.remove(self.door_close_intervals)
             self.door_close_intervals = None
 
         self.model.detach_node()
@@ -1481,7 +1572,13 @@ class Hangar:
         self.raise_stairs()
 
     def raise_stairs(self):
+        stair_seq = Sequence()
         stair_par = Parallel()
+
+        def remove_intervals():
+
+            if stair_seq in section_intervals:
+                section_intervals.remove(stair_seq)
 
         for i in range(len(self.model.find_all_matches("**/platform_stair_step*"))):
             stair = self.model.find(f"**/platform_stair_step{i + 1}")
@@ -1494,7 +1591,10 @@ class Hangar:
             s_brbn_inter = LerpPosInterval(stair_brbn, 2., end_pos, start_pos)
             stair_par.append(s_brbn_inter)
 
-        stair_par.start()
+        stair_seq.append(stair_par)
+        stair_seq.append(Func(remove_intervals))
+        stair_seq.start()
+        section_intervals.append(stair_seq)
 
 class Section1:
 
@@ -1636,7 +1736,7 @@ class Section1:
 
                             self.cam_is_fps = not self.cam_is_fps
 
-        base.accept("\\", cam_switch)
+        KeyBindings.add("\\", cam_switch, "section1")
         enable_orbital_cam()
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
@@ -1797,6 +1897,26 @@ class Section1:
         self.hangar.deactivate_forcefield()
         self.destroy_holo_ship()
 
+    def pauseGame(self):
+
+        if self.cam_is_fps:
+            fp_ctrl.pause_fp_camera()
+
+        pause_section_tasks()
+        pause_section_intervals()
+
+        KeyBindings.deactivate_all("section1")
+
+    def resumeGame(self):
+
+        resume_section_tasks()
+        resume_section_intervals()
+
+        if self.cam_is_fps:
+            fp_ctrl.resume_fp_camera()
+
+        KeyBindings.activate_all("section1")
+
     def destroy_holo_ship(self):
         if self.holo_ship:
             self.holo_ship.detach_node()
@@ -1808,8 +1928,7 @@ class Section1:
 
     def destroy(self):
 
-        base.ignore("escape")
-        base.ignore("\\")
+        KeyBindings.clear("section1")
 
         base.camera.reparent_to(base.render)
         self.cam_target.detach_node()
@@ -1835,11 +1954,8 @@ class Section1:
         self.destroy_holo_ship()
         fp_ctrl.fp_cleanup()
 
-        section_task_ids.add("update_cam")
-        section_task_ids.add("physics_update")
-
-        for task_id in section_task_ids:
-            base.task_mgr.remove(task_id)
+        remove_section_tasks()
+        del section_intervals[:]
 
         rigid_list = base.render.find_all_matches('**/brbn*')
 
@@ -1865,14 +1981,14 @@ class Section1:
 
 def initialise(data=None):
 
-    base.render.set_antialias(AntialiasAttrib.MMultisample)
+    base.render.set_antialias(AntialiasAttrib.M_multisample)
 
     base.camera.set_pos(0, 0, -2)
 
     scene_filters.set_blur_sharpen(0.8)
     scene_filters.set_bloom()
 
-    base.accept("escape", common.gameController.gameOver)
+    KeyBindings.add("escape", common.gameController.openPauseMenu, "section1")
 
     def print_player_pos():
         print(base.camera.get_pos(base.render))

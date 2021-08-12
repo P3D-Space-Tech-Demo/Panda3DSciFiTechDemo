@@ -12,6 +12,17 @@ from panda3d.bullet import BulletPlaneShape
 from panda3d.bullet import BulletDebugNode
 
 
+# keep track of Panda3D Tasks that are currently running, such that they
+# can be paused, resumed and removed
+running_tasks = []
+
+def add_running_task(task_func, task_id, *args, **kwargs):
+    cleanup = lambda task: running_tasks.remove(task)
+    task_obj = base.task_mgr.add(task_func, task_id, uponDeath=cleanup, *args, **kwargs)
+    running_tasks.append(task_obj)
+
+    return task_obj
+
 base.static_frames = 0
 base.static_pos = Vec3()
 
@@ -87,8 +98,8 @@ def enable_fp_camera(fp_height = 1):
     base.camera.reparent_to(player)
     base.camera.set_pos(player, 0, 0, fp_height)
     base.camera.set_hpr(0., 0., 0.)
-    base.task_mgr.add(update_cam, "update_cam")
-    base.task_mgr.add(physics_update, "physics_update")
+    add_running_task(update_cam, "update_fp_cam")
+    add_running_task(physics_update, "physics_update")
 
     # define button map
     base.accept("a", setKey, ["left", 1])
@@ -106,7 +117,7 @@ def enable_fp_camera(fp_height = 1):
 
     base.accept('mouse3', do_jump)
 
-    # disable mouse
+    # disable built-in camera controller
     base.disable_mouse()
 
 def disable_fp_camera():
@@ -116,15 +127,35 @@ def disable_fp_camera():
     toggle_props.set_cursor_hidden(not bp_hide)
     base.win.request_properties(toggle_props)
 
-    base.task_mgr.remove("update_cam")
-    base.task_mgr.remove("physics_update")
+    for task_obj in running_tasks[:]:
+        base.task_mgr.remove(task_obj)
+
     base.ignore("mouse3")
 
     for key_id in ("w", "a", "s", "d", "shift", "space"):
         base.ignore(key_id)
         base.ignore(key_id + "-up")
 
-def update_cam(Task):
+def pause_fp_camera():
+    win_props = WindowProperties()
+    win_props.set_cursor_hidden(False)
+    base.win.request_properties(win_props)
+    tmp_tasks = running_tasks[:]
+
+    for task_obj in tmp_tasks:
+        base.task_mgr.remove(task_obj)
+
+    running_tasks[:] = tmp_tasks[:]
+
+def resume_fp_camera():
+    win_props = WindowProperties()
+    win_props.set_cursor_hidden(True)
+    base.win.request_properties(win_props)
+
+    for task_obj in running_tasks:
+        base.task_mgr.add(task_obj)
+
+def update_cam(task):
     # the player movement speed
     movementSpeedForward = 15
     movementSpeedBackward = 15
@@ -218,16 +249,16 @@ def update_cam(Task):
                         if movement_init:
                             player.set_pos(base.static_pos)
 
-    return Task.cont
+    return task.cont
 
-def physics_update(Task):
+def physics_update(task):
     dt = globalClock.get_dt()
     base.world.do_physics(dt)
     
     if base.static_frames > 60:
         base.static_frames = 0
 
-    return Task.cont
+    return task.cont
     
 def make_collision(rigid_label, input_model, node_number, mass, target_pos = Vec3(0, 0, 0), hpr_adj = Vec3(0, 0, 0), scale_adj = 1):
     # generic tristrip collision generator begins

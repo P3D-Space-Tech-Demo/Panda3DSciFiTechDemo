@@ -130,3 +130,130 @@ def create_skybox(cube_map_name):
     skybox.set_texture(base.loader.load_cube_map(cube_map_name))
 
     return skybox
+
+
+# The following class keeps track of key-bindings, such that they can easily be
+# suppressed and restored (e.g. when pausing and resuming the demo, respectively).
+# A dedicated DirectObject can be used to listen for key events instead of ShowBase
+# by assigning it to `KeyBindings.listener`.
+# Key-bindings can be divided into groups for convenience. If no group ID is
+# specified in the calls to the class methods, a default ID ("") is used.
+class KeyBindings:
+
+    listener = base
+    bindings = {}
+
+    @classmethod
+    def add(cls, key, handler, group="", activate=True):
+        cls.bindings.setdefault(group, {})[key] = handler
+
+        if activate:
+            cls.listener.accept(key, handler)
+
+    @classmethod
+    def remove(cls, key, group="", deactivate=True):
+        if deactivate:
+            cls.listener.ignore(key)
+
+        del cls.bindings[group][key]
+
+        if not cls.bindings[group]:
+            del cls.bindings[group]
+
+    @classmethod
+    def clear(cls, group="", deactivate=True):
+        if deactivate:
+            cls.deactivate_all(group)
+
+        del cls.bindings[group]
+
+    @classmethod
+    def activate(cls, key, group="", once=False):
+        handler = cls.bindings.get(group, {}).get(key, lambda: None)
+
+        if once:
+            cls.listener.accept_once(key, handler)
+        else:
+            cls.listener.accept(key, handler)
+
+    @classmethod
+    def activate_all(cls, group="", once=False):
+        if once:
+            for key, handler in cls.bindings.get(group, {}).items():
+                cls.listener.accept_once(key, handler)
+        else:
+            for key, handler in cls.bindings.get(group, {}).items():
+                cls.listener.accept(key, handler)
+
+    @classmethod
+    def deactivate(cls, key):
+        cls.listener.ignore(key)
+
+    @classmethod
+    def deactivate_all(cls, group=""):
+        if group is None:  # not recommended if cls.listener == base!!!
+            cls.listener.ignore_all()
+        else:
+            for key in cls.bindings.get(group, {}):
+                cls.listener.ignore(key)
+
+
+# The following class is a modification of PythonTask. Its purpose is to
+# allow resuming (re-adding) a previously paused (removed) task without its
+# internal timers being reset.
+# Specifically, since `Task.time` is reset to zero when the task is re-added,
+# a new `cont_time` variable adds the previous task duration to this value.
+# This variable should therefore be used instead of `Task.time` for code that
+# expects the elapsed time to continue increasing from where it left off when
+# pausing the task.
+# For delayed tasks, no changes to existing code need to be made, as it can
+# rely on `Task.delay_time` being decreased by the previously elapsed task time
+# upon resumption, as expected.
+class ResumableTask(PythonTask):
+
+    def __init__(self, task_func, task_id, delay=None, sort=0, priority=0, uponDeath=None, clock=None):
+        def extended_func(task):
+            return task_func(self)
+
+        PythonTask.__init__(self, extended_func, task_id)
+
+        self.clock = globalClock if clock is None else clock
+        self.delay_time = delay
+        self.sort = sort
+        self.priority = priority
+        self.set_upon_death(uponDeath if uponDeath else lambda task: None)
+        self.paused_time = 0.
+        self.paused_delay_time = 0.
+        self.tmp_time = self.clock.get_real_time()
+        self.is_paused = False
+
+    def pause(self):
+        if self.is_paused:
+            return
+
+        self.paused_time += self.time
+        base.task_mgr.remove(self)
+
+        if self.delay_time is None:
+            self.paused_delay_time = 0.
+        else:
+            dt = self.clock.get_real_time() - self.tmp_time
+            self.paused_delay_time = max(0., self.delay_time - dt)
+
+        self.is_paused = True
+
+    def resume(self):
+        if not self.is_paused:
+            return
+
+        if self.delay_time is not None:
+            self.delay_time = self.paused_delay_time
+
+        base.task_mgr.add(self)
+        self.tmp_time = self.clock.get_real_time()
+
+        self.is_paused = False
+
+    @property
+    def cont_time(self):
+        return self.time + self.paused_time
