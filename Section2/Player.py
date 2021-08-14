@@ -10,6 +10,9 @@ from panda3d.core import MeshDrawer
 from panda3d.core import ColorBlendAttrib
 from panda3d.core import CompassEffect
 from direct.actor.Actor import Actor
+from panda3d.core import OmniBoundingVolume
+from panda3d.core import Mat4
+from panda3d.core import rotateTo
 
 from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import DirectLabel
@@ -35,6 +38,26 @@ class Player(GameObject, ArmedObject, ShieldedObject):
                             MASK_INTO_PLAYER,
                             2)
         ArmedObject.__init__(self)
+
+        self.dustTunnel = common.base.loader.loadModel("Assets/Section2/models/spaceDustTunnel")
+        self.dustTunnel.setTransparency(True)
+
+        shader = Shader.load(Shader.SL_GLSL,
+                             "Assets/Section2/shaders/spaceDustVertex.glsl",
+                             "Assets/Section2/shaders/spaceDustFragment.glsl")
+        self.dustTunnel.setShader(shader)
+        self.dustTunnel.setShaderInput("velocity", Vec3(0, 0, 0))
+        self.dustTunnel.setShaderInput("maxSpeed", 45)
+        self.dustTunnel.setShaderInput("movementOffset", 0)
+
+        self.dustTunnel.reparentTo(common.base.render)
+        self.dustTunnel.node().setBounds(OmniBoundingVolume())
+        self.dustTunnel.setScale(6)
+        self.dustTunnel.setAttrib(ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne))
+        self.dustTunnel.setDepthWrite(False)
+        self.dustTunnel.setBin("unsorted", 1)
+
+        self.dustMovementOffset = 0
 
         self.thirdPersonShip = common.base.loader.loadModel("Assets/Section2/models/{0}".format(shipSpec.shipModelFileLowPoly))
         self.thirdPersonShip.setScale(0.5)
@@ -352,6 +375,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         self.isThirdPerson = shouldBeThirdPerson
 
         if shouldBeThirdPerson:
+            self.dustTunnel.hide()
             self.cameraTarget.setPos(self.thirdPersonCameraPos)
             common.base.camera.setPos(self.actor, -self.thirdPersonCameraPos*0.5)
             self.cameraSpeedScalar = 20
@@ -370,6 +394,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
             self.missileCounter.reparentTo(self.missileCounterRootThirdPerson)
             self.speedometer.reparentTo(self.speedometerRootThirdPerson)
         else:
+            self.dustTunnel.show()
             self.cameraTarget.setY(0)
             self.cameraTarget.setZ(0)
             common.base.camera.setPos(self.actor, -self.thirdPersonCameraPos*0.5)
@@ -657,7 +682,23 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
         self.updateCamera(newDt)
 
-        #print (self.cameraTarget.getY(render), common.base.camera.getY(render))
+        self.dustMovementOffset += self.velocity.length()*0.0001
+        self.dustMovementOffset %= 1.0
+        self.dustTunnel.setShaderInput("velocity", self.velocity)
+        self.dustTunnel.setShaderInput("movementOffset", self.dustMovementOffset)
+
+        self.dustTunnel.setPos(common.base.render, self.root.getPos(common.base.render))
+        if self.walking:
+            currentQuat = self.dustTunnel.getQuat(common.base.render)
+            currentVec = currentQuat.getForward()
+            newVec = self.velocity.normalized()
+            thirdVec = currentVec.cross(newVec)
+            thirdVec.normalize()
+            if thirdVec.length() > 0.01:
+                angle = currentVec.signedAngleDeg(newVec, thirdVec)
+                quat = Quat()
+                quat.setFromAxisAngle(angle, thirdVec)
+                self.dustTunnel.setQuat(currentQuat * quat)
 
     def weaponReset(self, weapon):
         ArmedObject.weaponFired(self, weapon)
@@ -796,6 +837,10 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         effect.start(self)
 
     def destroy(self):
+        if self.dustTunnel is not None:
+            self.dustTunnel.removeNode()
+            self.dustTunnel = None
+
         if self.triggerDetectorNP is not None:
             self.triggerDetectorNP.clearPythonTag(TAG_OWNER)
             self.triggerDetectorNP.removeNode()
