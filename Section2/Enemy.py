@@ -122,7 +122,7 @@ class FighterEnemy(Enemy):
         self.steeringQueue = CollisionHandlerQueue()
         self.steeringTraverser = CollisionTraverser()
 
-        self.steeringDistance = 40
+        self.steeringDistance = 80
 
         self.state = FighterEnemy.STATE_ATTACK
         self.breakAwayTimer = 0
@@ -243,7 +243,7 @@ class FighterEnemy(Enemy):
                     u = diff.project(up)
                     offset = r + u
                     offset.normalize()
-                    self.turnTowards(selfPos - offset, 5 * (1.0 - dist / self.steeringDistance) * max(0, (diff.normalized().dot(forward))), dt)
+                    self.turnTowards(selfPos - offset, 15 * (1.0 - dist / self.steeringDistance) * max(0, (diff.normalized().dot(forward))), dt)
                     turned = True
 
             if not turned:
