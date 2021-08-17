@@ -12,7 +12,7 @@ from panda3d.core import CompassEffect
 from direct.actor.Actor import Actor
 from panda3d.core import OmniBoundingVolume
 from panda3d.core import Mat4
-from panda3d.core import rotateTo
+from panda3d.core import AudioSound
 
 from direct.gui.OnscreenText import OnscreenText
 from direct.gui.DirectGui import DirectLabel
@@ -355,6 +355,19 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         self.deathFireTimer = 2.5
         self.deathFlameTimer = 0
 
+        self.deathSound = common.base.loader.loadSfx("Assets/Section2/sounds/playerDie.ogg")
+        self.hurtSound = common.base.loader.loadSfx("Assets/Section2/sounds/playerHit.ogg")
+        self.engineSound = common.base.loader.loadSfx("Assets/Section2/sounds/playerEngine.ogg")
+        self.engineSound.setLoop(True)
+        self.engineSound.setPlayRate(1.5 - 0.5*((shipSpec.acceleration*shipSpec.acceleration) / (60*60)))
+        self.engineSound.setVolume((shipSpec.acceleration*shipSpec.acceleration) / (60*60))
+
+        self.weaponSoundBlasters = common.base.loader.loadSfx(shipSpec.weaponSoundBlastersFileName)
+        self.weaponSoundBlastersPlayedThisFrame = False
+
+        self.weaponSoundRockets = common.base.loader.loadSfx("Assets/Section2/sounds/playerAttackRocket.ogg")
+        self.weaponSoundRocketsPlayedThisFrame = False
+
     def applyUIShader(self, uiObj, colourTop, colourBottom, cornerSize, edgeSoftness, aspectRatio):
         uiShader = Shader.load(Shader.SL_GLSL,
                              "Assets/Shared/shaders/uiBarVertex.glsl",
@@ -512,6 +525,9 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         camera.setHpr(self.cameraTarget, 0, 0, 0)
 
     def update(self, keys, dt):
+        self.weaponSoundBlastersPlayedThisFrame = False
+        self.weaponSoundRocketsPlayedThisFrame = False
+
         if self.health <= 0:
             self.updateDeathCutscene(dt)
             GameObject.update(self, dt)
@@ -542,6 +558,11 @@ class Player(GameObject, ArmedObject, ShieldedObject):
             self.velocity += right*self.acceleration*dt
         if self.walking:
             self.inControl = True
+            if self.engineSound.status() != AudioSound.PLAYING:
+                self.engineSound.play()
+        else:
+            if self.engineSound.status() == AudioSound.PLAYING:
+                self.engineSound.stop()
 
         mouseWatcher = common.base.mouseWatcherNode
         if mouseWatcher.hasMouse():
@@ -711,6 +732,14 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
     def attackPerformed(self, weapon):
         ArmedObject.attackPerformed(self, weapon)
+        if weapon.__class__ == BlasterWeapon:
+            if not self.weaponSoundBlastersPlayedThisFrame:
+                self.weaponSoundBlastersPlayedThisFrame = True
+                self.weaponSoundBlasters.play()
+        elif weapon.__class__ == RocketWeapon:
+            if not self.weaponSoundRocketsPlayedThisFrame:
+                self.weaponSoundRocketsPlayedThisFrame = True
+                self.weaponSoundRockets.play()
 
     def postTraversalUpdate(self, dt):
         ArmedObject.update(self, dt)
@@ -726,7 +755,8 @@ class Player(GameObject, ArmedObject, ShieldedObject):
                 shield.removeNode()
             self.shields = []
 
-        #self.hurtSound.play()
+        if dHealth < 0:
+            self.hurtSound.play()
 
     def alterEnergy(self, dEnergy):
         self.energy += dEnergy

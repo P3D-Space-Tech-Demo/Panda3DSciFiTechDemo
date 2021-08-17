@@ -55,6 +55,7 @@ class BlasterWeapon(ProjectileWeapon):
         if owner.energy > self.energyCost:
             ProjectileWeapon.fire(self, owner, dt)
             owner.alterEnergy(-self.energyCost)
+            owner.attackPerformed(self)
 
     def triggerPressed(self, owner):
         ProjectileWeapon.triggerPressed(self, owner)
@@ -125,6 +126,7 @@ class RocketWeapon(ProjectileWeapon):
             proj = ProjectileWeapon.fire(self, owner, dt)
             proj.owner = owner
             owner.alterMissileCount(-self.ammoCost)
+            owner.attackPerformed(self)
 
     def triggerPressed(self, owner):
         ProjectileWeapon.triggerPressed(self, owner)

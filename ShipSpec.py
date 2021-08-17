@@ -14,3 +14,4 @@ class ShipSpec():
         self.cockpitModelFile = ""
         self.shipModelFileHighPoly = ""
         self.shipModelFileLowPoly = ""
+        self.weaponSoundBlastersFileName = ""

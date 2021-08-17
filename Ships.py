@@ -28,6 +28,7 @@ shipSpec.turnRate = 200
 shipSpec.acceleration = 60
 shipSpec.cockpitModelFile = "cockpit"
 shipSpec.shipModelFileLowPoly = "playerShip"
+shipSpec.weaponSoundBlastersFileName = "Assets/Section2/sounds/playerAttackBlastersMany.ogg"
 
 shipSpecs.append(shipSpec)
 
@@ -52,6 +53,7 @@ shipSpec.turnRate = 150
 shipSpec.acceleration = 40
 shipSpec.cockpitModelFile = "cockpit"
 shipSpec.shipModelFileLowPoly = "playerShip"
+shipSpec.weaponSoundBlastersFileName = "Assets/Section2/sounds/playerAttackBlastersSome.ogg"
 
 shipSpecs.append(shipSpec)
 
@@ -76,5 +78,6 @@ shipSpec.turnRate = 100
 shipSpec.acceleration = 20
 shipSpec.cockpitModelFile = "cockpit"
 shipSpec.shipModelFileLowPoly = "playerShip"
+shipSpec.weaponSoundBlastersFileName = "Assets/Section2/sounds/playerAttackBlastersOne.ogg"
 
 shipSpecs.append(shipSpec)
