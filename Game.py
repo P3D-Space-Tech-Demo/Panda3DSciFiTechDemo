@@ -760,10 +760,10 @@ class Game():
         self.optionsScroller["canvasSize"] = (-0.85, 0.85, self.currentOptionsZ, 0.5)
 
     def setMusicVolume(self, vol):
-        common.base.musicManager.setVolume(vol)
+        common.base.musicManager.setVolume(vol/100)
 
     def setSoundVolume(self, vol):
-        common.base.sfxManagerList[0].setVolume(vol)
+        common.base.sfxManagerList[0].setVolume(vol/100)
 
     def setResolution(self, res):
         w, h = res.split(" x ")
