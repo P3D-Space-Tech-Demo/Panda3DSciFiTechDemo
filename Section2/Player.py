@@ -751,6 +751,8 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         self.updateHealthUI()
 
         if self.health <= 0:
+            self.engineSound.stop()
+
             for shield, timer in self.shields:
                 shield.removeNode()
             self.shields = []
@@ -867,6 +869,10 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         effect.start(self)
 
     def destroy(self):
+        if self.engineSound is not None:
+            self.engineSound.stop()
+            self.engineSound = None
+
         if self.dustTunnel is not None:
             self.dustTunnel.removeNode()
             self.dustTunnel = None

@@ -168,6 +168,20 @@ class Section2():
         if self.currentLevel is not None:
             self.currentLevel.update(self.player, self.keyMap, dt)
 
+            if self.player is not None and self.player.health <= 0:
+                if self.playState == Section2.STATE_PLAYING:
+                    self.playState = Section2.STATE_DEATH_CUTSCENE
+                    self.deathTimer = 4.5
+                elif self.playState == Section2.STATE_DEATH_CUTSCENE:
+                    self.deathTimer -= dt
+                    if self.deathTimer <= 0:
+                        self.peaceMusic.stop()
+                        self.actionMusic.stop()
+                        self.playState = Section2.STATE_GAME_OVER
+                        common.gameController.gameOver()
+                        return Task.done
+                return Task.cont
+
             if len(self.currentLevel.enemies) == 0:
                 if self.peaceMusic.status() != AudioSound.PLAYING:
                     self.peaceMusic.play()
@@ -200,19 +214,6 @@ class Section2():
                 if newVolume > 1:
                     newVolume = 1
                 self.actionMusic.setVolume(newVolume)
-
-
-            if self.player is not None and self.player.health <= 0:
-                if self.playState == Section2.STATE_PLAYING:
-                    self.playState = Section2.STATE_DEATH_CUTSCENE
-                    self.deathTimer = 4.5
-                elif self.playState == Section2.STATE_DEATH_CUTSCENE:
-                    self.deathTimer -= dt
-                    if self.deathTimer <= 0:
-                        self.playState = Section2.STATE_GAME_OVER
-                        common.gameController.gameOver()
-                        return Task.done
-                return Task.cont
 
             self.traverser.traverse(common.base.render)
 
