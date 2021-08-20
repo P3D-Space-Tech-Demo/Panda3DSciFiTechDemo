@@ -29,6 +29,8 @@ metal_shader = Shader.load(Shader.SL_GLSL, invert_vert, invert_frag)
 scene_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 #base.render.set_shader(scene_shader)
 
+base.musicManager.setConcurrentSoundLimit(2)
+
 scene_filters = CommonFilters(base.win, base.cam)
 
 game_start_time = time.time()

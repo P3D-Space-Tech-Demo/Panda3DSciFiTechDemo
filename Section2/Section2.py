@@ -8,6 +8,7 @@ from panda3d.core import ClockObject
 from panda3d.core import AmbientLight
 from panda3d.core import CompassEffect
 from panda3d.core import OmniBoundingVolume
+from panda3d.core import AudioSound
 
 from direct.gui.DirectGui import *
 
@@ -26,7 +27,7 @@ class Section2():
     STATE_DEATH_CUTSCENE = 1
     STATE_GAME_OVER = 2
 
-    def __init__(self):
+    def __init__(self, actionMusic, peaceMusic):
         common.currentSection = self
 
 #        self.skybox = common.base.loader.load_model('Assets/Section2/models/5k_spacebox.gltf')
@@ -89,10 +90,29 @@ class Section2():
 
         self.paused = False
 
+        self.peaceMusic = common.base.loader.loadMusic(peaceMusic)
+        self.actionMusic = common.base.loader.loadMusic(actionMusic)
+
+        self.peaceMusic.setLoop(True)
+        self.actionMusic.setLoop(True)
+
+        self.actionMusic.setVolume(0)
+
+        self.peaceMusic.play()
+        self.actionMusic.play()
+
+        self.musicFadeSpeedToAction = 1.5
+        self.musicFadeSpeedToPeace = 0.5
+
     def toggleThirdPerson(self):
         self.player.toggleThirdPerson()
 
     def startGame(self, shipSpec):
+        xSize = common.base.win.getXSize()
+        ySize = common.base.win.getYSize()
+
+        common.base.win.movePointer(0, xSize//2, ySize//2)
+
         self.cleanupLevel()
 
         self.shipSpec = shipSpec
@@ -117,8 +137,14 @@ class Section2():
         self.activated()
         self.paused = False
 
+        self.peaceMusic.play()
+        self.actionMusic.play()
+
     def pauseGame(self):
         self.paused = True
+
+        self.peaceMusic.stop()
+        self.actionMusic.stop()
 
     def activated(self):
         properties = WindowProperties()
@@ -141,6 +167,40 @@ class Section2():
 
         if self.currentLevel is not None:
             self.currentLevel.update(self.player, self.keyMap, dt)
+
+            if len(self.currentLevel.enemies) == 0:
+                if self.peaceMusic.status() != AudioSound.PLAYING:
+                    self.peaceMusic.play()
+                newVolume = self.peaceMusic.getVolume()
+                newVolume += dt*self.musicFadeSpeedToPeace
+                if newVolume > 1:
+                    newVolume = 1
+                self.peaceMusic.setVolume(newVolume)
+
+                newVolume = self.actionMusic.getVolume()
+                newVolume -= dt*self.musicFadeSpeedToPeace
+                if newVolume < 0:
+                    newVolume = 0
+                    if self.actionMusic.status() == AudioSound.PLAYING:
+                        self.actionMusic.stop()
+                self.actionMusic.setVolume(newVolume)
+            else:
+                newVolume = self.peaceMusic.getVolume()
+                newVolume -= dt*self.musicFadeSpeedToAction
+                if newVolume < 0:
+                    newVolume = 0
+                    if self.peaceMusic.status() == AudioSound.PLAYING:
+                        self.peaceMusic.stop()
+                self.peaceMusic.setVolume(newVolume)
+
+                if self.actionMusic.status() != AudioSound.PLAYING:
+                    self.actionMusic.play()
+                newVolume = self.actionMusic.getVolume()
+                newVolume += dt*self.musicFadeSpeedToAction
+                if newVolume > 1:
+                    newVolume = 1
+                self.actionMusic.setVolume(newVolume)
+
 
             if self.player is not None and self.player.health <= 0:
                 if self.playState == Section2.STATE_PLAYING:
@@ -197,6 +257,13 @@ class Section2():
             self.currentLevel = None
 
     def destroy(self):
+        if self.peaceMusic is not None:
+            self.peaceMusic.stop()
+            self.peaceMusic = None
+        if self.actionMusic is not None:
+            self.actionMusic.stop()
+            self.actionMusic = None
+
         if self.skybox is not None:
             self.skybox.removeNode()
             self.skybox = None
@@ -225,7 +292,8 @@ class Section2():
         common.currentSection = None
 
 def initialise(shipSpec):
-    game = Section2()
+    game = Section2("Assets/Section2/music/space_tech_break.mp3",
+                    "Assets/Section2/music/space_tech_interlude_full.mp3")
     game.startGame(shipSpec)
     return game
 
