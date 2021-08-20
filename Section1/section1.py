@@ -1699,7 +1699,8 @@ class Section1:
         # set up camera control
         entrance_pos = Point3(self.hangar.entrance_pos)
         entrance_pos.x += 33
-        fp_ctrl.fp_init(Vec3(192.383, -0.182223, 3.46))
+        base.static_pos = Vec3(192.383, -0.182223, -0.5)
+        fp_ctrl.fp_init(Vec3(192.383, -0.182223, -0.5))
         
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
