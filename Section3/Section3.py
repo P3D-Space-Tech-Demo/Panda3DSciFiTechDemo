@@ -55,6 +55,7 @@ def resume_section_intervals():
 class Section3:
     def __init__(self):
         self.intervals = []
+        base.static_pos = Vec3(-5.29407, -15.2641, 2.66)
     
         render.set_shader_off()
         render.set_shader(scene_shader)
@@ -73,11 +74,6 @@ class Section3:
             plight_1_node.node().set_attenuation((0.5, 0, 0.005))
             render.set_light(plight_1_node)
             section_lights.append(plight_1_node)
-    
-        def exit():
-            return sys.exit()[0]
-    
-        base.accept('escape', exit)
     
         def print_player_pos():
             print(str(base.render.find('Player').get_pos()))
@@ -160,7 +156,7 @@ class Section3:
                 start_particles('Assets/Shared/particles/steam.ptf', self.hg_1)
                 load_particle_config('Assets/Shared/particles/steam.ptf', self.hg_1, clip_1_pos, 2)
         
-        base.accept('e', drop_clip)
+        base.accept('r', drop_clip)
         
         self.model = base.loader.load_model(ASSET_PATH_1 + "models/ramp_test.gltf")
         self.model.reparent_to(base.render)
@@ -197,7 +193,7 @@ class Section3:
         KeyBindings.activate_all("section1")
         
     def destroy(self):
-        base.static_pos = Vec3(192.383, -0.182223, 3.46)
+        base.static_pos = Vec3(192.383, -0.182223, 2)
     
         self.hg_1.detach_node()
         self.model.detach_node()
@@ -207,7 +203,6 @@ class Section3:
         
         fp_ctrl.disable_fp_camera()
         fp_ctrl.fp_cleanup()
-        print('stuff removed')
         
         for light in section_lights:
             base.render.set_light_off(light)
