@@ -72,6 +72,28 @@ def loadParticles(fileName):
     particleEffect.loadConfig(fileName)
     return particleEffect
 
+base.particle_effect = ParticleEffect()
+
+def start_particles(target_particle, in_model):
+    base.enableParticles()
+    base.particle_effect.cleanup()
+    base.particle_effect = ParticleEffect()
+    # swap .ptf files directly here to load different particle effects
+    load_particle_config(target_particle, in_model)
+
+def load_particle_config(filename, in_model, start_pos=Vec3(0, 0, 0), duration=1):
+    base.particle_effect.loadConfig(filename)
+    base.particle_effect.set_shader_off()
+    
+    # sets particles to birth relative to the model
+    def sec_particle(duration):
+        base.particle_effect.start(in_model)
+        base.particle_effect.setPos(start_pos)
+        time.sleep(duration)
+        base.particle_effect.softStop()
+    
+    threading2._start_new_thread(sec_particle, (duration,))
+
 def create_skybox(cube_map_name):
 
     coords = (

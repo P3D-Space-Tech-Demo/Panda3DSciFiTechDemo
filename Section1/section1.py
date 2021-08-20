@@ -1699,7 +1699,8 @@ class Section1:
         # set up camera control
         entrance_pos = Point3(self.hangar.entrance_pos)
         entrance_pos.x += 33
-        fp_ctrl.fp_init(entrance_pos)            
+        fp_ctrl.fp_init(Vec3(192.383, -0.182223, 3.46))
+        
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(4.)
@@ -1927,6 +1928,7 @@ class Section1:
             p_topper_force_brbn.detach_node()
 
     def destroy(self):
+        base.static_pos = Vec3(-5.29407, -15.2641, 2.66)
 
         KeyBindings.clear("section1")
 
@@ -1952,6 +1954,7 @@ class Section1:
         self.model_root.detach_node()
         self.model_root = None
         self.destroy_holo_ship()
+        fp_ctrl.disable_fp_camera()
         fp_ctrl.fp_cleanup()
 
         remove_section_tasks()

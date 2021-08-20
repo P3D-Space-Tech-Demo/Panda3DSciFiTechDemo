@@ -53,7 +53,7 @@ def toggle_debug():
     else:
         debug_np.hide()
 
-# base.accept('f1', toggle_debug)
+base.accept('f1', toggle_debug)
 
 # 3D player movement system begins
 keyMap = {"left": 0, "right": 0, "forward": 0, "backward": 0, "run": 0, "jump": 0}
@@ -160,7 +160,6 @@ def update_cam(task):
     movementSpeedForward = 15
     movementSpeedBackward = 15
     striveSpeed = 11
-    movement_init = False
     
     player = base.render.find('Player')
 
@@ -184,6 +183,7 @@ def update_cam(task):
     camViewTarget = LVecBase3f()
 
     if base.win.movePointer(0, window_Xcoord_halved, window_Ycoord_halved):
+    
         p = 0
 
         if mouse_watch.has_mouse():
@@ -217,37 +217,32 @@ def update_cam(task):
             camViewTarget.set_x(h)
 
     if keyMap["left"]:
-        movement_init = True
         base.static_frames = 0
         player.set_x(player, -striveSpeed * globalClock.get_dt())
 
     if keyMap["right"]:
-        movement_init = True
         base.static_frames = 0
         player.set_x(player, striveSpeed * globalClock.get_dt())
 
     if keyMap["forward"]:
-        movement_init = True
         base.static_frames = 0
         player.set_y(player, movementSpeedForward * globalClock.get_dt())
 
     if keyMap["backward"]:
-        movement_init = True
         base.static_frames = 0
         player.set_y(player, -movementSpeedBackward * globalClock.get_dt())
         
     if not keyMap["left"]:
         if not keyMap["right"]:
             if not keyMap["forward"]:
-                if not keyMap["backward"]:
+                if not keyMap["backward"]:       
                     if player.node().is_on_ground():
                         base.static_frames += 1
                     
                         if base.static_frames == 1:
                             base.static_pos = player.get_pos()
-
-                        if movement_init:
-                            player.set_pos(base.static_pos)
+                        
+                        player.set_pos(base.static_pos)
 
     return task.cont
 
@@ -273,7 +268,7 @@ def make_collision(rigid_label, input_model, node_number, mass, target_pos = Vec
     np = base.render.attach_new_node(body)
     np.node().add_shape(tri_shape)
     np.node().set_mass(mass)
-    np.node().set_friction(0.01)
+    np.node().set_friction(1)
     np.set_pos(target_pos)
     np.set_scale(scale_adj)
     np.set_hpr(hpr_adj)
