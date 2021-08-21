@@ -297,6 +297,11 @@ class KeyBindings:
             for event_id in Event.events[group_id]:
                 cls.reset(event_id, group_id)
 
+    setHandler = set_handler
+    activateAll = activate_all
+    deactivateAll = deactivate_all
+    resetAll = reset_all
+
 
 # The following class is a modification of PythonTask. Its purpose is to
 # allow resuming (re-adding) a previously paused (removed) task without its
