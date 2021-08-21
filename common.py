@@ -156,6 +156,28 @@ def create_skybox(cube_map_name):
     return skybox
 
 
+# The following class is used to associate event handlers with event IDs.
+class Event:
+
+    events = {}
+
+    def __init__(self, event_id, key, handler=None, group_id=""):
+        self.id = event_id
+        self.group_id = group_id
+        self.default_key = key
+        self.key = key
+        self._handler = handler if handler else lambda: None
+        self.events.setdefault(group_id, {})[event_id] = self
+
+    @property
+    def handler(self):
+        return self._handler
+
+    @handler.setter
+    def handler(self, handler=None):
+        self._handler = handler if handler else lambda: None
+
+
 # The following class keeps track of key-bindings, such that they can easily be
 # suppressed and restored (e.g. when pausing and resuming the demo, respectively).
 # A dedicated DirectObject can be used to listen for key events instead of ShowBase
@@ -168,58 +190,112 @@ class KeyBindings:
     bindings = {}
 
     @classmethod
-    def add(cls, key, handler, group="", activate=True):
-        cls.bindings.setdefault(group, {})[key] = handler
-
-        if activate:
-            cls.listener.accept(key, handler)
+    def add(cls, event_id, key, group_id="", handler=None):
+        event = Event(event_id, key, handler, group_id)
+        cls.bindings.setdefault(group_id, {})[key] = event
 
     @classmethod
-    def remove(cls, key, group="", deactivate=True):
-        if deactivate:
-            cls.listener.ignore(key)
+    def remove(cls, key, group_id=""):
+        del cls.bindings[group_id][key]
 
-        del cls.bindings[group][key]
-
-        if not cls.bindings[group]:
-            del cls.bindings[group]
+        if not cls.bindings[group_id]:
+            del cls.bindings[group_id]
 
     @classmethod
-    def clear(cls, group="", deactivate=True):
-        if deactivate:
-            cls.deactivate_all(group)
-
-        del cls.bindings[group]
+    def clear(cls, group_id=""):
+        del cls.bindings[group_id]
 
     @classmethod
-    def activate(cls, key, group="", once=False):
-        handler = cls.bindings.get(group, {}).get(key, lambda: None)
+    def set_handler(cls, event_id, handler, group_id=""):
+        if group_id not in Event.events:
+            return
+
+        events = Event.events[group_id]
+
+        if event_id not in events:
+            return
+
+        event = events[event_id]
+        event.handler = handler
+
+    @classmethod
+    def activate(cls, key, group_id="", once=False):
+        event = cls.bindings.get(group_id, {}).get(key)
+
+        if not event:
+            return
 
         if once:
-            cls.listener.accept_once(key, handler)
+            cls.listener.accept_once(key, event.handler)
         else:
-            cls.listener.accept(key, handler)
+            cls.listener.accept(key, event.handler)
 
     @classmethod
-    def activate_all(cls, group="", once=False):
+    def activate_all(cls, group_id="", once=False):
         if once:
-            for key, handler in cls.bindings.get(group, {}).items():
-                cls.listener.accept_once(key, handler)
+            for key, event in cls.bindings.get(group_id, {}).items():
+                cls.listener.accept_once(key, event.handler)
         else:
-            for key, handler in cls.bindings.get(group, {}).items():
-                cls.listener.accept(key, handler)
+            for key, event in cls.bindings.get(group_id, {}).items():
+                cls.listener.accept(key, event.handler)
 
     @classmethod
     def deactivate(cls, key):
         cls.listener.ignore(key)
 
     @classmethod
-    def deactivate_all(cls, group=""):
-        if group is None:  # not recommended if cls.listener == base!!!
+    def deactivate_all(cls, group_id=""):
+        if group_id is None:  # not recommended if cls.listener == base!!!
             cls.listener.ignore_all()
         else:
-            for key in cls.bindings.get(group, {}):
+            for key in cls.bindings.get(group_id, {}):
                 cls.listener.ignore(key)
+
+    @classmethod
+    def rebind(cls, key, event_id, group_id=""):
+        if group_id not in cls.bindings:
+            return
+
+        group = cls.bindings[group_id]
+
+        event = Event.events[group_id][event_id]
+        old_key = event.key
+
+        if key == old_key:
+            return
+
+        if key in group:
+            old_event = group[key]
+            old_event.key = None
+
+        del group[old_key]
+        group[key] = event
+
+    @classmethod
+    def reset(cls, event_id, group_id=""):
+        if group_id not in cls.bindings:
+            return
+
+        group = cls.bindings[group_id]
+        events = Event.events[group_id]
+
+        if event_id not in events:
+            return
+
+        event = events[event_id]
+        del group[event.key]
+        event.key = event.default_key
+        group[event.default_key] = event
+
+    @classmethod
+    def reset_all(cls, group_id=""):
+        if group_id is None:
+            for group_id, group in Event.events.items():
+                for event_id in group:
+                    cls.reset(event_id, group_id)
+        elif group_id in Event.events:
+            for event_id in Event.events[group_id]:
+                cls.reset(event_id, group_id)
 
 
 # The following class is a modification of PythonTask. Its purpose is to

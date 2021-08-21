@@ -156,8 +156,9 @@ class Section3:
                 start_particles('Assets/Shared/particles/steam.ptf', self.hg_1)
                 load_particle_config('Assets/Shared/particles/steam.ptf', self.hg_1, clip_1_pos, 2)
         
-        base.accept('r', drop_clip)
-        
+#        base.accept('r', drop_clip)
+        KeyBindings.set_handler("reload_gun", drop_clip, "section3")
+
         self.model = base.loader.load_model(ASSET_PATH_1 + "models/ramp_test.gltf")
         self.model.reparent_to(base.render)
         self.model.flatten_strong()
@@ -181,7 +182,7 @@ class Section3:
         pause_section_tasks()
         pause_section_intervals()
 
-        KeyBindings.deactivate_all("section1")
+        KeyBindings.deactivate_all("section3")
 
     def resumeGame(self):
 
@@ -190,7 +191,7 @@ class Section3:
 
         fp_ctrl.resume_fp_camera()
 
-        KeyBindings.activate_all("section1")
+        KeyBindings.activate_all("section3")
         
     def destroy(self):
         base.static_pos = Vec3(192.383, -0.182223, 2)
@@ -225,6 +226,12 @@ def initialise(data=None):
     section = Section3()
     common.currentSection = section
     
-    KeyBindings.add("escape", common.gameController.openPauseMenu, "Section3")
+#    KeyBindings.add("escape", common.gameController.openPauseMenu, "section3")
+    KeyBindings.set_handler("open_pause_menu", common.gameController.openPauseMenu, "section3")
+    KeyBindings.activate_all("section3")
 
     return section
+
+
+KeyBindings.add("open_pause_menu", "escape", "section3")
+KeyBindings.add("reload_gun", "r", "section3")

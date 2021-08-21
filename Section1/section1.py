@@ -1701,7 +1701,7 @@ class Section1:
         entrance_pos.x += 33
         base.static_pos = Vec3(192.383, -0.182223, -0.5)
         fp_ctrl.fp_init(Vec3(192.383, -0.182223, -0.5))
-        
+
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(4.)
@@ -1717,28 +1717,26 @@ class Section1:
             add_section_task(self.move_camera, "move_camera")
 
         def cam_switch():
-            forward_key = KeyboardButton.ascii_key('w')
-            backward_key = KeyboardButton.ascii_key('s')
-            left_key = KeyboardButton.ascii_key('a')
-            right_key = KeyboardButton.ascii_key('d')            
+            events = Event.events["fps_controller"]
+            forward_key = events["move_forward"].key
+            backward_key = events["move_backward"].key
+            left_key = events["move_left"].key
+            right_key = events["move_right"].key
             is_down = base.mouseWatcherNode.is_button_down
-            
-            if not is_down(forward_key):
-                if not is_down(backward_key):
-                    if not is_down(left_key):
-                        if not is_down(right_key):
-                        
-                            if self.cam_is_fps:
-                                fp_ctrl.disable_fp_camera()
-                                enable_orbital_cam()
+            moving = is_down(forward_key) or is_down(backward_key) or is_down(left_key) or is_down(right_key)
 
-                            else:
-                                base.task_mgr.remove("move_camera")
-                                fp_ctrl.enable_fp_camera(fp_height = 5)
+            if self.cam_is_fps:
+                if moving:
+                    return
+                fp_ctrl.disable_fp_camera()
+                enable_orbital_cam()
+            else:
+                base.task_mgr.remove("move_camera")
+                fp_ctrl.enable_fp_camera(fp_height = 5)
 
-                            self.cam_is_fps = not self.cam_is_fps
+            self.cam_is_fps = not self.cam_is_fps
 
-        KeyBindings.add("\\", cam_switch, "section1")
+        KeyBindings.set_handler("cam_switch", cam_switch, "section1")
         enable_orbital_cam()
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
@@ -1931,7 +1929,7 @@ class Section1:
     def destroy(self):
         base.static_pos = Vec3(-5.29407, -15.2641, 2.66)
 
-        KeyBindings.clear("section1")
+        KeyBindings.deactivate_all("section1")
 
         base.camera.reparent_to(base.render)
         self.cam_target.detach_node()
@@ -1992,7 +1990,7 @@ def initialise(data=None):
     scene_filters.set_blur_sharpen(0.8)
     scene_filters.set_bloom()
 
-    KeyBindings.add("escape", common.gameController.openPauseMenu, "section1")
+    KeyBindings.set_handler("open_pause_menu", common.gameController.openPauseMenu, "section1")
 
     def print_player_pos():
         print(base.camera.get_pos(base.render))
@@ -2039,5 +2037,10 @@ def initialise(data=None):
 
     section = Section1()
     common.currentSection = section
+    KeyBindings.activate_all("section1")
 
     return section
+
+
+KeyBindings.add("open_pause_menu", "escape", "section1")
+KeyBindings.add("cam_switch", "\\", "section1")

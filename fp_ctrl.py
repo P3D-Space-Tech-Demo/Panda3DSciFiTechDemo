@@ -26,6 +26,8 @@ def add_running_task(task_func, task_id, *args, **kwargs):
 base.static_frames = 0
 base.static_pos = Vec3()
 
+paused_cursor_pos = [0, 0]
+
 base.world = BulletWorld()
 base.world.set_gravity(Vec3(0, 0, -9.81))
 # the effective world-Z limit
@@ -61,6 +63,10 @@ keyMap = {"left": 0, "right": 0, "forward": 0, "backward": 0, "run": 0, "jump": 
 def setKey(key, value):
     keyMap[key] = value
 
+def reset_key_map():
+    for key in keyMap:
+        keyMap[key] = 0
+
 def fp_init(target_pos):
     # initialize player character physics the Bullet way
     shape_1 = BulletCapsuleShape(2, 1, ZUp)
@@ -90,7 +96,8 @@ def enable_fp_camera(fp_height = 1):
     toggle_props = WindowProperties()
     toggle_props.set_cursor_hidden(not bp_hide)
     base.win.request_properties(toggle_props)
-    
+    base.win.move_pointer(0, *paused_cursor_pos)
+
     player = base.render.find('Player')
     base.camLens.fov = 80
     base.camLens.set_near_far(0.01, 90000)
@@ -101,21 +108,7 @@ def enable_fp_camera(fp_height = 1):
     add_running_task(update_cam, "update_fp_cam")
     add_running_task(physics_update, "physics_update")
 
-    # define button map
-    base.accept("a", setKey, ["left", 1])
-    base.accept("a-up", setKey, ["left", 0])
-    base.accept("d", setKey, ["right", 1])
-    base.accept("d-up", setKey, ["right", 0])
-    base.accept("w", setKey, ["forward", 1])
-    base.accept("w-up", setKey, ["forward", 0])
-    base.accept("s", setKey, ["backward", 1])
-    base.accept("s-up", setKey, ["backward", 0])
-    base.accept("shift", setKey, ["run", 1])
-    base.accept("shift-up", setKey, ["run", 0])
-    base.accept("space", setKey, ["jump", 1])
-    base.accept("space-up", setKey, ["jump", 0])
-
-    base.accept('mouse3', do_jump)
+    KeyBindings.activate_all("fps_controller")
 
     # disable built-in camera controller
     base.disable_mouse()
@@ -130,11 +123,12 @@ def disable_fp_camera():
     for task_obj in running_tasks[:]:
         base.task_mgr.remove(task_obj)
 
-    base.ignore("mouse3")
+    KeyBindings.deactivate_all("fps_controller")
+    reset_key_map()
 
-    for key_id in ("w", "a", "s", "d", "shift", "space"):
-        base.ignore(key_id)
-        base.ignore(key_id + "-up")
+    pointer = base.win.get_pointer(0)
+    paused_cursor_pos[0] = int(pointer.get_x())
+    paused_cursor_pos[1] = int(pointer.get_y())
 
 def pause_fp_camera():
     win_props = WindowProperties()
@@ -146,21 +140,30 @@ def pause_fp_camera():
         base.task_mgr.remove(task_obj)
 
     running_tasks[:] = tmp_tasks[:]
+    KeyBindings.deactivate_all("fps_controller")
+    reset_key_map()
+
+    pointer = base.win.get_pointer(0)
+    paused_cursor_pos[0] = int(pointer.get_x())
+    paused_cursor_pos[1] = int(pointer.get_y())
 
 def resume_fp_camera():
     win_props = WindowProperties()
     win_props.set_cursor_hidden(True)
     base.win.request_properties(win_props)
+    base.win.move_pointer(0, *paused_cursor_pos)
 
     for task_obj in running_tasks:
         base.task_mgr.add(task_obj)
+
+    KeyBindings.activate_all("fps_controller")
 
 def update_cam(task):
     # the player movement speed
     movementSpeedForward = 15
     movementSpeedBackward = 15
     striveSpeed = 11
-    
+
     player = base.render.find('Player')
 
     # get mouse data
@@ -183,7 +186,7 @@ def update_cam(task):
     camViewTarget = LVecBase3f()
 
     if base.win.movePointer(0, window_Xcoord_halved, window_Ycoord_halved):
-    
+
         p = 0
 
         if mouse_watch.has_mouse():
@@ -231,17 +234,17 @@ def update_cam(task):
     if keyMap["backward"]:
         base.static_frames = 0
         player.set_y(player, -movementSpeedBackward * globalClock.get_dt())
-        
+
     if not keyMap["left"]:
         if not keyMap["right"]:
             if not keyMap["forward"]:
-                if not keyMap["backward"]:       
+                if not keyMap["backward"]:
                     if player.node().is_on_ground():
                         base.static_frames += 1
-                    
+
                         if base.static_frames == 1:
                             base.static_pos = player.get_pos()
-                        
+
                         player.set_pos(base.static_pos)
 
     return task.cont
@@ -249,12 +252,12 @@ def update_cam(task):
 def physics_update(task):
     dt = globalClock.get_dt()
     base.world.do_physics(dt)
-    
+
     if base.static_frames > 60:
         base.static_frames = 0
 
     return task.cont
-    
+
 def make_collision(rigid_label, input_model, node_number, mass, target_pos = Vec3(0, 0, 0), hpr_adj = Vec3(0, 0, 0), scale_adj = 1):
     # generic tristrip collision generator begins
     geom_nodes = input_model.find_all_matches('**/+GeomNode')
@@ -275,3 +278,18 @@ def make_collision(rigid_label, input_model, node_number, mass, target_pos = Vec
     np.set_collide_mask(BitMask32.allOn())
     base.world.attach_rigid_body(np.node())
 
+
+# define button map
+KeyBindings.add("move_left", "a", "fps_controller", lambda: setKey("left", 1))
+KeyBindings.add("move_left_done", "a-up", "fps_controller", lambda: setKey("left", 0))
+KeyBindings.add("move_right", "d", "fps_controller", lambda: setKey("right", 1))
+KeyBindings.add("move_right_done", "d-up", "fps_controller", lambda: setKey("right", 0))
+KeyBindings.add("move_forward", "w", "fps_controller", lambda: setKey("forward", 1))
+KeyBindings.add("move_forward_done", "w-up", "fps_controller", lambda: setKey("forward", 0))
+KeyBindings.add("move_backward", "s", "fps_controller", lambda: setKey("backward", 1))
+KeyBindings.add("move_backward_done", "s-up", "fps_controller", lambda: setKey("backward", 0))
+KeyBindings.add("run", "shift", "fps_controller", lambda: setKey("run", 1))
+KeyBindings.add("run_done", "shift-up", "fps_controller", lambda: setKey("run", 0))
+KeyBindings.add("jump", "space", "fps_controller", lambda: setKey("jump", 1))
+KeyBindings.add("jump_done", "space-up", "fps_controller", lambda: setKey("jump", 0))
+KeyBindings.add("do_jump", "mouse3", "fps_controller", do_jump)
