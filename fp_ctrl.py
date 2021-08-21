@@ -26,6 +26,10 @@ def add_running_task(task_func, task_id, *args, **kwargs):
 base.static_frames = 0
 base.static_pos = Vec3()
 
+movementSpeedForward = 15
+movementSpeedBackward = 15
+striveSpeed = 11
+
 paused_cursor_pos = [0, 0]
 
 base.world = BulletWorld()
@@ -160,9 +164,6 @@ def resume_fp_camera():
 
 def update_cam(task):
     # the player movement speed
-    movementSpeedForward = 15
-    movementSpeedBackward = 15
-    striveSpeed = 11
 
     player = base.render.find('Player')
 
