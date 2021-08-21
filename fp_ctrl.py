@@ -251,7 +251,7 @@ def update_cam(task):
 
 def physics_update(task):
     dt = globalClock.get_dt()
-    base.world.do_physics(dt)
+    base.world.do_physics(dt, 15, 1/200)
 
     if base.static_frames > 60:
         base.static_frames = 0
