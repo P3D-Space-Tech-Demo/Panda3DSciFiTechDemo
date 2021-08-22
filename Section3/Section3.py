@@ -59,9 +59,9 @@ class Section3:
     
         render.set_shader_off()
         render.set_shader(scene_shader)
-    
+
         player_start_pos = Vec3(-5.29407, -15.2641, 2.66)
-        fp_ctrl.fp_init(player_start_pos)
+        fp_ctrl.fp_init(player_start_pos, z_limit=-14)
         fp_ctrl.enable_fp_camera()
     
         for x in range(2):
