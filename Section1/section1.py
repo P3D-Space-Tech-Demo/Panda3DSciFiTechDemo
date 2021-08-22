@@ -27,7 +27,7 @@ def remove_section_tasks():
     for task_obj in section_tasks[:]:
         base.task_mgr.remove(task_obj)
 
-    del section_tasks[:]
+    section_tasks.clear()
 
 def pause_section_tasks():
 
@@ -1435,7 +1435,7 @@ class Hangar:
 
         self.model.detach_node()
         self.model = None
-        del Elevator.instances[:]
+        Elevator.instances.clear()
         base.ignore("o")
 
     def pulsate_emitters(self, task):
@@ -1706,15 +1706,16 @@ class Section1:
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(4.)
         self.cam_target.set_h(self.cam_heading)
+        self.cam_pivot = self.cam_target.attach_new_node("cam_pivot")
+        self.cam_pivot.set_y(-120.)
         self.cam_is_fps = False
 
         def enable_orbital_cam():
-            base.camera.reparent_to(self.cam_target)
-            base.camera.set_y(-120.)
+            base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
+            base.camera.reparent_to(self.cam_pivot)
             base.camLens.fov = 80
             base.camLens.set_near_far(0.01, 90000)
             base.camLens.focal_length = 7
-            add_section_task(self.move_camera, "move_camera")
 
         def cam_switch():
             events = Event.events["fps_controller"]
@@ -1731,13 +1732,13 @@ class Section1:
                 fp_ctrl.disable_fp_camera()
                 enable_orbital_cam()
             else:
-                base.task_mgr.remove("move_camera")
                 fp_ctrl.enable_fp_camera(fp_height = 5)
 
             self.cam_is_fps = not self.cam_is_fps
 
         KeyBindings.set_handler("cam_switch", cam_switch, "section1")
         enable_orbital_cam()
+        add_section_task(self.move_camera, "move_camera")
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
         self.setup_elevator_camera()
@@ -1814,7 +1815,7 @@ class Section1:
         self.cam_target.set_h(self.cam_heading)
         if self.cam_target.get_z() < 40:
             self.cam_target.set_z(self.cam_target.get_z() + 0.15 * dt)
-        base.camera.look_at(base.render, 0, 0, 15)
+        self.cam_pivot.look_at(base.render, 0, 0, 15)
 
         return task.cont
 
@@ -1953,11 +1954,11 @@ class Section1:
         self.model_root.detach_node()
         self.model_root = None
         self.destroy_holo_ship()
-        fp_ctrl.disable_fp_camera()
+#        fp_ctrl.disable_fp_camera()
         fp_ctrl.fp_cleanup()
 
         remove_section_tasks()
-        del section_intervals[:]
+        section_intervals.clear()
 
         rigid_list = base.render.find_all_matches('**/brbn*')
 

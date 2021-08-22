@@ -72,7 +72,8 @@ def fp_init(target_pos, z_limit = 0):
     player.set_collide_mask(BitMask32.all_on())
     base.world.attach_character(player.node())
     player.node().set_max_slope(0.6)
-    
+    cam_pivot = player.attach_new_node("cam_pivot")
+
     # the effective world-Z limit
     ground_plane = BulletPlaneShape(Vec3(0, 0, 1), 0)
     node = BulletRigidBodyNode('ground')
@@ -94,12 +95,13 @@ def fp_cleanup():
     player = base.render.find('Player')
     base.world.remove(player.node())
     player.detach_node()
-    
+
     ground = base.render.find('ground')
     base.world.remove(ground.node())
     ground.detach_node()
-    
+
     disable_fp_camera()
+    running_tasks.clear()
 
 def enable_fp_camera(fp_height = 1):
     base_props = base.win.get_properties()
@@ -110,12 +112,13 @@ def enable_fp_camera(fp_height = 1):
     base.win.move_pointer(0, *paused_cursor_pos)
 
     player = base.render.find('Player')
+    cam_pivot = player.find('cam_pivot')
     base.camLens.fov = 80
     base.camLens.set_near_far(0.01, 90000)
     base.camLens.focal_length = 7
-    base.camera.reparent_to(player)
-    base.camera.set_pos(player, 0, 0, fp_height)
-    base.camera.set_hpr(0., 0., 0.)
+    base.camera.reparent_to(cam_pivot)
+    base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
+    cam_pivot.set_pos(player, 0, 0, fp_height)
     add_running_task(update_cam, "update_fp_cam")
     add_running_task(physics_update, "physics_update")
 
@@ -173,13 +176,12 @@ def update_cam(task):
     # the player movement speed
 
     player = base.render.find('Player')
+    cam_pivot = player.find('cam_pivot')
 
     # get mouse data
-    mouse_watch = base.mouseWatcherNode
-    if mouse_watch.has_mouse():
-        pointer = base.win.get_pointer(0)
-        mouseX = pointer.get_x()
-        mouseY = pointer.get_y()
+    pointer = base.win.get_pointer(0)
+    mouseX = pointer.get_x()
+    mouseY = pointer.get_y()
 
     # screen sizes
     window_Xcoord_halved = base.win.get_x_size() // 2
@@ -197,35 +199,24 @@ def update_cam(task):
 
         p = 0
 
-        if mouse_watch.has_mouse():
-            # calculate the pitch of camera
-            p = base.camera.get_p() - (mouseY - window_Ycoord_halved) * mouseSpeedY
+        # calculate the pitch of the camera pivot
+        p = cam_pivot.get_p() - (mouseY - window_Ycoord_halved) * mouseSpeedY
 
         # sanity checking
-        if p < minPitch:
-            p = minPitch
-        elif p > maxPitch:
-            p = maxPitch
+        p = max(minPitch, min(maxPitch, p))
 
-        if mouse_watch.has_mouse():
-            # directly set the camera pitch
-            base.camera.set_p(p)
-            camViewTarget.set_y(p)
+        # directly set the camera pivot pitch
+        cam_pivot.set_p(p)
+        camViewTarget.set_y(p)
 
         # rotate the player's heading according to the mouse x-axis movement
-        if mouse_watch.has_mouse():
-            h = player.get_h() - (mouseX - window_Xcoord_halved) * mouseSpeedX
+        h = player.get_h() - (mouseX - window_Xcoord_halved) * mouseSpeedX
 
-        if mouse_watch.has_mouse():
-            # sanity checking
-            if h < -360:
-                h += 360
+        # sanity checking
+        h %= 360.
 
-            elif h > 360:
-                h -= 360
-
-            player.set_h(h)
-            camViewTarget.set_x(h)
+        player.set_h(h)
+        camViewTarget.set_x(h)
 
     if keyMap["left"]:
         base.static_frames = 0
@@ -243,17 +234,14 @@ def update_cam(task):
         base.static_frames = 0
         player.set_y(player, -movementSpeedBackward * globalClock.get_dt())
 
-    if not keyMap["left"]:
-        if not keyMap["right"]:
-            if not keyMap["forward"]:
-                if not keyMap["backward"]:
-                    if player.node().is_on_ground():
-                        base.static_frames += 1
+    if not (keyMap["left"] or keyMap["right"] or keyMap["forward"] or keyMap["backward"]):
+        if player.node().is_on_ground():
+            base.static_frames += 1
 
-                        if base.static_frames == 1:
-                            base.static_pos = player.get_pos()
+            if base.static_frames == 1:
+                base.static_pos = player.get_pos()
 
-                        player.set_pos(base.static_pos)
+            player.set_pos(base.static_pos)
 
     return task.cont
 
