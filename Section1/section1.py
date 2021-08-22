@@ -1700,7 +1700,7 @@ class Section1:
         entrance_pos = Point3(self.hangar.entrance_pos)
         entrance_pos.x += 33
         base.static_pos = Vec3(192.383, -0.182223, -0.5)
-        fp_ctrl.fp_init(Vec3(192.383, -0.182223, -0.5))
+        fp_ctrl.fp_init(Vec3(192.383, -0.182223, -0.5), z_limit=-4)
 
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
