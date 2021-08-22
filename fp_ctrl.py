@@ -34,14 +34,6 @@ paused_cursor_pos = [0, 0]
 
 base.world = BulletWorld()
 base.world.set_gravity(Vec3(0, 0, -9.81))
-# the effective world-Z limit
-ground_plane = BulletPlaneShape(Vec3(0, 0, 1), 0)
-node = BulletRigidBodyNode('ground')
-node.add_shape(ground_plane)
-node.set_friction(0.1)
-np = base.render.attach_new_node(node)
-np.set_pos(0, 0, -4)
-base.world.attach_rigid_body(node)
 
 # Bullet debugger
 debug_node = BulletDebugNode('bullet_debug')
@@ -71,7 +63,7 @@ def reset_key_map():
     for key in keyMap:
         keyMap[key] = 0
 
-def fp_init(target_pos):
+def fp_init(target_pos, z_limit = 0):
     # initialize player character physics the Bullet way
     shape_1 = BulletCapsuleShape(2, 1, ZUp)
     player_node = BulletCharacterControllerNode(shape_1, 1.5, 'Player')  # (shape, mass, player name)
@@ -79,6 +71,16 @@ def fp_init(target_pos):
     player.set_pos(target_pos)
     player.set_collide_mask(BitMask32.all_on())
     base.world.attach_character(player.node())
+    player.node().set_max_slope(0.6)
+    
+    # the effective world-Z limit
+    ground_plane = BulletPlaneShape(Vec3(0, 0, 1), 0)
+    node = BulletRigidBodyNode('ground')
+    node.add_shape(ground_plane)
+    node.set_friction(0.1)
+    np = base.render.attach_new_node(node)
+    np.set_pos(0, 0, z_limit)
+    base.world.attach_rigid_body(node)
 
 def do_jump(jump_speed = 16, max_height = 1, fall_speed = 150, gravity = 50):
     player = base.render.find('Player')
@@ -92,6 +94,11 @@ def fp_cleanup():
     player = base.render.find('Player')
     base.world.remove(player.node())
     player.detach_node()
+    
+    ground = base.render.find('ground')
+    base.world.remove(ground.node())
+    ground.detach_node()
+    
     disable_fp_camera()
 
 def enable_fp_camera(fp_height = 1):
