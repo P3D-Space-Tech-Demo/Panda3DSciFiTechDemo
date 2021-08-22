@@ -25,6 +25,7 @@ def add_running_task(task_func, task_id, *args, **kwargs):
 
 base.static_frames = 0
 base.static_pos = Vec3()
+base.frac_history = []
 
 movementSpeedForward = 15
 movementSpeedBackward = 15
@@ -236,12 +237,31 @@ def update_cam(task):
 
     if not (keyMap["left"] or keyMap["right"] or keyMap["forward"] or keyMap["backward"]):
         if player.node().is_on_ground():
-            base.static_frames += 1
+            p_pos = player.get_pos()
+            g_pos = p_pos[0], p_pos[1], p_pos[2] - 5
+            
+            frac = collider_data(p_pos, g_pos)[2]
 
-            if base.static_frames == 1:
+            base.frac_history.append(frac)
+                
+            if len(base.frac_history) > 60:
+                del base.frac_history[1:]
+            
+            slope_strangeness = max(base.frac_history) - min(base.frac_history)
+            
+            if slope_strangeness >= 0.1:
+                # the slope variation is too great, ignore the weld
                 base.static_pos = player.get_pos()
+                
+            if slope_strangeness < 0.1:
+                base.static_frames += 1
 
-            player.set_pos(base.static_pos)
+                if base.static_frames == 1:
+                    base.static_pos = player.get_pos()
+
+                if frac <= player.node().get_max_slope():
+                    # set the weld
+                    player.set_pos(base.static_pos)
 
     return task.cont
 
@@ -274,6 +294,11 @@ def make_collision(rigid_label, input_model, node_number, mass, target_pos = Vec
     np.set_collide_mask(BitMask32.allOn())
     base.world.attach_rigid_body(np.node())
 
+def collider_data(pos_1 = Vec3(), pos_2 = Vec3()):
+    coll = base.world.ray_test_closest(pos_1, pos_2)
+    out_data = [coll.get_hit_pos(), coll.get_hit_normal(), coll.get_hit_fraction(), coll.get_node()]
+    
+    return out_data
 
 # define button map
 KeyBindings.add("move_left", "a", "fps_controller", lambda: setKey("left", 1))
