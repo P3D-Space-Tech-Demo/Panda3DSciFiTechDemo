@@ -96,9 +96,11 @@ class Section2():
         self.peaceMusic.setLoop(True)
         self.actionMusic.setLoop(True)
 
+        self.startedPeaceMusic = False
+
+        self.peaceMusic.setVolume(0)
         self.actionMusic.setVolume(0)
 
-        self.peaceMusic.play()
         self.actionMusic.play()
 
         self.musicFadeSpeedToAction = 1.5
@@ -121,6 +123,7 @@ class Section2():
 
         self.player = Player(shipSpec)
         self.player.root.setPos(self.currentLevel.playerSpawnPoint)
+        self.player.root.setY(1300)
         self.player.forceCameraPosition()
 
         exit_sphere = self.currentLevel.geometry.find("**/=exit").find("**/+GeomNode")
@@ -137,7 +140,7 @@ class Section2():
         self.activated()
         self.paused = False
 
-        self.peaceMusic.play()
+        self.conditionallyPlayPeaceMusic()
         self.actionMusic.play()
 
     def pauseGame(self):
@@ -145,6 +148,12 @@ class Section2():
 
         self.peaceMusic.stop()
         self.actionMusic.stop()
+
+    def conditionallyPlayPeaceMusic(self):
+        if self.player.root.getY(common.base.render) > -840 or self.startedPeaceMusic:
+            self.startedPeaceMusic = True
+            if self.peaceMusic.status() != AudioSound.PLAYING:
+                    self.peaceMusic.play()
 
     def activated(self):
         properties = WindowProperties()
@@ -183,13 +192,13 @@ class Section2():
                 return Task.cont
 
             if len(self.currentLevel.enemies) == 0:
-                if self.peaceMusic.status() != AudioSound.PLAYING:
-                    self.peaceMusic.play()
-                newVolume = self.peaceMusic.getVolume()
-                newVolume += dt*self.musicFadeSpeedToPeace
-                if newVolume > 1:
-                    newVolume = 1
-                self.peaceMusic.setVolume(newVolume)
+                self.conditionallyPlayPeaceMusic()
+                if self.startedPeaceMusic:
+                    newVolume = self.peaceMusic.getVolume()
+                    newVolume += dt*self.musicFadeSpeedToPeace
+                    if newVolume > 1:
+                        newVolume = 1
+                    self.peaceMusic.setVolume(newVolume)
 
                 newVolume = self.actionMusic.getVolume()
                 newVolume -= dt*self.musicFadeSpeedToPeace

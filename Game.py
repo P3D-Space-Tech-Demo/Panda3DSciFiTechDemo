@@ -21,8 +21,8 @@ OPTION_FILE_NAME = "options.dat"
 
 def buildOptionsMenu(gameRef):
     gameRef.addOptionHeading("General")
-    gameRef.addOptionSlider("Music Volume", (0, 100), 1, "musicVolume", "general", 100, gameRef.setMusicVolume)
-    gameRef.addOptionSlider("Sound Volume", (0, 100), 1, "soundVolume", "general", 100, gameRef.setSoundVolume)
+    gameRef.addOptionSlider("Music Volume", (0, 100), 1, "musicVolume", "general", 40, gameRef.setMusicVolume)
+    gameRef.addOptionSlider("Sound Volume", (0, 100), 1, "soundVolume", "general", 75, gameRef.setSoundVolume)
     gameRef.addOptionMenu("Resolution", gameRef.resolutionList, "resolution", "general", "1024 768", gameRef.setResolution)
     gameRef.addOptionHeading("Section 1")
     gameRef.addOptionHeading("Section 2")
