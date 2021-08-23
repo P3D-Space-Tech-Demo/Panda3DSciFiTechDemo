@@ -53,6 +53,13 @@ def resume_section_intervals():
     for interval in section_intervals:
         interval.resume()
 
+def remove_section_intervals():
+
+    for interval in section_intervals:
+        interval.pause()
+
+    section_intervals.clear()
+
 
 # keep track of all lights that have been created, such that they can be removed
 # when this section gets cleaned up
@@ -181,6 +188,91 @@ def create_beam_connector():
     return beam_connector
 
 
+# The following class wraps a camera that focuses on a particular object which
+# it renders to a secondary display region inset within the main view.
+# The display region is updated each time the window is resized to maintain its
+# aspect ratio and pixel-offset from the window borders.
+# The intent is to have the camera focus on a specific object at a moment of
+# interest (e.g. a drone starting work on generating a part of the starship's
+# hull), for as long as deemed appropriate. During this time, the camera cannot
+# focus on a different object if so requested, as this could lead to way too
+# fast shifts in focus. Whether the camera can shift focus or not is determined
+# by its idle state. Normally this comes down to the idle state of the object
+# in focus, although the `idle` class variable can also be used (it is checked
+# when the `focus` object is `None`).
+class FocusCamera:
+
+    target = None
+    cam = None
+    display_region = None
+    idle = True
+    focus = None
+    listener = None
+
+    @classmethod
+    def setup(cls):
+        from direct.showbase.DirectObject import DirectObject
+
+        cls.target = target = base.render.attach_new_node("worker_cam_target")
+        cam_node = Camera("worker_focus_cam")
+        cam_node.get_lens().fov = (30., 25.)
+        cls.cam = cam = target.attach_new_node(cam_node)
+        cam.set_y(-20.)
+        cls.display_region = dr = base.win.make_display_region(.05, .25, .05, .35)
+        dr.sort = 1
+        dr.set_clear_color_active(True)
+        dr.set_clear_depth_active(True)
+        dr.camera = cam
+
+        state_node = NodePath("state")
+        state_node.set_depth_test(False)
+        state_node.set_two_sided(True)
+        state = state_node.get_state()
+        cam_node.set_tag_state_key("render_state")
+        cam_node.set_tag_state("forcefield", state)
+
+        cls.listener = DirectObject()
+        cls.listener.accept("window-event", cls.update_display_region)
+        cls.update_display_region(base.win)
+
+        cls.idle = True
+
+    @classmethod
+    def destroy(cls):
+
+        base.win.remove_display_region(cls.display_region)
+        cls.display_region = None
+        cls.target.detach_node()
+        cls.target = None
+        cls.cam = None
+        cls.focus = None
+        cls.listener.ignore_all()
+        cls.listener = None
+
+    @classmethod
+    def update_display_region(cls, window):
+
+        w = window.get_x_size()
+        h = window.get_y_size()
+        t = .35
+        y1 = 20
+        y2 = h * t
+        x1 = 20
+        x2 = x1 + (y2 - y1) * cls.cam.node().get_lens().aspect_ratio
+        l = x1 / w
+        r = x2 / w
+        b = y1 / h
+        cls.display_region.dimensions = (l, r, b, t)
+
+    @classmethod
+    def is_idle(cls):
+
+        if cls.focus:
+            return cls.focus.idle
+        else:
+            return cls.idle
+
+
 class IdleWorkers:
 
     workers = {"bot": [], "drone": []}
@@ -260,6 +352,11 @@ class Worker:
             self.intervals.clear_intervals()
             if self.intervals in section_intervals:
                 section_intervals.remove()
+
+    @property
+    def idle(self):
+
+        return self in IdleWorkers.workers[self.type]
 
     def reset_energy_beams(self):
 
@@ -412,15 +509,30 @@ class Worker:
             end_z = self.generator_start_z
 
             if (z - end_z) * (-1. if ext_z < 0. else 1.) <= 0.:
+
                 self.generator.set_z(end_z)
                 self.continue_job()
+
+                if FocusCamera.focus is self:
+                    FocusCamera.focus = None
+
                 return
 
             self.generator.set_z(z)
 
             return task.cont
 
-        self._do_job = lambda: add_section_task(activate_generator, "activate_generator")
+        def activation_job():
+
+            add_section_task(activate_generator, "activate_generator")
+
+            if FocusCamera.is_idle():
+                FocusCamera.focus = self
+                FocusCamera.target.set_pos(*part.worker_pos)
+                h = random.uniform(-135., -45.) if job.start_pos.x < 0. else random.uniform(45., 135.)
+                FocusCamera.target.set_hpr(h, -20., 0.)
+
+        self._do_job = activation_job
 
         if start:
             self.start_job = lambda: self.set_part(part)
@@ -540,7 +652,7 @@ class WorkerDrone(Worker):
         if self.wobble_intervals:
             if self.wobble_intervals in section_intervals:
                 section_intervals.remove(self.wobble_intervals)
-            self.wobble_intervals.finish()
+            self.wobble_intervals.pause()
             self.wobble_intervals.clear_intervals()
             self.wobble_intervals = None
 
@@ -550,8 +662,10 @@ class WorkerDrone(Worker):
 
     def wobble(self):
 
-        if self.wobble_intervals and self.wobble_intervals in section_intervals:
-            section_intervals.remove(self.wobble_intervals)
+        if self.wobble_intervals:
+            self.wobble_intervals.pause()
+            if self.wobble_intervals in section_intervals:
+                section_intervals.remove(self.wobble_intervals)
 
         h, p, r = start_hpr = self.pivot.get_hpr()
         hpr = (random.uniform(h - 2, h + 2), random.uniform(-3, 3), random.uniform(-3, 3))
@@ -580,7 +694,7 @@ class WorkerDrone(Worker):
             hpr = self.pivot.get_hpr()
             if self.wobble_intervals in section_intervals:
                 section_intervals.remove(self.wobble_intervals)
-            self.wobble_intervals.finish()
+            self.wobble_intervals.pause()
             self.wobble_intervals.clear_intervals()
             self.wobble_intervals = None
             self.model.set_pos(0., 0., 0.)
@@ -667,7 +781,17 @@ class WorkerDrone(Worker):
 
     def fly_up(self):
 
-        self._do_job = lambda: IdleWorkers.add(self)
+        def set_idle():
+
+            IdleWorkers.add(self)
+
+            if FocusCamera.is_idle():
+                FocusCamera.focus = self
+                FocusCamera.target.set_pos(self.pivot.get_pos())
+                h = random.uniform(0., 360.)
+                FocusCamera.target.set_hpr(h, 40., 0.)
+
+        self._do_job = set_idle
         x, y, z = self.pivot.get_pos()
         self.target_point = Point3(x, y, z + 20.)
         self.move()
@@ -808,7 +932,6 @@ class Part:
 class Elevator:
 
     instances = []
-    cam_target = None
 
     def __init__(self, elevator_root, y):
 
@@ -854,6 +977,9 @@ class Elevator:
 
                 self.ready = True
                 self.idle = True
+
+                if FocusCamera.focus is self:
+                    FocusCamera.focus = None
 
             if self.bot:
                 self.bot.model.wrt_reparent_to(base.render)
@@ -965,7 +1091,11 @@ class Elevator:
                 self.add_request(lower_platform)
                 self.add_request(open_iris)
 
-            Elevator.cam_target.look_at(self.model.get_pos())
+            if FocusCamera.is_idle():
+                FocusCamera.target.set_pos(self.model.get_pos())
+                h = random.uniform(-135., -45.)
+                FocusCamera.target.set_hpr(h, -20., 0.)
+                FocusCamera.focus = self
 
         add_section_task(raise_if_none_waiting, "raise_if_none_waiting")
 
@@ -1054,9 +1184,13 @@ class DroneCompartment:
         r = task.cont
 
         if self.blade_angle >= 44.8:
+
             self.blade_angle = 44.8
             r = task.done
             self.idle = True
+
+            if FocusCamera.focus is self:
+                FocusCamera.focus = None
 
         for blade in self.blades:
             blade.set_h(self.blade_angle)
@@ -1073,6 +1207,12 @@ class DroneCompartment:
             drone.pivot.set_pos(x, y, z + 1.)
             drone.target_point = Point3(x, y, z - 5.)
             add_section_task(self.open_iris, "open_iris")
+
+            if FocusCamera.is_idle():
+                FocusCamera.focus = self
+                FocusCamera.target.set_pos(self.model.get_pos(base.render))
+                h = random.uniform(0., 360.)
+                FocusCamera.target.set_hpr(h, 30., 0.)
 
         self.add_request(request)
 
@@ -1290,6 +1430,9 @@ class Hangar:
 
         self.job_starter = job_starter
         add_section_task(self.lower_panel, "lower_panel")
+        FocusCamera.target.set_pos(Elevator.instances[-3].model.get_pos(base.render))
+        FocusCamera.target.set_z(0.)
+        FocusCamera.target.set_hpr(180., -5., 0.)
 
     def create_support_structure(self):
 
@@ -1436,7 +1579,6 @@ class Hangar:
         self.model.detach_node()
         self.model = None
         Elevator.instances.clear()
-        base.ignore("o")
 
     def pulsate_emitters(self, task):
 
@@ -1520,6 +1662,9 @@ class Hangar:
     def deactivate_forcefield(self):
 
         add_section_task(self.lower_elevator_platform, "lower_elevator_platform")
+        FocusCamera.target.set_pos(Elevator.instances[-3].model.get_pos(base.render))
+        FocusCamera.target.set_hpr(-180, -5., 0.)
+        FocusCamera.idle = False
 
     def lower_elevator_platform(self, task):
 
@@ -1565,10 +1710,10 @@ class Hangar:
         self.forcefield.hide()
 
         stair_step = self.model.find("**/platform_stair_step1*")
-        Elevator.cam_target.reparent_to(stair_step)
-        Elevator.cam_target.set_pos(74, 0., 4.)
-        Elevator.cam_target.look_at(stair_step)
-        Elevator.cam_target.children[0].set_y(-50.)
+        cam_target = FocusCamera.target
+        cam_target.reparent_to(stair_step)
+        cam_target.set_pos(120., 35., 5.)
+        cam_target.look_at(74., 0., 0.)
         self.raise_stairs()
 
     def raise_stairs(self):
@@ -1692,6 +1837,8 @@ class Section1:
         # prune any invalid jobs
         self.jobs = [j for j in self.jobs if j]
 
+        FocusCamera.setup()
+
         self.hangar = Hangar(self.start_jobs)
 
         add_section_task(self.check_workers_done, "check_workers_done")
@@ -1707,7 +1854,7 @@ class Section1:
         self.cam_target.set_z(4.)
         self.cam_target.set_h(self.cam_heading)
         self.cam_pivot = self.cam_target.attach_new_node("cam_pivot")
-        self.cam_pivot.set_y(-120.)
+        self.cam_pivot.set_y(-115.)
         self.cam_is_fps = False
 
         def enable_orbital_cam():
@@ -1741,7 +1888,6 @@ class Section1:
         add_section_task(self.move_camera, "move_camera")
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
-        self.setup_elevator_camera()
 
     def start_jobs(self):
 
@@ -1818,27 +1964,6 @@ class Section1:
         self.cam_pivot.look_at(base.render, 0, 0, 15)
 
         return task.cont
-
-    def setup_elevator_camera(self):
-
-        self.elevator_display_region = dr = base.win.make_display_region(.05, .25, .05, .35)
-        dr.sort = 10
-        dr.set_clear_color_active(True)
-        dr.set_clear_depth_active(True)
-        cam_node = Camera("elevator_cam")
-        Elevator.cam_target = target = base.render.attach_new_node("elevator_cam_target")
-        # target.set_hpr(120., -30., 0.)
-        self.elevator_cam = cam = target.attach_new_node(cam_node)
-        cam.set_y(-40)
-        cam.set_z(2)
-        dr.camera = cam
-
-        state_node = NodePath("state")
-        state_node.set_depth_test(False)
-        state_node.set_two_sided(True)
-        state = state_node.get_state()
-        cam_node.set_tag_state_key("render_state")
-        cam_node.set_tag_state("forcefield", state)
 
     def add_primitive(self, component, prim):
 
@@ -1935,10 +2060,7 @@ class Section1:
         base.camera.reparent_to(base.render)
         self.cam_target.detach_node()
         self.cam_target = None
-        base.win.remove_display_region(self.elevator_display_region)
-        Elevator.cam_target.detach_node()
-        Elevator.cam_target = None
-        self.elevator_cam = None
+        FocusCamera.destroy()
 
         for tmp_node in base.render.find_all_matches("**/tmp_node"):
             tmp_node.detach_node()
@@ -1958,7 +2080,7 @@ class Section1:
         fp_ctrl.fp_cleanup()
 
         remove_section_tasks()
-        section_intervals.clear()
+        remove_section_intervals()
 
         rigid_list = base.render.find_all_matches('**/brbn*')
 
