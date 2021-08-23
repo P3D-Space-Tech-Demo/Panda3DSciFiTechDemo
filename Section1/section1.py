@@ -1283,6 +1283,7 @@ class Hangar:
             stair = self.model.find(f"**/platform_stair_step{i + 1}")
             z = -4.55 + i * .15
             stair.set_z(z)
+            stair.flatten_strong()
             fp_ctrl.make_collision(f'stair_{i + 1}_brbn', stair, 0, 0, stair.get_pos())
 
         self.alcove_toggle = False
@@ -1729,7 +1730,7 @@ class Hangar:
             stair = self.model.find(f"**/platform_stair_step{i + 1}")
             start_pos = stair.get_pos()
             end_pos = Point3(start_pos)
-            end_pos.z += .55 * (i + 1)
+            end_pos.z += .34 * (i + 1)
             s_inter = LerpPosInterval(stair, 2., end_pos, start_pos)
             stair_par.append(s_inter)
             stair_brbn = base.render.find(f'**/stair_{i + 1}_brbn')

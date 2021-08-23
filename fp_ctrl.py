@@ -245,7 +245,7 @@ def update_cam(task):
             base.frac_history.append(frac)
                 
             if len(base.frac_history) > 60:
-                del base.frac_history[1:]
+                del base.frac_history[:58]
             
             slope_strangeness = max(base.frac_history) - min(base.frac_history)
             
