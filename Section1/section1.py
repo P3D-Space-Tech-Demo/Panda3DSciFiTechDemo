@@ -2110,6 +2110,8 @@ def initialise(data=None):
     base.render.set_antialias(AntialiasAttrib.M_multisample)
 
     base.camera.set_pos(0, 0, -2)
+    
+    base.bullet_max_step = 1
 
     scene_filters.set_blur_sharpen(0.8)
     scene_filters.set_bloom()

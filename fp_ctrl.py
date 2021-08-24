@@ -26,6 +26,7 @@ def add_running_task(task_func, task_id, *args, **kwargs):
 base.static_frames = 0
 base.static_pos = Vec3()
 base.frac_history = []
+base.bullet_max_step = 5
 
 movementSpeedForward = 15
 movementSpeedBackward = 15
@@ -267,7 +268,7 @@ def update_cam(task):
 
 def physics_update(task):
     dt = globalClock.get_dt()
-    base.world.do_physics(dt, 15, 1/160)
+    base.world.do_physics(dt, base.bullet_max_step, 1/160)
 
     if base.static_frames > 60:
         base.static_frames = 0

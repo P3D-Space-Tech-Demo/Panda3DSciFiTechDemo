@@ -220,6 +220,8 @@ class Section3:
 
 def initialise(data=None):
 
+    base.bullet_max_step = 15
+
     section = Section3()
     common.currentSection = section
 
