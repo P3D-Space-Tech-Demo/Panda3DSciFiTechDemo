@@ -1,6 +1,8 @@
 from common import *
 import common
 
+from panda3d.core import CollisionPolygon, GeomVertexFormat, CollisionNode
+
 vert_shader = "Assets/Shared/shaders/portal_sphere.vert"
 frag_shader = "Assets/Shared/shaders/portal_sphere.frag"
 portal_sphere_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
@@ -147,6 +149,45 @@ class SphericalPortalSystem:
         plane_def = Vec4(*plane_normal, plane_dist)
         self.tunnel_model_0.set_shader(pbr_clip_shader)
         self.tunnel_model_0.set_shader_input("clip_plane_def", plane_def)
+
+        # Create the collision-geometry for the tunnel
+        # With thanks to Epihaius for the relevant snippet!
+        # Ref: https://discourse.panda3d.org/t/collision-mesh-from-loaded-model-for-built-in-collision-system/27102
+        tunnel_collision = loader.load_model("Assets/Section2/models/wrecked_tunnel_collision.gltf")
+        tunnel_collision.set_scale(50)
+        collision_copy = tunnel_collision.copy_to(common.base.render)
+        tunnel_collision.remove_node()
+        collision_copy.detach_node()
+        collision_copy.flatten_light()
+
+        collision_root = NodePath("tunnel collision root")
+        collision_root.reparent_to(level_model)
+        collision_root.set_pos(portal_pos + Vec3(5, 0, 0))
+        collision_root.set_hpr(-90, -40, 0)
+
+        for np in collision_copy.find_all_matches("**/+GeomNode"):
+            node = np.node()
+            collision_node = CollisionNode(node.name)
+            collision_mesh = collision_root.attach_new_node(collision_node)
+
+            #collision_mesh.show()
+
+            for geom in node.modify_geoms():
+                geom.decompose_in_place()
+                v_data = geom.modify_vertex_data()
+                v_data.format = GeomVertexFormat.get_v3()
+                view = memoryview(v_data.arrays[0]).cast("B").cast("f")
+                index_list = geom.primitives[0].get_vertex_list()
+                index_count = len(index_list)
+
+                for indexList in (index_list[i:i+3] for i in range(0, index_count, 3)):
+                    pts = [Point3(*view[index*3:index*3 + 3]) for index in indexList]
+                    poly = CollisionPolygon(*pts)
+                    collision_node.add_solid(poly)
+
+        collision_copy.remove_node()
+
+        # /Collision-geometry creaction
 
         cube_map_name = 'Assets/Section2/tex/portal_skybox_#.png'
         skybox = common.create_skybox(cube_map_name)
