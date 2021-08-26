@@ -123,7 +123,6 @@ class Section2():
 
         self.player = Player(shipSpec)
         self.player.root.setPos(self.currentLevel.playerSpawnPoint)
-        self.player.root.setY(1300)
         self.player.forceCameraPosition()
 
         exit_sphere = self.currentLevel.geometry.find("**/=exit").find("**/+GeomNode")
