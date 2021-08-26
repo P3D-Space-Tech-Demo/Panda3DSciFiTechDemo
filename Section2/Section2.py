@@ -132,6 +132,20 @@ class Section2():
         lights = [self.currentLevel.lightNP, self.player.lightNP]
         self.portalSys = SphericalPortalSystem(self.currentLevel.geometry, lights, pos)
 
+        shieldModel = common.base.loader.loadModel("Assets/Section2/models/bigShield")
+        shieldModel.setTransparency(True)
+        shieldModel.setBin("unsorted", 0)
+        shieldModel.reparentTo(self.currentLevel.geometry)
+        shieldModel.setPos(pos)
+        shieldModel.setHpr(-90, -40, 0)
+
+        shader = Shader.load(Shader.SL_GLSL,
+                             "Assets/Section2/shaders/bigShieldVertex.glsl",
+                             "Assets/Section2/shaders/bigShieldFragment.glsl")
+        shieldModel.setShader(shader)
+
+        shieldModel.setShaderInput("player", self.player.root)
+
         self.playState = Section2.STATE_PLAYING
 
         self.activated()

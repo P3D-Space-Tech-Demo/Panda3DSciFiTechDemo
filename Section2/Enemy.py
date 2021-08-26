@@ -237,7 +237,7 @@ class FighterEnemy(Enemy):
             if self.steeringQueue.getNumEntries() > 0:
                 for hit in self.steeringQueue.getEntries():
                     np = hit.getIntoNodePath()
-                    diff = np.getPos(common.base.render) - selfPos
+                    diff = hit.getSurfacePoint(common.base.render) - selfPos
                     dist = max(0.0001, diff.length())
                     r = diff.project(right)
                     u = diff.project(up)
