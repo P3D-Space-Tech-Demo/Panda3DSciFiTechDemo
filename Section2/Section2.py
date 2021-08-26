@@ -105,6 +105,15 @@ class Section2():
 
         self.musicFadeSpeedToAction = 1.5
         self.musicFadeSpeedToPeace = 0.5
+        
+        # controller info text
+        controller_text = 'Forward: W' + '\n' + 'Backward: S' + '\n' + 'Orientation: Mouse Movement' + '\n' + '\n'  + 'Fire Energy Weapon: Mouse Left (hold)' + '\n'  + 'Fire Missile: Mouse Right (hold)' + '\n' + '\n' + 'Dismiss Controller Info: F6'
+        common.fade_in_text('text_1_node', controller_text, 1)
+        
+        def hide_info():
+            common.dismiss_info_text('text_1_node')
+            
+        base.accept('f6', hide_info)
 
     def toggleThirdPerson(self):
         self.player.toggleThirdPerson()
@@ -291,6 +300,8 @@ class Section2():
             self.skybox.removeNode()
             self.skybox = None
 
+        base.aspect2d.find('text_1_node').detach_node()
+
         common.base.ignore("w")
         common.base.ignore("w-up")
         common.base.ignore("s")
@@ -305,6 +316,7 @@ class Section2():
         common.base.ignore("projectile-again-into")
         common.base.ignore("player-into")
         common.base.ignore("enemy-into")
+        
 
         self.cleanupLevel()
         self.portalSys.destroy()
@@ -315,6 +327,9 @@ class Section2():
         common.currentSection = None
 
 def initialise(shipSpec):
+
+    base.text_alpha = 0.01
+
     game = Section2("Assets/Section2/music/space_tech_break.mp3",
                     "Assets/Section2/music/space_tech_interlude_full.mp3")
     game.startGame(shipSpec)

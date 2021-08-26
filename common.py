@@ -362,3 +362,36 @@ class ResumableTask(PythonTask):
     @property
     def cont_time(self):
         return self.time + self.paused_time
+        
+def fade_in_text(label, text, duration):
+    # directly make a text node to display text
+    text_1 = TextNode(label)
+    text_1.set_text(text)
+    text_1_node = base.aspect2d.attach_new_node(text_1)
+    text_1_node.set_scale(0.05)
+    text_1_node.set_pos(-1.2, 0, 0.9)
+    display_font = base.loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf")
+    # apply font
+    text_1.set_font(display_font)
+
+    text_1_node.set_alpha_scale(base.text_alpha)
+    
+    def text_alpha():
+        for x in range(100):
+            base.text_alpha += 0.01
+            time.sleep(0.01)
+            text_1_node.set_alpha_scale(base.text_alpha)
+            
+    threading2._start_new_thread(text_alpha, ())
+    
+def dismiss_info_text(text_node):
+    t_node = base.aspect2d.find(text_node)
+    t_node.set_alpha_scale(base.text_alpha)
+    
+    def text_alpha():
+        for x in range(100):
+            base.text_alpha -= 0.01
+            time.sleep(0.01)
+            t_node.set_alpha_scale(base.text_alpha)
+            
+    threading2._start_new_thread(text_alpha, ())

@@ -60,7 +60,6 @@ def remove_section_intervals():
 
     section_intervals.clear()
 
-
 # keep track of all lights that have been created, such that they can be removed
 # when this section gets cleaned up
 section_lights = []
@@ -1235,6 +1234,16 @@ class Hangar:
 
     def __init__(self, job_starter):
 
+
+        # controller info text
+        controller_text = 'Toggle First-Person Mode: Forward Slash' + '\n' + '\n''Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n' + '\n' + 'Dismiss Controller Info: F6'
+        fade_in_text('text_1_node', controller_text, 1)
+        
+        def hide_info():
+            dismiss_info_text('text_1_node')
+            
+        base.accept('f6', hide_info)
+
         self.model = base.loader.load_model(ASSET_PATH + "models/hangar.gltf")
         self.model.reparent_to(base.render)
         ceiling = self.model.find('**/ceiling')
@@ -1560,6 +1569,8 @@ class Hangar:
         container.detach_node()
 
     def destroy(self):
+    
+        base.aspect2d.find('text_1_node').detach_node()
 
         if self.door_open_intervals:
             if self.door_open_intervals.is_playing():
@@ -2112,6 +2123,8 @@ def initialise(data=None):
     base.camera.set_pos(0, 0, -2)
     
     base.bullet_max_step = 1
+    
+    base.text_alpha = 0.01
 
     scene_filters.set_blur_sharpen(0.8)
     scene_filters.set_bloom()

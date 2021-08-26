@@ -54,18 +54,34 @@ def resume_section_intervals():
 
 class Section3:
     def __init__(self):
+
+        # section load order
+        # self.loadCutsceneOne()
+        self.loadStationSegmentOne()
+
+    def loadStationSegmentOne(self):
+    
         self.intervals = []
         base.static_pos = Vec3(-5.29407, -15.2641, 2.66)
 
         render.set_shader_off()
         render.set_shader(scene_shader)
 
-        player_start_pos = Vec3(-5.29407, -15.2641, 2.66)
-        fp_ctrl.fp_init(player_start_pos, z_limit=-14)
+        player_start_pos = Vec3(-2.7, 0, 100)
+        fp_ctrl.fp_init(player_start_pos, z_limit=-50)
         fp_ctrl.enable_fp_camera()
+        
+        # controller info text
+        controller_text = 'Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n'  + 'Reload: R' + '\n' + '\n' + 'Dismiss Controller Info: F6'
+        fade_in_text('text_1_node', controller_text, 1)
+        
+        def hide_info():
+            dismiss_info_text('text_1_node')
+            
+        base.accept('f6', hide_info)
 
         for x in range(2):
-            plight_1 = PointLight('plight_1')
+            plight_1 = PointLight('plight_' + str(len(section_lights)))
             plight_1.set_priority(5)
             # add plight props here
             plight_1_node = render.attach_new_node(plight_1)
@@ -128,12 +144,12 @@ class Section3:
                 chassis_1_up = Vec3(chassis_1.get_pos()[0], chassis_1.get_pos()[1], chassis_1.get_pos()[2] + 0.005)
                 chassis_1_pos = chassis_1.get_pos()
 
-                rhg_inter_1 = LerpPosInterval(chassis_1, 1, chassis_1_up, chassis_1.get_pos(), blendType='easeInOut')
-                rhg_inter_2 = LerpPosInterval(chassis_1, 0.5, chassis_1_pos, chassis_1_up, blendType='easeInOut')
-                rhg_inter_1a = LerpPosInterval(inset_effect_1, 1, chassis_1_up, chassis_1.get_pos(), blendType='easeInOut')
-                rhg_inter_2a = LerpPosInterval(inset_effect_1, 0.5, chassis_1_pos, chassis_1_up, blendType='easeInOut')
-                rhg_inter_3 = LerpPosInterval(clip_container, 2, clip_container_down, clip_container.get_pos(), blendType='easeInOut')
-                rhg_inter_4 = LerpPosInterval(clip_container, 1, clip_container_pos, clip_container_down, blendType='easeInOut')
+                rhg_inter_1 = LerpPosInterval(chassis_1, 1, chassis_1_up, blendType='easeInOut')
+                rhg_inter_2 = LerpPosInterval(chassis_1, 0.5, chassis_1_pos, blendType='easeInOut')
+                rhg_inter_1a = LerpPosInterval(inset_effect_1, 1, chassis_1_up, blendType='easeInOut')
+                rhg_inter_2a = LerpPosInterval(inset_effect_1, 0.5, chassis_1_pos, blendType='easeInOut')
+                rhg_inter_3 = LerpPosInterval(clip_container, 2, clip_container_down, blendType='easeInOut')
+                rhg_inter_4 = LerpPosInterval(clip_container, 1, clip_container_pos, blendType='easeInOut')
 
                 rl_par_1 = Parallel()
                 rl_par_1.append(rhg_inter_1)
@@ -152,13 +168,15 @@ class Section3:
                 reload_hg_1.append(lf_end)
                 reload_hg_1.append(rl_false)
                 reload_hg_1.start()
+                
+                section_intervals.append(reload_hg_1)
 
                 start_particles('Assets/Shared/particles/steam.ptf', self.hg_1)
                 load_particle_config('Assets/Shared/particles/steam.ptf', self.hg_1, clip_1_pos, 2)
 
         KeyBindings.set_handler("reload_gun", drop_clip, "section3")
 
-        self.model = base.loader.load_model(ASSET_PATH_1 + "models/ramp_test.gltf")
+        self.model = base.loader.load_model(ASSET_PATH_1 + "levels/tunnel_drop_1.gltf")
         self.model.reparent_to(base.render)
         self.model.flatten_strong()
 
@@ -166,14 +184,14 @@ class Section3:
 
         amb_light = AmbientLight('amblight')
         amb_light.set_priority(50)
-        amb_light.set_color((0.8, 0.8, 0.8, 1))
+        amb_light.set_color((0.5, 0.5, 0.5, 1))
         amb_light_node = render.attach_new_node(amb_light)
-        # model.set_light(amb_light_node)
+        self.model.set_light(amb_light_node)
         section_lights.append(amb_light_node)
 
         self.hg_1.set_shader(metal_shader)
         self.hg_1.set_light(amb_light_node)
-
+            
     def pauseGame(self):
 
         fp_ctrl.pause_fp_camera()
@@ -200,6 +218,8 @@ class Section3:
         ramp = base.render.find('ramp')
         base.world.remove(ramp.node())
         ramp.detach_node()
+        
+        base.aspect2d.find('text_1_node').detach_node()
 
 #        fp_ctrl.disable_fp_camera()
         fp_ctrl.fp_cleanup()
@@ -221,6 +241,8 @@ class Section3:
 def initialise(data=None):
 
     base.bullet_max_step = 15
+    
+    base.text_alpha = 0.01
 
     section = Section3()
     common.currentSection = section
