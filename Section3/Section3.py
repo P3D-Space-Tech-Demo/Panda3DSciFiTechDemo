@@ -60,7 +60,7 @@ class Section3:
         self.loadStationSegmentOne()
 
     def loadStationSegmentOne(self):
-    
+
         self.intervals = []
         base.static_pos = Vec3(-5.29407, -15.2641, 2.66)
 
@@ -70,14 +70,14 @@ class Section3:
         player_start_pos = Vec3(-2.7, 0, 100)
         fp_ctrl.fp_init(player_start_pos, z_limit=-50)
         fp_ctrl.enable_fp_camera()
-        
+
         # controller info text
         controller_text = 'Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n'  + 'Reload: R' + '\n' + '\n' + 'Dismiss Controller Info: F6'
         fade_in_text('text_1_node', controller_text, 1)
-        
+
         def hide_info():
             dismiss_info_text('text_1_node')
-            
+
         base.accept('f6', hide_info)
 
         for x in range(2):
@@ -110,7 +110,7 @@ class Section3:
                 clip_1_pos = clip_1.get_pos()
                 clip_1.hide()
 
-                def show_clip(t):
+                '''def show_clip(t):
                     t = t * 1
 
                     clip_1.show()
@@ -129,7 +129,23 @@ class Section3:
 
                     base.drop_clip_toggle = False
 
-                rl_false = LerpFunc(reload_false, fromData=2.5, toData=4, duration=0)
+                rl_false = LerpFunc(reload_false, fromData=2.5, toData=4, duration=0)'''
+
+                def show_clip():
+                    clip_1.show()
+
+                lf_end = Func(show_clip)
+
+                def reload_true():
+                    base.drop_clip_toggle = True
+
+                rl_true = Func(reload_true)
+
+                def reload_false():
+                    base.drop_clip_toggle = False
+                    section_intervals.remove(reload_hg_1)
+
+                rl_false = Func(reload_false)
 
                 clip_container = self.hg_1.find('clip_case')
                 clip_container_down = Vec3(clip_container.get_pos()[0], clip_container.get_pos()[1], clip_container.get_pos()[2] - 2)
@@ -168,7 +184,7 @@ class Section3:
                 reload_hg_1.append(lf_end)
                 reload_hg_1.append(rl_false)
                 reload_hg_1.start()
-                
+
                 section_intervals.append(reload_hg_1)
 
                 start_particles('Assets/Shared/particles/steam.ptf', self.hg_1)
@@ -191,7 +207,7 @@ class Section3:
 
         self.hg_1.set_shader(metal_shader)
         self.hg_1.set_light(amb_light_node)
-            
+
     def pauseGame(self):
 
         fp_ctrl.pause_fp_camera()
@@ -218,10 +234,9 @@ class Section3:
         ramp = base.render.find('ramp')
         base.world.remove(ramp.node())
         ramp.detach_node()
-        
+
         base.aspect2d.find('text_1_node').detach_node()
 
-#        fp_ctrl.disable_fp_camera()
         fp_ctrl.fp_cleanup()
 
         for light in section_lights:
@@ -241,7 +256,7 @@ class Section3:
 def initialise(data=None):
 
     base.bullet_max_step = 15
-    
+
     base.text_alpha = 0.01
 
     section = Section3()
