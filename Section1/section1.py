@@ -1236,7 +1236,7 @@ class Hangar:
 
 
         # controller info text
-        controller_text = 'Toggle First-Person Mode: Forward Slash' + '\n' + '\n''Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n' + '\n' + 'Dismiss Controller Info: F6'
+        controller_text = 'Toggle First-Person Mode: Backslash' + '\n' + '\n''Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n' + '\n' + 'Dismiss Controller Info: F6'
         fade_in_text('text_1_node', controller_text, 1)
         
         def hide_info():

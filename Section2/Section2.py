@@ -107,7 +107,7 @@ class Section2():
         self.musicFadeSpeedToPeace = 0.5
         
         # controller info text
-        controller_text = 'Toggle Third-Person Mode: Forward Slash' + '\n' + '\n' + 'Forward: W' + '\n' + 'Backward: S' + '\n' + 'Orientation: Mouse Movement' + '\n' + '\n'  + 'Fire Energy Weapon: Mouse Left (hold)' + '\n'  + 'Fire Missile: Mouse Right (hold)' + '\n' + '\n' + 'Dismiss Controller Info: F6'
+        controller_text = 'Toggle Third-Person Mode: Backslash' + '\n' + '\n' + 'Forward: W' + '\n' + 'Backward: S' + '\n' + 'Orientation: Mouse Movement' + '\n' + '\n'  + 'Fire Energy Weapon: Mouse Left (hold)' + '\n'  + 'Fire Missile: Mouse Right (hold)' + '\n' + '\n' + 'Dismiss Controller Info: F6'
         common.fade_in_text('text_1_node', controller_text, 1)
         
         def hide_info():
