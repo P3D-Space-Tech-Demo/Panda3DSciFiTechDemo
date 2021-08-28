@@ -83,18 +83,30 @@ def start_particles(target_particle, in_model):
     # swap .ptf files directly here to load different particle effects
     load_particle_config(target_particle, in_model)
 
-def load_particle_config(filename, in_model, start_pos=Vec3(0, 0, 0), duration=1):
-    base.particle_effect.loadConfig(filename)
-    base.particle_effect.set_shader_off()
+def load_particle_config(filename, in_model, start_pos=Vec3(), inter_duration=1, inter_list=[], use_interval=False):
+    if use_interval:
+        base.particle_effect.loadConfig(filename)
+        base.particle_effect.set_shader_off()
+        base.particle_effect.set_pos(start_pos)
+        particle_interval = ParticleInterval(base.particle_effect, in_model, 0, duration=inter_duration, softStopT=inter_duration/2)
+        base.particle_seq = Sequence()
+        base.particle_seq.append(particle_interval)
+        base.particle_seq.start()
+
+        inter_list.append(base.particle_seq)
     
-    # sets particles to birth relative to the model
-    def sec_particle(duration):
-        base.particle_effect.start(in_model)
-        base.particle_effect.setPos(start_pos)
-        time.sleep(duration)
-        base.particle_effect.softStop()
+    if not use_interval:
+        base.particle_effect.loadConfig(filename)
+        base.particle_effect.set_shader_off()
     
-    threading2._start_new_thread(sec_particle, (duration,))
+        # sets particles to birth relative to the model
+        def sec_particle(duration):
+            base.particle_effect.start(in_model)
+            base.particle_effect.setPos(start_pos)
+            time.sleep(duration)
+            base.particle_effect.softStop()
+    
+        threading2._start_new_thread(sec_particle, (inter_duration,))
 
 def create_skybox(cube_map_name):
 

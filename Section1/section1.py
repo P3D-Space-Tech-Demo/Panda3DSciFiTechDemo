@@ -1234,9 +1234,8 @@ class Hangar:
 
     def __init__(self, job_starter):
 
-
         # controller info text
-        controller_text = 'Toggle First-Person Mode: Backslash' + '\n' + '\n''Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n' + '\n' + 'Dismiss Controller Info: F6'
+        controller_text = 'Toggle First-Person Mode: Backslash' + '\n' + '\n''Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n' + '\n' + 'Play/Pause Music: P' + '\n' + '\n' + 'Dismiss Controller Info: F6'
         fade_in_text('text_1_node', controller_text, 1)
         
         def hide_info():
@@ -1756,6 +1755,16 @@ class Hangar:
 class Section1:
 
     def __init__(self):
+        
+        music_path = ASSET_PATH + 'music/space_tech_next_short.mp3'
+        self.music = common.base.loader.load_music(music_path)
+        self.music.set_loop(False)
+        self.music_time = self.music.get_time()
+        self.music_paused_while_playing = False
+        # self.music.play()
+        
+        base.accept('p', self.toggle_music)
+    
         # initial collision
         p_topper = base.loader.load_model(ASSET_PATH + "models/p_topper.gltf")
         fp_ctrl.make_collision('brbn', p_topper, 0, 0)
@@ -1901,6 +1910,15 @@ class Section1:
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
 
+    def toggle_music(self):
+        if self.music.status() == 2:
+            self.music_time = self.music.get_time()
+            self.music.stop()
+        
+        elif self.music.status() == 1:
+            self.music.set_time(self.music_time)
+            self.music.play()
+        
     def start_jobs(self):
 
         job = self.jobs[0]
@@ -2042,6 +2060,12 @@ class Section1:
 
         pause_section_tasks()
         pause_section_intervals()
+        
+        if self.music.status() == 2:
+            self.music_paused_while_playing = True
+        
+        self.music_time = self.music.get_time()
+        self.music.stop()
 
         KeyBindings.deactivate_all("section1")
 
@@ -2049,6 +2073,12 @@ class Section1:
 
         resume_section_tasks()
         resume_section_intervals()
+        
+        if self.music_paused_while_playing:
+            self.music.set_time(self.music_time)
+            self.music.play()
+            
+            self.music_paused_while_playing = False
 
         if self.cam_is_fps:
             fp_ctrl.resume_fp_camera()
