@@ -2157,7 +2157,7 @@ class Section1:
         remove_section_tasks()
         remove_section_intervals()
 
-        rigid_list = base.render.find_all_matches('**/brbn*')
+        rigid_list = base.render.find_all_matches('**/*brbn*')
 
         for rigid_body in rigid_list:
             base.world.remove(rigid_body.node())
