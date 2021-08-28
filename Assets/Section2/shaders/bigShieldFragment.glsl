@@ -16,7 +16,7 @@ void main()
     shieldVal = mod((shieldVal + osg_FrameTime*(0.4 + step(0.01, vertexColour.y)*0.5)), 1.0);
     shieldVal = sin(shieldVal * 3.142 );
 
-    float alpha = min(1, vertexColour.y + 1 - clamp(length(mspos_player - vertexPos) / 25, 0, 1));
+    float alpha = min(1, vertexColour.y + 1 - clamp(length(mspos_player - vertexPos) / 25, 0, 1)) * vertexColour.z;
 
     color.xyz = vec3(0.2, 0.3, 1) * shieldVal;
     color.w = alpha;
