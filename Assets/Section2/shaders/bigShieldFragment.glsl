@@ -13,7 +13,7 @@ out vec4 color;
 void main()
 {
     float shieldVal = vertexColour.x;
-    shieldVal = mod((shieldVal + osg_FrameTime*(0.4 + vertexColour.y*0.5)), 1.0);
+    shieldVal = mod((shieldVal + osg_FrameTime*(0.4 + step(0.01, vertexColour.y)*0.5)), 1.0);
     shieldVal = sin(shieldVal * 3.142 );
 
     float alpha = min(1, vertexColour.y + 1 - clamp(length(mspos_player - vertexPos) / 25, 0, 1));
