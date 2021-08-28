@@ -2,7 +2,7 @@ import common
 from common import *
 import fp_ctrl
 import holo
-
+from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode
 
 ASSET_PATH = "Assets/Section1/"
 SHADOW_MASK = BitMask32.bit(1)
@@ -1252,10 +1252,30 @@ class Hangar:
         alcove = self.model.find('**/alcove')
         alcove.set_shader_off()
         alcove.set_shader(metal_shader)
+        fp_ctrl.make_collision('alcove_brbn', alcove, 0, 0, alcove.get_pos())
+        
+        corridor_coll_pos = [(180.83, -12.099, 3.46),  (179.901, 11.5889, 3.46), (199.222, -0.22609, 3.46), (156.69, 6.82736, 3.46), (156.522, -6.79245, 3.46)]
+        shape_sizes = [(25, 1, 10), (25, 1, 10), (1, 25, 10), (2, 2, 10), (2, 2, 10)]
+        corridor_inc = 0
+        
+        for p in corridor_coll_pos:
+        
+            container_shape = BulletBoxShape(Vec3(shape_sizes[corridor_inc]))
+            body = BulletRigidBodyNode('corridor_brbn_1')
+            d_coll = base.render.attach_new_node(body)
+            d_coll.node().add_shape(container_shape)
+            d_coll.node().set_mass(0)
+            d_coll.node().set_friction(0.5)
+            d_coll.set_collide_mask(BitMask32.allOn())
+            d_coll.set_pos(corridor_coll_pos[corridor_inc])
+            base.world.attach_rigid_body(d_coll.node())
+            
+            corridor_inc += 1
 
         for w in self.model.find_all_matches('**/wall*'):
             w.set_shader_off()
             w.set_shader(metal_shader)
+            fp_ctrl.make_collision('wall_brbn', w, 0, 0, w.get_pos())
 
         entrance_doors = list(self.model.find_all_matches("**/entrance_door*"))
         entrance_door_root = self.model.attach_new_node("entrance_door_root")
@@ -1270,6 +1290,7 @@ class Hangar:
         for d in self.model.find_all_matches("**/door_*"):
             d.set_shader_off()
             d.set_shader(metal_shader)
+            fp_ctrl.make_collision('alcove_brbn', d, 0, 0, d.get_pos())
 
         for s in self.model.find_all_matches("**/support_anchor*"):
             s.set_shader_off()
@@ -1549,7 +1570,19 @@ class Hangar:
                 max_angle += 90.
                 stack_root = stack_pivot.attach_new_node("stack_root")
                 stack_root.set_x(stack_dist)
-                stack_root.set_h(random.random() * 360.)
+                stack_current_h = random.random() * 360.
+                stack_root.set_h(stack_current_h)
+
+                container_shape = BulletBoxShape(Vec3(10, 10, 10))
+                body = BulletRigidBodyNode('container_brbn')
+                d_coll = base.render.attach_new_node(body)
+                d_coll.node().add_shape(container_shape)
+                d_coll.node().set_mass(0)
+                d_coll.node().set_friction(0.5)
+                d_coll.set_collide_mask(BitMask32.allOn())
+                d_coll.set_pos(stack_root.get_pos(base.render))
+                d_coll.set_h(stack_current_h)
+                base.world.attach_rigid_body(d_coll.node())
 
                 for i in range(random.randint(1, 5)):
                     container_copy = container.copy_to(stack_root)
