@@ -30,21 +30,12 @@ class Section2():
     def __init__(self, actionMusic, peaceMusic):
         common.currentSection = self
 
-#        self.skybox = common.base.loader.load_model('Assets/Section2/models/5k_spacebox.gltf')
         cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
         self.skybox = common.create_skybox(cube_map_name)
         self.skybox.reparentTo(common.base.render)
         self.skybox.setEffect(CompassEffect.make(common.base.camera, CompassEffect.P_pos))
-#        self.skybox.setBin("background", 1)
-#        self.skybox.setDepthWrite(False)
         self.skybox.node().setBounds(OmniBoundingVolume())
         self.skybox.node().setFinal(True)
-
-        '''amb_light = AmbientLight('amblight')
-        amb_light.setColor((1, 1, 1, 1))
-        amb_light_node = self.skybox.attachNewNode(amb_light)
-
-        self.skybox.set_light(amb_light_node)'''
 
         self.keyMap = {
             "up" : False,
@@ -105,14 +96,14 @@ class Section2():
 
         self.musicFadeSpeedToAction = 1.5
         self.musicFadeSpeedToPeace = 0.5
-        
+
         # controller info text
         controller_text = 'Toggle Third-Person Mode: Backslash' + '\n' + '\n' + 'Forward: W' + '\n' + 'Backward: S' + '\n' + 'Orientation: Mouse Movement' + '\n' + '\n'  + 'Fire Energy Weapon: Mouse Left (hold)' + '\n'  + 'Fire Missile: Mouse Right (hold)' + '\n' + '\n' + 'Dismiss Controller Info: F6'
         common.fade_in_text('text_1_node', controller_text, 1)
-        
+
         def hide_info():
             common.dismiss_info_text('text_1_node')
-            
+
         base.accept('f6', hide_info)
 
     def toggleThirdPerson(self):
@@ -316,7 +307,7 @@ class Section2():
         common.base.ignore("projectile-again-into")
         common.base.ignore("player-into")
         common.base.ignore("enemy-into")
-        
+
 
         self.cleanupLevel()
         self.portalSys.destroy()

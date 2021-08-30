@@ -72,6 +72,8 @@ in vec3 v_world_pos;
 
 in vec4 v_shadow_pos[MAX_LIGHTS];
 
+out vec4 color_out;
+
 // Schlick's Fresnel approximation with Spherical Gaussian approximation to replace the power
 vec3 specular_reflection(FunctionParameters func_params) {
     vec3 f0 = func_params.reflection0;
@@ -140,7 +142,7 @@ void main() {
         float spotcutoff = p3d_LightSource[i].spotCosCutoff;
         float shadowSpot = smoothstep(spotcutoff-SPOTSMOOTH, spotcutoff+SPOTSMOOTH, spotcos);
 
-        float shadowCaster = shadow2DProj(p3d_LightSource[i].shadowMap, v_shadow_pos[i]).r;
+        float shadowCaster = textureProj(p3d_LightSource[i].shadowMap, v_shadow_pos[i]);
         float shadow = shadowSpot * shadowCaster * attenuation_factor;
 
         FunctionParameters func_params;
@@ -172,5 +174,5 @@ void main() {
     float fog_factor = clamp(1.0 / exp(fog_distance * p3d_Fog.density), 0.0, 1.0);
     color = mix(p3d_Fog.color, color, fog_factor);
 
-    gl_FragColor = color;
+    color_out = color;
 }
