@@ -1,6 +1,7 @@
 import common
 from common import *
 import fp_ctrl
+from .intro import Intro
 
 ASSET_PATH_1 = "Assets/Section3/"
 
@@ -54,6 +55,13 @@ def resume_section_intervals():
 
 class Section3:
     def __init__(self):
+
+        cube_map_name = 'Assets/Section3/tex/main_skybox_#.png'
+        self.skybox = common.create_skybox(cube_map_name)
+        self.skybox.reparent_to(base.render)
+        self.skybox.set_effect(CompassEffect.make(base.camera, CompassEffect.P_pos))
+        self.skybox.node().set_bounds(OmniBoundingVolume())
+        self.skybox.node().set_final(True)
 
         # section load order
         # self.loadCutsceneOne()
@@ -232,6 +240,10 @@ class Section3:
 
     def destroy(self):
         base.static_pos = Vec3(192.383, -0.182223, 2)
+
+        if self.skybox:
+            self.skybox.detach_node()
+            self.skybox = None
 
         self.hg_1.detach_node()
         self.model.detach_node()

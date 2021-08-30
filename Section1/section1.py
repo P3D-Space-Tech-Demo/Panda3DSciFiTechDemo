@@ -2,7 +2,7 @@ import common
 from common import *
 import fp_ctrl
 import holo
-
+from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode
 
 ASSET_PATH = "Assets/Section1/"
 SHADOW_MASK = BitMask32.bit(1)
@@ -1237,10 +1237,10 @@ class Hangar:
         # controller info text
         controller_text = 'Toggle First-Person Mode: Backslash' + '\n' + '\n''Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n' + '\n' + 'Play/Pause Music: P' + '\n' + '\n' + 'Dismiss Controller Info: F6'
         fade_in_text('text_1_node', controller_text, 1)
-        
+
         def hide_info():
             dismiss_info_text('text_1_node')
-            
+
         base.accept('f6', hide_info)
 
         self.model = base.loader.load_model(ASSET_PATH + "models/hangar.gltf")
@@ -1252,10 +1252,26 @@ class Hangar:
         alcove = self.model.find('**/alcove')
         alcove.set_shader_off()
         alcove.set_shader(metal_shader)
+        fp_ctrl.make_collision('alcove_brbn', alcove, 0, 0, alcove.get_pos())
+
+        corridor_coll_pos = [(180.83, -12.099, 3.46),  (179.901, 11.5889, 3.46), (199.222, -0.22609, 3.46), (156.69, 6.82736, 3.46), (156.522, -6.79245, 3.46)]
+        shape_sizes = [(25, 1, 10), (25, 1, 10), (1, 25, 10), (2, 2, 10), (2, 2, 10)]
+
+        for p, s in zip(corridor_coll_pos, shape_sizes):
+            coll_shape = BulletBoxShape(Vec3(s))
+            body = BulletRigidBodyNode('corridor_brbn_1')
+            d_coll = base.render.attach_new_node(body)
+            d_coll.node().add_shape(coll_shape)
+            d_coll.node().set_mass(0)
+            d_coll.node().set_friction(0.5)
+            d_coll.set_collide_mask(BitMask32.allOn())
+            d_coll.set_pos(p)
+            base.world.attach_rigid_body(d_coll.node())
 
         for w in self.model.find_all_matches('**/wall*'):
             w.set_shader_off()
             w.set_shader(metal_shader)
+            fp_ctrl.make_collision('wall_brbn', w, 0, 0, w.get_pos())
 
         entrance_doors = list(self.model.find_all_matches("**/entrance_door*"))
         entrance_door_root = self.model.attach_new_node("entrance_door_root")
@@ -1270,6 +1286,7 @@ class Hangar:
         for d in self.model.find_all_matches("**/door_*"):
             d.set_shader_off()
             d.set_shader(metal_shader)
+            fp_ctrl.make_collision('alcove_brbn', d, 0, 0, d.get_pos())
 
         for s in self.model.find_all_matches("**/support_anchor*"):
             s.set_shader_off()
@@ -1549,12 +1566,22 @@ class Hangar:
                 max_angle += 90.
                 stack_root = stack_pivot.attach_new_node("stack_root")
                 stack_root.set_x(stack_dist)
-                stack_root.set_h(random.random() * 360.)
 
                 for i in range(random.randint(1, 5)):
                     container_copy = container.copy_to(stack_root)
                     container_copy.set_h(random.random() * 360.)
                     container_copy.set_z(i * 10.)
+
+                container_shape = BulletBoxShape(Vec3(10, 10, 10))
+                body = BulletRigidBodyNode('container_brbn')
+                d_coll = base.render.attach_new_node(body)
+                d_coll.node().add_shape(container_shape)
+                d_coll.node().set_mass(0)
+                d_coll.node().set_friction(0.5)
+                d_coll.set_collide_mask(BitMask32.allOn())
+                d_coll.set_pos(stack_root.get_pos(base.render))
+                d_coll.set_h(stack_root.children[0].get_h(base.render))
+                base.world.attach_rigid_body(d_coll.node())
 
         '''
         for root in self.model.find_all_matches("**/container_root_*"):
@@ -1568,7 +1595,7 @@ class Hangar:
         container.detach_node()
 
     def destroy(self):
-    
+
         base.aspect2d.find('text_1_node').detach_node()
 
         if self.door_open_intervals:
@@ -1755,16 +1782,16 @@ class Hangar:
 class Section1:
 
     def __init__(self):
-        
+
         music_path = ASSET_PATH + 'music/space_tech_next_short.mp3'
         self.music = common.base.loader.load_music(music_path)
         self.music.set_loop(False)
         self.music_time = self.music.get_time()
         self.music_paused_while_playing = False
         # self.music.play()
-        
+
         base.accept('p', self.toggle_music)
-    
+
         # initial collision
         p_topper = base.loader.load_model(ASSET_PATH + "models/p_topper.gltf")
         fp_ctrl.make_collision('brbn', p_topper, 0, 0)
@@ -1914,11 +1941,11 @@ class Section1:
         if self.music.status() == 2:
             self.music_time = self.music.get_time()
             self.music.stop()
-        
+
         elif self.music.status() == 1:
             self.music.set_time(self.music_time)
             self.music.play()
-        
+
     def start_jobs(self):
 
         job = self.jobs[0]
@@ -2060,10 +2087,10 @@ class Section1:
 
         pause_section_tasks()
         pause_section_intervals()
-        
+
         if self.music.status() == 2:
             self.music_paused_while_playing = True
-        
+
         self.music_time = self.music.get_time()
         self.music.stop()
 
@@ -2073,11 +2100,11 @@ class Section1:
 
         resume_section_tasks()
         resume_section_intervals()
-        
+
         if self.music_paused_while_playing:
             self.music.set_time(self.music_time)
             self.music.play()
-            
+
             self.music_paused_while_playing = False
 
         if self.cam_is_fps:
@@ -2118,13 +2145,12 @@ class Section1:
         self.model_root.detach_node()
         self.model_root = None
         self.destroy_holo_ship()
-#        fp_ctrl.disable_fp_camera()
         fp_ctrl.fp_cleanup()
 
         remove_section_tasks()
         remove_section_intervals()
 
-        rigid_list = base.render.find_all_matches('**/brbn*')
+        rigid_list = base.render.find_all_matches('**/*brbn*')
 
         for rigid_body in rigid_list:
             base.world.remove(rigid_body.node())
@@ -2151,9 +2177,9 @@ def initialise(data=None):
     base.render.set_antialias(AntialiasAttrib.M_multisample)
 
     base.camera.set_pos(0, 0, -2)
-    
+
     base.bullet_max_step = 1
-    
+
     base.text_alpha = 0.01
 
     scene_filters.set_blur_sharpen(0.8)

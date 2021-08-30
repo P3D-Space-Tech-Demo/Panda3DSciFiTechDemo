@@ -30,21 +30,12 @@ class Section2():
     def __init__(self, actionMusic, peaceMusic):
         common.currentSection = self
 
-#        self.skybox = common.base.loader.load_model('Assets/Section2/models/5k_spacebox.gltf')
         cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
         self.skybox = common.create_skybox(cube_map_name)
         self.skybox.reparentTo(common.base.render)
         self.skybox.setEffect(CompassEffect.make(common.base.camera, CompassEffect.P_pos))
-#        self.skybox.setBin("background", 1)
-#        self.skybox.setDepthWrite(False)
         self.skybox.node().setBounds(OmniBoundingVolume())
         self.skybox.node().setFinal(True)
-
-        '''amb_light = AmbientLight('amblight')
-        amb_light.setColor((1, 1, 1, 1))
-        amb_light_node = self.skybox.attachNewNode(amb_light)
-
-        self.skybox.set_light(amb_light_node)'''
 
         self.keyMap = {
             "up" : False,
