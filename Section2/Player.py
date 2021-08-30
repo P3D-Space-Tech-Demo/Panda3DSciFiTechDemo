@@ -133,12 +133,9 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         common.base.camera.reparentTo(common.currentSection.currentLevel.geometry)
 
         lens = common.base.camLens
-
         lens.setNear(0.03)
 
-        ratio = lens.getAspectRatio()
-
-        lens.setFov(75*ratio)
+        self.updateCameraLens()
 
         self.lastMousePos = Vec2(0, 0)
         self.mouseSpeedHori = 50.0
@@ -367,6 +364,23 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
         self.weaponSoundRockets = common.base.loader.loadSfx("Assets/Section2/sounds/playerAttackRocket.ogg")
         self.weaponSoundRocketsPlayedThisFrame = False
+
+    def updateCameraLens(self):
+        verticalFOV = 105
+
+        lens = common.base.camLens
+
+        xSize = common.base.win.getXSize()
+        xSize *= 0.5
+        ySize = common.base.win.getYSize()
+        ySize *= 0.5
+
+        dist = ySize / math.tan(math.radians(verticalFOV*0.5))
+
+        halfHFov = math.atan(xSize / dist)
+        halfHFov = math.degrees(halfHFov)
+
+        lens.setFov(halfHFov*2, verticalFOV)
 
     def applyUIShader(self, uiObj, colourTop, colourBottom, cornerSize, edgeSoftness, aspectRatio):
         uiShader = Shader.load(Shader.SL_GLSL,

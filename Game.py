@@ -804,6 +804,9 @@ class Game():
             size = window.getSize()
             self.updateTitleForWindowSize(size[0], size[1])
 
+        if self.currentSectionObject is not None and hasattr(self.currentSectionObject, "windowUpdated"):
+            self.currentSectionObject.windowUpdated(window)
+
     def openMenu(self):
         self.cleanupCurrentSection()
 

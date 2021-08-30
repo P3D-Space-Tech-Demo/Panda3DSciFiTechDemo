@@ -67,6 +67,8 @@ class Section2():
         common.base.accept("\\", self.toggleThirdPerson)
         common.base.accept("escape", common.gameController.openPauseMenu)
 
+        common.base.accept('f6', self.hide_info)
+
         self.pusher = CollisionHandlerPusher()
         self.traverser = CollisionTraverser()
         self.traverser.setRespectPrevTransform(True)
@@ -109,11 +111,13 @@ class Section2():
         # controller info text
         controller_text = 'Toggle Third-Person Mode: Backslash' + '\n' + '\n' + 'Forward: W' + '\n' + 'Backward: S' + '\n' + 'Orientation: Mouse Movement' + '\n' + '\n'  + 'Fire Energy Weapon: Mouse Left (hold)' + '\n'  + 'Fire Missile: Mouse Right (hold)' + '\n' + '\n' + 'Dismiss Controller Info: F6'
         common.fade_in_text('text_1_node', controller_text, 1)
-        
-        def hide_info():
-            common.dismiss_info_text('text_1_node')
-            
-        base.accept('f6', hide_info)
+
+    def hide_info(self):
+        common.dismiss_info_text('text_1_node')
+
+    def windowUpdated(self, window):
+        if self.player is not None:
+            self.player.updateCameraLens()
 
     def toggleThirdPerson(self):
         self.player.toggleThirdPerson()
@@ -312,6 +316,7 @@ class Section2():
         common.base.ignore("mouse3-up")
         common.base.ignore("escape")
         common.base.ignore("\\")
+        common.base.ignore("f6")
         common.base.ignore("projectile-into")
         common.base.ignore("projectile-again-into")
         common.base.ignore("player-into")
