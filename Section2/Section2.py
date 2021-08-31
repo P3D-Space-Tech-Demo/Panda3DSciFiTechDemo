@@ -47,17 +47,17 @@ class Section2():
             "shootSecondary" : False
         }
 
-        KeyBindings.set_handler("moveUp", lambda: self.updateKeyMap("up", True), "section2")
-        KeyBindings.set_handler("moveUpDone", lambda: self.updateKeyMap("up", False), "section2")
-        KeyBindings.set_handler("moveDown", lambda: self.updateKeyMap("down", True), "section2")
-        KeyBindings.set_handler("moveDownDone", lambda: self.updateKeyMap("down", False), "section2")
-        KeyBindings.set_handler("shoot", lambda: self.updateKeyMap("shoot", True), "section2")
-        KeyBindings.set_handler("shootDone", lambda: self.updateKeyMap("shoot", False), "section2")
-        KeyBindings.set_handler("shootSecondary", lambda: self.updateKeyMap("shootSecondary", True), "section2")
-        KeyBindings.set_handler("shootSecondaryDone", lambda: self.updateKeyMap("shootSecondary", False), "section2")
+        KeyBindings.setHandler("moveUp", lambda: self.updateKeyMap("up", True), "section2")
+        KeyBindings.setHandler("moveUpDone", lambda: self.updateKeyMap("up", False), "section2")
+        KeyBindings.setHandler("moveDown", lambda: self.updateKeyMap("down", True), "section2")
+        KeyBindings.setHandler("moveDownDone", lambda: self.updateKeyMap("down", False), "section2")
+        KeyBindings.setHandler("shoot", lambda: self.updateKeyMap("shoot", True), "section2")
+        KeyBindings.setHandler("shootDone", lambda: self.updateKeyMap("shoot", False), "section2")
+        KeyBindings.setHandler("shootSecondary", lambda: self.updateKeyMap("shootSecondary", True), "section2")
+        KeyBindings.setHandler("shootSecondaryDone", lambda: self.updateKeyMap("shootSecondary", False), "section2")
 
-        KeyBindings.set_handler("openPauseMenu", common.gameController.openPauseMenu, "section2")
-        KeyBindings.set_handler("toggleThirdPerson", self.toggleThirdPerson, "section2")
+        KeyBindings.setHandler("openPauseMenu", common.gameController.openPauseMenu, "section2")
+        KeyBindings.setHandler("toggleThirdPerson", self.toggleThirdPerson, "section2")
 
         self.pusher = CollisionHandlerPusher()
         self.traverser = CollisionTraverser()
@@ -114,7 +114,7 @@ class Section2():
             'Fire Missile: Mouse Right (hold)',
             f'\nToggle This Help: {help_toggle_key.upper()}'
         ))
-        common.TextManager.add_text("context_help", controller_text)
+        common.TextManager.addText("context_help", controller_text)
 
     def windowUpdated(self, window):
         if self.player is not None:
@@ -309,9 +309,9 @@ class Section2():
             self.skybox.removeNode()
             self.skybox = None
 
-        common.TextManager.remove_text()
+        common.TextManager.removeText()
 
-        KeyBindings.deactivate_all("section2")
+        KeyBindings.deactivateAll("section2")
 
         common.base.ignore("projectile-into")
         common.base.ignore("projectile-again-into")
@@ -333,8 +333,8 @@ def initialise(shipSpec):
     game = Section2("Assets/Section2/music/space_tech_break.mp3",
                     "Assets/Section2/music/space_tech_interlude_full.mp3")
     game.startGame(shipSpec)
-    KeyBindings.activate_all("section2")
-    KeyBindings.activate_all("text")
+    KeyBindings.activateAll("section2")
+    KeyBindings.activateAll("text")
     return game
 
 def addOptions():
