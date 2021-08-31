@@ -102,18 +102,18 @@ def load_particle_config(filename, in_model, start_pos=Vec3(), inter_duration=1,
         base.particle_seq.start()
 
         inter_list.append(base.particle_seq)
-    
+
     if not use_interval:
         base.particle_effect.loadConfig(filename)
         base.particle_effect.set_shader_off()
-    
+
         # sets particles to birth relative to the model
         def sec_particle(duration):
             base.particle_effect.start(in_model)
             base.particle_effect.setPos(start_pos)
             time.sleep(duration)
             base.particle_effect.softStop()
-    
+
         threading2._start_new_thread(sec_particle, (inter_duration,))
 
 def create_skybox(cube_map_name):
@@ -455,36 +455,199 @@ class ResumableTask(PythonTask):
     @property
     def cont_time(self):
         return self.time + self.paused_time
-        
-def fade_in_text(label, text, duration):
+
+
+class TextManager:
+
+    text_nodes = {}
+    text_pages = []  # list of strings
+    help_text = ""
+    KeyBindings.add("toggle_help", "f1", "text", lambda: TextManager.toggle_text("context_help"))
+    KeyBindings.add("advance_text", "f6", "text", lambda: TextManager.advance_text())
+    KeyBindings.activate_all("text")
+    text_alpha_start = {
+        "context_help": 0.01,
+        "multi_page": 0.01
+    }
+    text_alpha = {
+        "context_help": 0.01,
+        "multi_page": 0.01
+    }
+    # alpha increment values and scalar (-1. for decrement)
+    text_alpha_incr = {
+        "context_help": [0.01, 1.],
+        "multi_page": [0.01, 1.]
+    }
+
+    @classmethod
+    def add_text(cls, text_id, text):
+        if text_id in cls.text_nodes:
+            text_np = cls.text_nodes[text_id]
+            text_np.detach_node()
+
+        # directly make a text node to display text
+        text_node = TextNode(text_id)
+
+        if text_id == "multi_page":
+            text_node.set_text(text.pop(0))
+            cls.text_pages = text
+            key = Event.events["text"]["advance_text"].key
+            cls.text_nodes["context_help"].node().set_text(f"{key.upper()} to advance text")
+            z = -.2
+        else:
+            text_node.set_text(text)
+            cls.help_text = text
+            z = -.1
+
+        text_np = base.a2dTopLeft.attach_new_node(text_node)
+        text_np.set_scale(0.05)
+        text_np.set_pos(.05, 0., z)
+        display_font = base.loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf")
+        # apply font
+        text_node.set_font(display_font)
+
+        cls.text_alpha_incr[text_id][1] = 1.
+        cls.text_alpha[text_id] = cls.text_alpha_start[text_id]
+        text_np.set_alpha_scale(cls.text_alpha[text_id])
+        cls.text_nodes[text_id] = text_np
+        cls.fade_in_text(text_id)
+
+    @classmethod
+    def remove_text(cls):
+        for text_id in ("context_help", "multi_page"):
+            if text_id in cls.text_nodes:
+                text_np = cls.text_nodes[text_id]
+                text_np.detach_node()
+                del cls.text_nodes[text_id]
+
+    @classmethod
+    def fade_in_text(cls, text_id):
+        if not text_id in cls.text_nodes:
+            return
+
+        text_np = cls.text_nodes[text_id]
+
+        def text_alpha():
+            for x in range(100):
+                cls.text_alpha[text_id] += cls.text_alpha_incr[text_id][0]
+                time.sleep(0.01)
+                text_np.set_alpha_scale(cls.text_alpha[text_id])
+
+        threading2._start_new_thread(text_alpha, ())
+
+    @classmethod
+    def fade_out_text(cls, text_id):
+        if not text_id in cls.text_nodes:
+            return
+
+        text_np = cls.text_nodes[text_id]
+        text_np.set_alpha_scale(cls.text_alpha[text_id])
+
+        def text_alpha():
+            for x in range(100):
+                cls.text_alpha[text_id] -= cls.text_alpha_incr[text_id][0]
+                time.sleep(0.01)
+                text_np.set_alpha_scale(cls.text_alpha[text_id])
+
+        threading2._start_new_thread(text_alpha, ())
+
+    @classmethod
+    def advance_text(cls):
+        if "multi_page" not in cls.text_nodes:
+            return
+
+        text_np = cls.text_nodes["multi_page"]
+
+        def text_alpha():
+            for x in range(100):
+                cls.text_alpha["multi_page"] -= cls.text_alpha_incr["multi_page"][0]
+                time.sleep(0.01)
+                text_np.set_alpha_scale(cls.text_alpha["multi_page"])
+
+            if cls.text_pages:
+                text_np.node().set_text(cls.text_pages.pop(0))
+                for x in range(100):
+                    cls.text_alpha["multi_page"] += cls.text_alpha_incr["multi_page"][0]
+                    time.sleep(0.01)
+                    text_np.set_alpha_scale(cls.text_alpha["multi_page"])
+            else:
+                text_np.detach_node()
+                del cls.text_nodes["multi_page"]
+                cls.text_nodes["context_help"].node().set_text(cls.help_text)
+
+        threading2._start_new_thread(text_alpha, ())
+
+    @classmethod
+    def fade_text(cls, text_id):
+        if not text_id in cls.text_nodes:
+            return
+
+        text_np = cls.text_nodes[text_id]
+
+        def text_alpha():
+            incr = cls.text_alpha_incr[text_id][1]
+
+            while (cls.text_alpha[text_id] < 1.) if incr > 0. else (cls.text_alpha[text_id] > 0.):
+                if cls.text_alpha_incr[text_id][1] != incr:
+                    break
+                cls.text_alpha[text_id] += cls.text_alpha_incr[text_id][0] * incr
+                time.sleep(0.01)
+                text_np.set_alpha_scale(cls.text_alpha[text_id])
+
+        threading2._start_new_thread(text_alpha, ())
+
+    @classmethod
+    def toggle_text(cls, text_id):
+        if not text_id in cls.text_nodes:
+            return
+
+        cls.text_alpha_incr[text_id][1] *= -1.
+        cls.fade_text(text_id)
+
+        # allow keeping the help text on screen until the associated key is released
+        if text_id == "context_help" and cls.text_alpha_incr[text_id][1] > 0.:
+            key = Event.events["text"]["toggle_help"].key
+
+            def fade_out_help(task):
+                base.accept_once(f"{key}-up", lambda: cls.toggle_text(text_id))
+
+            # activate the "held down" mode after keeping the key pressed for half
+            # a second
+            base.task_mgr.add(fade_out_help, "fade_out_help", delay=.5)
+            base.accept_once(f"{key}-up", lambda: base.task_mgr.remove("fade_out_help"))
+
+    addText = add_text
+    removeText = remove_text
+
+'''def fade_in_text(label, text, duration):
     # directly make a text node to display text
     text_1 = TextNode(label)
     text_1.set_text(text)
-    text_1_node = base.aspect2d.attach_new_node(text_1)
+    text_1_node = base.a2dTopLeft.attach_new_node(text_1)
     text_1_node.set_scale(0.05)
-    text_1_node.set_pos(-1.2, 0, 0.9)
+    text_1_node.set_pos(.05, 0, -.1)
     display_font = base.loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf")
     # apply font
     text_1.set_font(display_font)
 
     text_1_node.set_alpha_scale(base.text_alpha)
-    
+
     def text_alpha():
         for x in range(100):
             base.text_alpha += 0.01
             time.sleep(0.01)
             text_1_node.set_alpha_scale(base.text_alpha)
-            
+
     threading2._start_new_thread(text_alpha, ())
-    
+
 def dismiss_info_text(text_node):
-    t_node = base.aspect2d.find(text_node)
+    t_node = base.a2dTopLeft.find(text_node)
     t_node.set_alpha_scale(base.text_alpha)
-    
+
     def text_alpha():
         for x in range(100):
             base.text_alpha -= 0.01
             time.sleep(0.01)
             t_node.set_alpha_scale(base.text_alpha)
-            
-    threading2._start_new_thread(text_alpha, ())
+
+    threading2._start_new_thread(text_alpha, ())'''

@@ -19,6 +19,7 @@ from Section2.Level import Level
 from Section2.EndPortal import SphericalPortalSystem
 
 import common
+from common import Event, KeyBindings
 
 import random
 
@@ -46,19 +47,17 @@ class Section2():
             "shootSecondary" : False
         }
 
-        common.base.accept("w", self.updateKeyMap, ["up", True])
-        common.base.accept("w-up", self.updateKeyMap, ["up", False])
-        common.base.accept("s", self.updateKeyMap, ["down", True])
-        common.base.accept("s-up", self.updateKeyMap, ["down", False])
-        common.base.accept("mouse1", self.updateKeyMap, ["shoot", True])
-        common.base.accept("mouse1-up", self.updateKeyMap, ["shoot", False])
-        common.base.accept("mouse3", self.updateKeyMap, ["shootSecondary", True])
-        common.base.accept("mouse3-up", self.updateKeyMap, ["shootSecondary", False])
+        KeyBindings.set_handler("moveUp", lambda: self.updateKeyMap("up", True), "section2")
+        KeyBindings.set_handler("moveUpDone", lambda: self.updateKeyMap("up", False), "section2")
+        KeyBindings.set_handler("moveDown", lambda: self.updateKeyMap("down", True), "section2")
+        KeyBindings.set_handler("moveDownDone", lambda: self.updateKeyMap("down", False), "section2")
+        KeyBindings.set_handler("shoot", lambda: self.updateKeyMap("shoot", True), "section2")
+        KeyBindings.set_handler("shootDone", lambda: self.updateKeyMap("shoot", False), "section2")
+        KeyBindings.set_handler("shootSecondary", lambda: self.updateKeyMap("shootSecondary", True), "section2")
+        KeyBindings.set_handler("shootSecondaryDone", lambda: self.updateKeyMap("shootSecondary", False), "section2")
 
-        common.base.accept("\\", self.toggleThirdPerson)
-        common.base.accept("escape", common.gameController.openPauseMenu)
-
-        common.base.accept('f6', self.hide_info)
+        KeyBindings.set_handler("openPauseMenu", common.gameController.openPauseMenu, "section2")
+        KeyBindings.set_handler("toggleThirdPerson", self.toggleThirdPerson, "section2")
 
         self.pusher = CollisionHandlerPusher()
         self.traverser = CollisionTraverser()
@@ -98,13 +97,24 @@ class Section2():
 
         self.musicFadeSpeedToAction = 1.5
         self.musicFadeSpeedToPeace = 0.5
-        
-        # controller info text
-        controller_text = 'Toggle Third-Person Mode: Backslash' + '\n' + '\n' + 'Forward: W' + '\n' + 'Backward: S' + '\n' + 'Orientation: Mouse Movement' + '\n' + '\n'  + 'Fire Energy Weapon: Mouse Left (hold)' + '\n'  + 'Fire Missile: Mouse Right (hold)' + '\n' + '\n' + 'Dismiss Controller Info: F6'
-        common.fade_in_text('text_1_node', controller_text, 1)
 
-    def hide_info(self):
-        common.dismiss_info_text('text_1_node')
+        # controller info text
+        events = Event.events["section2"]
+        cam_toggle_key = events["toggleThirdPerson"].key
+        forward_key = events["moveUp"].key
+        backward_key = events["moveDown"].key
+        events = Event.events["text"]
+        help_toggle_key = events["toggle_help"].key
+        controller_text = '\n'.join((
+            f'Toggle Third-Person Mode: {cam_toggle_key.upper()}',
+            f'\nForward: {forward_key.upper()}',
+            f'Backward: {backward_key.upper()}',
+            'Orientation: Mouse Movement',
+            '\nFire Energy Weapon: Mouse Left (hold)',
+            'Fire Missile: Mouse Right (hold)',
+            f'\nToggle This Help: {help_toggle_key.upper()}'
+        ))
+        common.TextManager.add_text("context_help", controller_text)
 
     def windowUpdated(self, window):
         if self.player is not None:
@@ -159,12 +169,16 @@ class Section2():
 
         self.conditionallyPlayPeaceMusic()
         self.actionMusic.play()
+        KeyBindings.activateAll("section2")
+        KeyBindings.activateAll("text")
 
     def pauseGame(self):
         self.paused = True
 
         self.peaceMusic.stop()
         self.actionMusic.stop()
+        KeyBindings.deactivateAll("section2")
+        KeyBindings.deactivateAll("text")
 
     def conditionallyPlayPeaceMusic(self):
         if self.player.root.getY(common.base.render) > -840 or self.startedPeaceMusic:
@@ -295,24 +309,14 @@ class Section2():
             self.skybox.removeNode()
             self.skybox = None
 
-        base.aspect2d.find('text_1_node').detach_node()
+        common.TextManager.remove_text()
 
-        common.base.ignore("w")
-        common.base.ignore("w-up")
-        common.base.ignore("s")
-        common.base.ignore("s-up")
-        common.base.ignore("mouse1")
-        common.base.ignore("mouse1-up")
-        common.base.ignore("mouse3")
-        common.base.ignore("mouse3-up")
-        common.base.ignore("escape")
-        common.base.ignore("\\")
-        common.base.ignore("f6")
+        KeyBindings.deactivate_all("section2")
+
         common.base.ignore("projectile-into")
         common.base.ignore("projectile-again-into")
         common.base.ignore("player-into")
         common.base.ignore("enemy-into")
-        
 
         self.cleanupLevel()
         self.portalSys.destroy()
@@ -329,9 +333,23 @@ def initialise(shipSpec):
     game = Section2("Assets/Section2/music/space_tech_break.mp3",
                     "Assets/Section2/music/space_tech_interlude_full.mp3")
     game.startGame(shipSpec)
+    KeyBindings.activate_all("section2")
+    KeyBindings.activate_all("text")
     return game
 
 def addOptions():
     gameController = common.gameController
 
     gameController.addOptionCheck("Use Semi-Newtonian Flight", "useNewtonianFlight", "section2", True)
+
+# define key map
+KeyBindings.add("moveUp", "w", "section2")
+KeyBindings.add("moveUpDone", "w-up", "section2")
+KeyBindings.add("moveDown", "s", "section2")
+KeyBindings.add("moveDownDone", "s-up", "section2")
+KeyBindings.add("shoot", "mouse1", "section2")
+KeyBindings.add("shootDone", "mouse1-up", "section2")
+KeyBindings.add("shootSecondary", "mouse3", "section2")
+KeyBindings.add("shootSecondaryDone", "mouse3-up", "section2")
+KeyBindings.add("openPauseMenu", "escape", "section2")
+KeyBindings.add("toggleThirdPerson", "\\", "section2")

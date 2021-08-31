@@ -1234,15 +1234,6 @@ class Hangar:
 
     def __init__(self, job_starter):
 
-        # controller info text
-        controller_text = 'Toggle First-Person Mode: Backslash' + '\n' + '\n''Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n' + '\n' + 'Play/Pause Music: P' + '\n' + '\n' + 'Dismiss Controller Info: F6'
-        fade_in_text('text_1_node', controller_text, 1)
-
-        def hide_info():
-            dismiss_info_text('text_1_node')
-
-        base.accept('f6', hide_info)
-
         self.model = base.loader.load_model(ASSET_PATH + "models/hangar.gltf")
         self.model.reparent_to(base.render)
         ceiling = self.model.find('**/ceiling')
@@ -1596,8 +1587,6 @@ class Hangar:
 
     def destroy(self):
 
-        base.aspect2d.find('text_1_node').detach_node()
-
         if self.door_open_intervals:
             if self.door_open_intervals.is_playing():
                 self.door_open_intervals.finish()
@@ -1783,6 +1772,29 @@ class Section1:
 
     def __init__(self):
 
+        events = Event.events["section1"]
+        cam_toggle_key = events["cam_switch"].key
+        music_toggle_key = events["toggle_music"].key
+        events = Event.events["fps_controller"]
+        forward_key = events["move_forward"].key
+        backward_key = events["move_backward"].key
+        left_key = events["move_left"].key
+        right_key = events["move_right"].key
+        events = Event.events["text"]
+        help_toggle_key = events["toggle_help"].key
+        # controller info text
+        controller_text = '\n'.join((
+            f'Toggle First-Person Mode: {cam_toggle_key.upper()}',
+            '\nJump: Mouse Right',
+            f'\nForward: {forward_key.upper()}',
+            f'Left: {left_key.upper()}',
+            f'Right: {right_key.upper()}',
+            f'Backward: {backward_key.upper()}',
+            f'\nPlay/Pause Music: {music_toggle_key.upper()}',
+            f'\nToggle This Help: {help_toggle_key.upper()}'
+        ))
+        TextManager.add_text("context_help", controller_text)
+
         music_path = ASSET_PATH + 'music/space_tech_next_short.mp3'
         self.music = common.base.loader.load_music(music_path)
         self.music.set_loop(False)
@@ -1790,7 +1802,7 @@ class Section1:
         self.music_paused_while_playing = False
         # self.music.play()
 
-        base.accept('p', self.toggle_music)
+        KeyBindings.set_handler("toggle_music", self.toggle_music, "section1")
 
         # initial collision
         p_topper = base.loader.load_model(ASSET_PATH + "models/p_topper.gltf")
@@ -2095,6 +2107,7 @@ class Section1:
         self.music.stop()
 
         KeyBindings.deactivate_all("section1")
+        KeyBindings.deactivate_all("text")
 
     def resumeGame(self):
 
@@ -2111,6 +2124,7 @@ class Section1:
             fp_ctrl.resume_fp_camera()
 
         KeyBindings.activate_all("section1")
+        KeyBindings.activate_all("text")
 
     def destroy_holo_ship(self):
         if self.holo_ship:
@@ -2123,6 +2137,8 @@ class Section1:
 
     def destroy(self):
         base.static_pos = Vec3(-5.29407, -15.2641, 2.66)
+
+        TextManager.remove_text()
 
         KeyBindings.deactivate_all("section1")
 
@@ -2180,8 +2196,6 @@ def initialise(data=None):
 
     base.bullet_max_step = 1
 
-    base.text_alpha = 0.01
-
     scene_filters.set_blur_sharpen(0.8)
     scene_filters.set_bloom()
 
@@ -2233,9 +2247,11 @@ def initialise(data=None):
     section = Section1()
     common.currentSection = section
     KeyBindings.activate_all("section1")
+    KeyBindings.activate_all("text")
 
     return section
 
 
 KeyBindings.add("open_pause_menu", "escape", "section1")
 KeyBindings.add("cam_switch", "\\", "section1")
+KeyBindings.add("toggle_music", "p", "section1")

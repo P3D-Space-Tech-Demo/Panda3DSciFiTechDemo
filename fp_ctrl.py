@@ -53,7 +53,7 @@ def toggle_debug():
     else:
         debug_np.hide()
 
-base.accept('f1', toggle_debug)
+base.accept('f10', toggle_debug)
 
 # 3D player movement system begins
 keyMap = {"left": 0, "right": 0, "forward": 0, "backward": 0, "run": 0, "jump": 0}
@@ -240,20 +240,20 @@ def update_cam(task):
         if player.node().is_on_ground():
             p_pos = player.get_pos()
             g_pos = p_pos[0], p_pos[1], p_pos[2] - 5
-            
+
             frac = collider_data(p_pos, g_pos)[2]
 
             base.frac_history.append(frac)
-                
+
             if len(base.frac_history) > 60:
                 del base.frac_history[:58]
-            
+
             slope_strangeness = max(base.frac_history) - min(base.frac_history)
-            
+
             if slope_strangeness >= 0.1:
                 # the slope variation is too great, ignore the weld
                 base.static_pos = player.get_pos()
-                
+
             if slope_strangeness < 0.1:
                 base.static_frames += 1
 
@@ -298,7 +298,7 @@ def make_collision(rigid_label, input_model, node_number, mass, target_pos = Vec
 def collider_data(pos_1 = Vec3(), pos_2 = Vec3()):
     coll = base.world.ray_test_closest(pos_1, pos_2)
     out_data = [coll.get_hit_pos(), coll.get_hit_normal(), coll.get_hit_fraction(), coll.get_node()]
-    
+
     return out_data
 
 # define button map

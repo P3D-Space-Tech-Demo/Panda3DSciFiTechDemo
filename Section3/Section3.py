@@ -79,14 +79,45 @@ class Section3:
         fp_ctrl.fp_init(player_start_pos, z_limit=-50)
         fp_ctrl.enable_fp_camera()
 
+        events = Event.events["section3"]
+        reload_key = events["reload_gun"].key
+        events = Event.events["fps_controller"]
+        forward_key = events["move_forward"].key
+        backward_key = events["move_backward"].key
+        left_key = events["move_left"].key
+        right_key = events["move_right"].key
+        events = Event.events["text"]
+        help_toggle_key = events["toggle_help"].key
         # controller info text
+        controller_text = '\n'.join((
+            'Jump: Mouse Right',
+            f'\nForward: {forward_key.upper()}',
+            f'Left: {left_key.upper()}',
+            f'Right: {right_key.upper()}',
+            f'Backward: {backward_key.upper()}',
+            f'\nReload: {reload_key.upper()}',
+            f'\nToggle This Help: {help_toggle_key.upper()}'
+        ))
+        TextManager.add_text("context_help", controller_text)
+        # narrative text
+        narrative = [
+            "This is the first page of the narrative"
+            " related to the background story of Section 3.",
+            "This is the second page of the narrative"
+            " related to the background story of Section 3.",
+            "This is the third and last page of the narrative"
+            " related to the background story of Section 3."
+        ]
+        TextManager.add_text("multi_page", narrative)
+
+        '''# controller info text
         controller_text = 'Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n'  + 'Reload: R' + '\n' + '\n' + 'Dismiss Controller Info: F6'
         fade_in_text('text_1_node', controller_text, 1)
 
         def hide_info():
             dismiss_info_text('text_1_node')
 
-        base.accept('f6', hide_info)
+        base.accept('f6', hide_info)'''
 
         for x in range(2):
             plight_1 = PointLight('plight_' + str(len(section_lights)))
@@ -228,6 +259,7 @@ class Section3:
         pause_section_intervals()
 
         KeyBindings.deactivate_all("section3")
+        KeyBindings.deactivate_all("text")
 
     def resumeGame(self):
 
@@ -237,6 +269,7 @@ class Section3:
         fp_ctrl.resume_fp_camera()
 
         KeyBindings.activate_all("section3")
+        KeyBindings.activate_all("text")
 
     def destroy(self):
         base.static_pos = Vec3(192.383, -0.182223, 2)
@@ -251,7 +284,7 @@ class Section3:
         base.world.remove(ramp.node())
         ramp.detach_node()
 
-        base.aspect2d.find('text_1_node').detach_node()
+        TextManager.remove_text()
 
         fp_ctrl.fp_cleanup()
 
@@ -273,13 +306,12 @@ def initialise(data=None):
 
     base.bullet_max_step = 15
 
-    base.text_alpha = 0.01
-
     section = Section3()
     common.currentSection = section
 
     KeyBindings.set_handler("open_pause_menu", common.gameController.openPauseMenu, "section3")
     KeyBindings.activate_all("section3")
+    KeyBindings.activate_all("text")
 
     return section
 
