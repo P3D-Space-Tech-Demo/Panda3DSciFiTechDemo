@@ -96,7 +96,7 @@ def load_particle_config(filename, in_model, start_pos=Vec3(), inter_duration=1,
         base.particle_effect.loadConfig(filename)
         base.particle_effect.set_shader_off()
         base.particle_effect.set_pos(start_pos)
-        particle_interval = ParticleInterval(base.particle_effect, in_model, 0, duration=inter_duration, softStopT=inter_duration/2)
+        particle_interval = ParticleInterval(base.particle_effect, in_model, 0, duration=inter_duration, softStopT=inter_duration/1.5)
         base.particle_seq = Sequence()
         base.particle_seq.append(particle_interval)
         base.particle_seq.start()
