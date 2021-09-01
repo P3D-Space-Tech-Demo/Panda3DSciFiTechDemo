@@ -1,7 +1,7 @@
 
 from direct.showbase.ShowBase import ShowBase
 
-from panda3d.core import WindowProperties, TextNode, Vec4, Vec3, Vec2, Filename, Texture, PandaNode
+from panda3d.core import WindowProperties, TextNode, Vec4, Vec3, Vec2, VirtualFileSystem, Filename, Texture, PandaNode
 from direct.stdpy.file import *
 from direct.gui.DirectGui import *
 
@@ -177,6 +177,9 @@ class Game():
         btn = Game.makeButton("Chapter Selection", self.selectSection, self.mainMenuPanel, Game.BUTTON_SIZE_LARGE)
         buttons.append(btn)
 
+        btn = Game.makeButton("Help", self.openHelp, self.mainMenuPanel, Game.BUTTON_SIZE_LARGE)
+        buttons.append(btn)
+
         btn = Game.makeButton("Options", self.openOptions, self.mainMenuPanel, Game.BUTTON_SIZE_LARGE)
         buttons.append(btn)
 
@@ -194,6 +197,52 @@ class Game():
         gradient = loader.loadTexture("Assets/Shared/tex/menuGradient.png")
         gradient.setWrapU(Texture.WMClamp)
         gradient.setWrapV(Texture.WMClamp)
+
+
+        ### Help Menu
+
+        self.helpMenu = DirectDialog(
+                                        frameSize = (-1, 1, -0.85, 0.85),
+                                        frameColor = (0.225, 0.325, 0.5, 0.75),
+                                        fadeScreen = 0.5,
+                                        pos = (0, 0, 0),
+                                        frameTexture = gradient,
+                                        relief = DGG.FLAT
+                                       )
+        self.helpMenu.hide()
+
+        label = DirectLabel(text = "Help",
+                            parent = self.helpMenu,
+                            text_font = common.fancyFont,
+                            text_fg = (0.8, 0.9, 1, 1),
+                            frameColor = (0, 0, 0.225, 1),
+                            pad = (0.9, 0.3),
+                            relief = DGG.FLAT,
+                            scale = 0.1,
+                            pos = (0, 0, 0.65)
+                            )
+        if common.italiciseFont:
+            label.setShear((0, 0.1, 0))
+
+        helpText = VirtualFileSystem.getGlobalPtr().readFile(Filename("help.txt"), False)
+        helpText = helpText.decode("utf-8")
+        label = DirectLabel(text = helpText,
+                            parent = self.helpMenu,
+                            text_font = common.fancyFont,
+                            text_fg = (0.8, 0.9, 1, 1),
+                            text_wordwrap = 20,
+                            frameColor = (0, 0, 0.225, 1),
+                            pad = (0.9, 0.3),
+                            relief = DGG.FLAT,
+                            scale = 0.075,
+                            pos = (0, 0, 0.45)
+                            )
+        if common.italiciseFont:
+            label.setShear((0, 0.1, 0))
+
+        btn = Game.makeButton("Back", self.closeCurrentMenu, self.helpMenu, Game.BUTTON_SIZE_SMALL, leftAligned = False)
+        btn.setPos(0, 0, -0.7)
+
 
         ### Options Menu
 
@@ -828,6 +877,10 @@ class Game():
     def openOptions(self):
         self.optionsMenu.show()
         self.currentMenu = self.optionsMenu
+
+    def openHelp(self):
+        self.helpMenu.show()
+        self.currentMenu = self.helpMenu
         
     def openPauseMenu(self):
         properties = WindowProperties()

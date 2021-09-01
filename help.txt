@@ -1,0 +1,3 @@
+To see context-sensitive help, press the F1 key.
+
+If the key is simply tapped, then the help will be displayed until it is tapped again. If the key is held, then the help will be displayed until it is released.
