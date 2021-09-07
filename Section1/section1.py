@@ -254,7 +254,7 @@ class FocusCamera:
 
         w = window.get_x_size()
         h = window.get_y_size()
-        t = .1
+        t = .2
         y1 = 20
         y2 = h * t
         x1 = 20
