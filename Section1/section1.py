@@ -2013,7 +2013,7 @@ class Section1:
                         self.music.set_time(self.music_time)
                         self.music.play()
             
-                    print('starship instantiation triggered')
+                    print('Starship instantiation triggered.')
                     # starship instantiation begins
                     self.jobs_started = True
                     add_section_task(self.check_workers_done, "check_workers_done")
@@ -2547,11 +2547,9 @@ class Section1:
             holo.holo_cleanup()
 
     def destroy(self):
-    
-        try:
+
+        if 'not' not in str(base.render.find('bay_ready_text')):
             dismiss_info_text('bay_ready_text')
-        except:
-            print('No bay_ready_text present.')
 
         if self.arms_instantiated:
             self.left_arm.detach_node()
@@ -2562,16 +2560,14 @@ class Section1:
         # objects without needing to know anything
         # about their respective self spaces
         arm_screen = base.render.find('**/wide_screen_video_display.egg/Plane')
-        
-        if 'not found' not in str(arm_screen):
-            arm_screen.get_parent().detach_node()
-            
+        arm_screen.get_parent().detach_node()
+
+        if 'not' not in str(base.render.find('**/joystick')):
             joystick = base.render.find('**/joystick')
             joystick.get_parent().detach_node()
-            
             cockpit = base.render.find('**/dashboard')
             cockpit.get_parent().detach_node()
-    
+        
         base.static_pos = Vec3(-5.29407, -15.2641, 2.66)
 
         TextManager.remove_text()
