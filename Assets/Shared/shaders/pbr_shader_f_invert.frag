@@ -132,7 +132,7 @@ void main() {
         float spotcutoff = p3d_LightSource[i].spotCosCutoff;
         float shadowSpot = smoothstep(spotcutoff-SPOTSMOOTH, spotcutoff+SPOTSMOOTH, spotcos);
 
-        float shadowCaster = shadow2DProj(p3d_LightSource[i].shadowMap, v_shadow_pos[i]).r;
+        float shadowCaster = textureProj(p3d_LightSource[i].shadowMap, v_shadow_pos[i]);
         float shadow = shadowSpot * shadowCaster * attenuation_factor;
 
         FunctionParameters func_params;

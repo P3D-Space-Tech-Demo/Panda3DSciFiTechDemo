@@ -487,6 +487,7 @@ class TextManager:
 
         # directly make a text node to display text
         text_node = TextNode(text_id)
+        text_node.set_shadow(0.1, 0.1)
 
         if text_id == "multi_page":
             text_node.set_text(text.pop(0))
@@ -619,13 +620,18 @@ class TextManager:
     addText = add_text
     removeText = remove_text
 
-'''def fade_in_text(label, text, duration):
+# functional control of a global text alpha scale
+# base.text_alpha is declared in section initialise()
+def fade_in_text(label, text, screen_pos, color):
     # directly make a text node to display text
     text_1 = TextNode(label)
     text_1.set_text(text)
     text_1_node = base.a2dTopLeft.attach_new_node(text_1)
     text_1_node.set_scale(0.05)
-    text_1_node.set_pos(.05, 0, -.1)
+    text_1_node.set_pos(screen_pos)
+    text_1_node.set_color(color)
+    text_1.set_shadow(0.1, 0.1)
+    # text_1.set_shadow_color(color)
     display_font = base.loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf")
     # apply font
     text_1.set_font(display_font)
@@ -650,4 +656,4 @@ def dismiss_info_text(text_node):
             time.sleep(0.01)
             t_node.set_alpha_scale(base.text_alpha)
 
-    threading2._start_new_thread(text_alpha, ())'''
+    threading2._start_new_thread(text_alpha, ())

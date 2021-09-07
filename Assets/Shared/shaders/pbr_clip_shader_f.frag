@@ -2,7 +2,7 @@
 // Based on panda3d-simplepbr (see license files for information)
 // Based on code from https://github.com/KhronosGroup/glTF-Sample-Viewer
 
-#version 130
+#version 330
 
 #ifndef MAX_LIGHTS
     #define MAX_LIGHTS 11

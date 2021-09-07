@@ -1,4 +1,4 @@
-#version 130
+#version 330
 
 uniform sampler2D p3d_Texture0;
 

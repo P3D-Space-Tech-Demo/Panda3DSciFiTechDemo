@@ -28,11 +28,11 @@ base.static_pos = Vec3()
 base.frac_history = []
 base.bullet_max_step = 5
 
+paused_cursor_pos = [0,0]
+
 movementSpeedForward = 15
 movementSpeedBackward = 15
 striveSpeed = 11
-
-paused_cursor_pos = [0, 0]
 
 base.world = BulletWorld()
 base.world.set_gravity(Vec3(0, 0, -9.81))
@@ -94,16 +94,19 @@ def do_jump(jump_speed = 16, max_height = 1, fall_speed = 150, gravity = 50):
     player.node().do_jump()
 
 def fp_cleanup():
-    player = base.render.find('Player')
-    base.world.remove(player.node())
-    player.detach_node()
+    try:
+        player = base.render.find('Player')
+        base.world.remove(player.node())
+        player.detach_node()
 
-    ground = base.render.find('ground')
-    base.world.remove(ground.node())
-    ground.detach_node()
+        ground = base.render.find('ground')
+        base.world.remove(ground.node())
+        ground.detach_node()
 
-    disable_fp_camera()
-    running_tasks.clear()
+        disable_fp_camera()
+        running_tasks.clear()
+    except:
+        print('fp_cleanup() failed to execute, passing.')
 
 def enable_fp_camera(fp_height = 1):
     base_props = base.win.get_properties()
@@ -275,7 +278,7 @@ def physics_update(task):
 
     return task.cont
 
-def make_collision(rigid_label, input_model, node_number, mass, target_pos = Vec3(0, 0, 0), hpr_adj = Vec3(0, 0, 0), scale_adj = 1):
+def make_collision(rigid_label, input_model, node_number, mass, target_pos = Vec3(), hpr_adj = Vec3(), scale_adj = 1):
     # generic tristrip collision generator begins
     geom_nodes = input_model.find_all_matches('**/+GeomNode')
     geom_nodes = geom_nodes.get_path(node_number).node()

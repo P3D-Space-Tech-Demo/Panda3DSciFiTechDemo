@@ -1,4 +1,4 @@
-#version 130
+#version 330
 
 in vec4 p3d_Vertex;
 in vec4 p3d_MultiTexCoord0;

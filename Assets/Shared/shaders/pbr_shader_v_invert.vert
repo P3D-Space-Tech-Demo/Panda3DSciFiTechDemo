@@ -1,7 +1,7 @@
 // Author: Simulan
 // Based on panda3d-simplepbr (see license files for information)
 
-#version 130
+#version 330
 
 #ifndef MAX_LIGHTS
     #define MAX_LIGHTS 5
