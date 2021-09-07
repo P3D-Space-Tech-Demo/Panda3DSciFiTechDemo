@@ -1244,10 +1244,6 @@ class Hangar:
         alcove = self.model.find('**/alcove')
         alcove.set_shader_off()
         alcove.set_shader(metal_shader)
-        # optional binning hack
-        # alcove.set_bin("fixed", 5)
-        # alcove.set_transparency(TransparencyAttrib.MAlpha, 1)
-        # alcove.set_alpha_scale(0.9)
         
         fp_ctrl.make_collision('alcove_brbn', alcove, 0, 0, alcove.get_pos())
 
@@ -1864,6 +1860,8 @@ class Hangar:
             chair_seq.append(joystick_inter)
             chair_seq.start()
             
+            section_intervals.append(chair_seq)
+            
         animate_cockpit()
         
         # self.left_arm.detach_node()
@@ -1948,6 +1946,8 @@ class Hangar:
         exit_seq.append(pit_par)
         exit_seq.append(load_sec_2)
         exit_seq.start()
+        
+        section_intervals.append(exit_seq)
 
 class Section1:
 
