@@ -1,3 +1,12 @@
-To see context-sensitive help, press the F1 key.
+The game is composed of several chapters, each with its own distinct gameplay. In order, they are:
+
+Chapter 1: First-person movement and ship-selection
+Chapter 2: Six-degrees-of-freedom space -flight and -combat
+Chapter 3: First-person shooting
+Chapter 4: ???
+
+To see the controls for the current section while playing, press the F1 key.
 
 If the key is simply tapped, then the help will be displayed until it is tapped again. If the key is held, then the help will be displayed until it is released.
+
+To pause the game and bring up a pause-menu while playing, pressing the "escape" key.

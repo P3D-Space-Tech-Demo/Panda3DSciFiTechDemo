@@ -230,12 +230,13 @@ class Game():
                             parent = self.helpMenu,
                             text_font = common.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),
-                            text_wordwrap = 20,
+                            text_wordwrap = 27,
                             frameColor = (0, 0, 0.225, 1),
                             pad = (0.9, 0.3),
                             relief = DGG.FLAT,
-                            scale = 0.075,
-                            pos = (0, 0, 0.45)
+                            scale = 0.06,
+                            text_align = TextNode.ALeft,
+                            pos = (-27*0.06*0.5, 0, 0.45)
                             )
         if common.italiciseFont:
             label.setShear((0, 0.1, 0))
