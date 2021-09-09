@@ -226,7 +226,8 @@ class Game():
 
         helpText = VirtualFileSystem.getGlobalPtr().readFile(Filename("help.txt"), False)
         helpText = helpText.decode("utf-8")
-        label = DirectLabel(text = helpText,
+        newHelpText = helpText.replace("\r", "")
+        label = DirectLabel(text = newHelpText,
                             parent = self.helpMenu,
                             text_font = common.fancyFont,
                             text_fg = (0.8, 0.9, 1, 1),

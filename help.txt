@@ -9,4 +9,4 @@ To see the controls for the current section while playing, press the F1 key.
 
 If the key is simply tapped, then the help will be displayed until it is tapped again. If the key is held, then the help will be displayed until it is released.
 
-To pause the game and bring up a pause-menu while playing, pressing the "escape" key.
+To pause the game while playing, thus bringing up a pause-menu, press the "escape" key.
