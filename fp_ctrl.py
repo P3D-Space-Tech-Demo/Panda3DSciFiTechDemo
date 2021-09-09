@@ -85,6 +85,10 @@ def fp_init(target_pos, z_limit = 0):
     np.set_pos(0, 0, z_limit)
     base.world.attach_rigid_body(node)
 
+    # initialize the previous cursor position to be at the center of the window
+    paused_cursor_pos[0] = base.win.get_x_size() // 2
+    paused_cursor_pos[1] = base.win.get_y_size() // 2
+
 def do_jump(jump_speed = 16, max_height = 1, fall_speed = 150, gravity = 50):
     player = base.render.find('Player')
     player.node().set_jump_speed(jump_speed)
