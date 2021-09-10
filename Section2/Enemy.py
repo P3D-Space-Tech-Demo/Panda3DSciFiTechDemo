@@ -171,12 +171,19 @@ class FighterEnemy(Enemy):
         vectorToPlayer = playerPos - selfPos
 
         quadraticA = shotSpeed*shotSpeed - playerVel.lengthSquared()
+        if quadraticA <= 0:
+            quadraticA = playerVel.lengthSquared()*1.25
         quadraticB = -2*playerVel.dot(vectorToPlayer)
         quadraticC = -vectorToPlayer.lengthSquared()
 
-        quadraticResult = (quadraticB + math.sqrt(quadraticB*quadraticB - 4*quadraticA*quadraticC)) / (2*quadraticA)
+        innerSquare = quadraticB*quadraticB - 4*quadraticA*quadraticC
 
-        targetPt = playerPos + playerVel*quadraticResult
+        if innerSquare < 0:
+            targetPt = playerPos
+        else:
+            quadraticResult = (quadraticB + math.sqrt(innerSquare)) / (2*quadraticA)
+
+            targetPt = playerPos + playerVel*quadraticResult
 
         ### End of GameDev.net algorithm
 
