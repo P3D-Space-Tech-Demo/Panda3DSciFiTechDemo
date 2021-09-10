@@ -639,7 +639,7 @@ def fade_in_text(label, text, screen_pos, color):
     text_1_node.set_alpha_scale(base.text_alpha)
 
     def text_alpha():
-        for x in range(100):
+        while base.text_alpha < 1:
             base.text_alpha += 0.01
             time.sleep(0.01)
             text_1_node.set_alpha_scale(base.text_alpha)
@@ -651,9 +651,11 @@ def dismiss_info_text(text_node):
     t_node.set_alpha_scale(base.text_alpha)
 
     def text_alpha():
-        for x in range(100):
+        while base.text_alpha > 0:
             base.text_alpha -= 0.01
             time.sleep(0.01)
             t_node.set_alpha_scale(base.text_alpha)
+            
+            print(base.text_alpha)
 
     threading2._start_new_thread(text_alpha, ())
