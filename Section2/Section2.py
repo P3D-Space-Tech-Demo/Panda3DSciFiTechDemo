@@ -19,7 +19,7 @@ from Section2.Level import Level
 from Section2.EndPortal import SphericalPortalSystem
 
 import common
-from common import Event, KeyBindings
+from common import KeyBindings
 
 import random
 
@@ -99,20 +99,22 @@ class Section2():
         self.musicFadeSpeedToPeace = 0.5
 
         # controller info text
-        events = Event.events["section2"]
-        cam_toggle_key = events["toggleThirdPerson"].key
-        forward_key = events["moveUp"].key
-        backward_key = events["moveDown"].key
-        events = Event.events["text"]
-        help_toggle_key = events["toggle_help"].key
+        events = KeyBindings.events["section2"]
+        cam_toggle_key = events["toggleThirdPerson"].key_str
+        forward_key = events["moveUp"].key_str
+        backward_key = events["moveDown"].key_str
+        prim_weapon_key = events["shoot"].key_str
+        sec_weapon_key = events["shootSecondary"].key_str
+        events = KeyBindings.events["text"]
+        help_toggle_key = events["toggle_help"].key_str
         controller_text = '\n'.join((
-            f'Toggle Third-Person Mode: {cam_toggle_key.upper()}',
-            f'\nForward: {forward_key.upper()}',
-            f'Backward: {backward_key.upper()}',
-            'Orientation: Mouse Movement',
-            '\nFire Energy Weapon: Mouse Left (hold)',
-            'Fire Missile: Mouse Right (hold)',
-            f'\nToggle This Help: {help_toggle_key.upper()}'
+            f'Toggle Third-Person Mode: \1key\1{cam_toggle_key.title()}\2',
+            f'\nForward: \1key\1{forward_key.title()}\2',
+            f'Backward: \1key\1{backward_key.title()}\2',
+            'Orientation: \1key\1Mouse Movement\2',
+            f'\nFire Energy Weapon: \1key\1{prim_weapon_key.title()}\2 (hold)',
+            f'Fire Missile: \1key\1{sec_weapon_key.title()}\2 (hold)',
+            f'\nToggle This Help: \1key\1{help_toggle_key.title()}\2'
         ))
         common.TextManager.addText("context_help", controller_text)
 

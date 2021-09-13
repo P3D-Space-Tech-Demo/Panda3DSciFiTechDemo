@@ -79,24 +79,25 @@ class Section3:
         fp_ctrl.fp_init(player_start_pos, z_limit=-50)
         fp_ctrl.enable_fp_camera()
 
-        events = Event.events["section3"]
-        reload_key = events["reload_gun"].key
-        events = Event.events["fps_controller"]
-        forward_key = events["move_forward"].key
-        backward_key = events["move_backward"].key
-        left_key = events["move_left"].key
-        right_key = events["move_right"].key
-        events = Event.events["text"]
-        help_toggle_key = events["toggle_help"].key
+        events = KeyBindings.events["section3"]
+        reload_key = events["reload_gun"].key_str
+        events = KeyBindings.events["fps_controller"]
+        jump_key = events["do_jump"].key_str
+        forward_key = events["move_forward"].key_str
+        backward_key = events["move_backward"].key_str
+        left_key = events["move_left"].key_str
+        right_key = events["move_right"].key_str
+        events = KeyBindings.events["text"]
+        help_toggle_key = events["toggle_help"].key_str
         # controller info text
         controller_text = '\n'.join((
-            'Jump: Mouse Right',
-            f'\nForward: {forward_key.upper()}',
-            f'Left: {left_key.upper()}',
-            f'Right: {right_key.upper()}',
-            f'Backward: {backward_key.upper()}',
-            f'\nReload: {reload_key.upper()}',
-            f'\nToggle This Help: {help_toggle_key.upper()}'
+            f'Jump: \1key\1{jump_key.title()}\2',
+            f'\nForward: \1key\1{forward_key.title()}\2',
+            f'Left: \1key\1{left_key.title()}\2',
+            f'Right: \1key\1{right_key.title()}\2',
+            f'Backward: \1key\1{backward_key.title()}\2',
+            f'\nReload: \1key\1{reload_key.title()}\2',
+            f'\nToggle This Help: \1key\1{help_toggle_key.title()}\2'
         ))
         TextManager.add_text("context_help", controller_text)
         # narrative text
@@ -109,15 +110,6 @@ class Section3:
             " related to the background story of Section 3."
         ]
         TextManager.add_text("multi_page", narrative)
-
-        '''# controller info text
-        controller_text = 'Jump: Mouse Right' + '\n' + '\n' + 'Forward: W' + '\n'+ 'Left: A' + '\n' + 'Right: D' + '\n' + 'Backward: S' + '\n'  + 'Reload: R' + '\n' + '\n' + 'Dismiss Controller Info: F6'
-        fade_in_text('text_1_node', controller_text, 1)
-
-        def hide_info():
-            dismiss_info_text('text_1_node')
-
-        base.accept('f6', hide_info)'''
 
         for x in range(2):
             plight_1 = PointLight('plight_' + str(len(section_lights)))
