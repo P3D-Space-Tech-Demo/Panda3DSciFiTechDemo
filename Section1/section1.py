@@ -1953,26 +1953,27 @@ class Section1:
 
     def __init__(self):
 
-        events = Event.events["section1"]
-        cam_toggle_key = events["cam_switch"].key
-        music_toggle_key = events["toggle_music"].key
-        events = Event.events["fps_controller"]
-        forward_key = events["move_forward"].key
-        backward_key = events["move_backward"].key
-        left_key = events["move_left"].key
-        right_key = events["move_right"].key
-        events = Event.events["text"]
-        help_toggle_key = events["toggle_help"].key
+        events = KeyBindings.events["section1"]
+        cam_toggle_key = events["cam_switch"].key_str
+        music_toggle_key = events["toggle_music"].key_str
+        events = KeyBindings.events["fps_controller"]
+        jump_key = events["do_jump"].key_str
+        forward_key = events["move_forward"].key_str
+        backward_key = events["move_backward"].key_str
+        left_key = events["move_left"].key_str
+        right_key = events["move_right"].key_str
+        events = KeyBindings.events["text"]
+        help_toggle_key = events["toggle_help"].key_str
         # controller info text
         controller_text = '\n'.join((
-            f'Toggle First-Person Mode: {cam_toggle_key.upper()}',
-            '\nJump: Mouse Right',
-            f'\nForward: {forward_key.upper()}',
-            f'Left: {left_key.upper()}',
-            f'Right: {right_key.upper()}',
-            f'Backward: {backward_key.upper()}',
-            f'\nPlay/Pause Music: {music_toggle_key.upper()}',
-            f'\nToggle This Help: {help_toggle_key.upper()}'
+            f'Toggle First-Person Mode: \1key\1{cam_toggle_key.title()}\2',
+            f'\nJump: \1key\1{jump_key.title()}\2',
+            f'\nForward: \1key\1{forward_key.title()}\2',
+            f'Left: \1key\1{left_key.title()}\2',
+            f'Right: \1key\1{right_key.title()}\2',
+            f'Backward: \1key\1{backward_key.title()}\2',
+            f'\nPlay/Pause Music: \1key\1{music_toggle_key.title()}\2',
+            f'\nToggle This Help: \1key\1{help_toggle_key.title()}\2'
         ))
         TextManager.add_text("context_help", controller_text)
 
@@ -2137,11 +2138,11 @@ class Section1:
             base.camLens.focal_length = 7
 
         def cam_switch():
-            events = Event.events["fps_controller"]
-            forward_key = events["move_forward"].key
-            backward_key = events["move_backward"].key
-            left_key = events["move_left"].key
-            right_key = events["move_right"].key
+            events = KeyBindings.events["fps_controller"]
+            forward_key = events["move_forward"].key_str
+            backward_key = events["move_backward"].key_str
+            left_key = events["move_left"].key_str
+            right_key = events["move_right"].key_str
             is_down = base.mouseWatcherNode.is_button_down
             moving = is_down(forward_key) or is_down(backward_key) or is_down(left_key) or is_down(right_key)
 
@@ -2368,7 +2369,14 @@ class Section1:
                 print('No info text present.')
 
         else:
-            bay_ready_text = 'Construction bay is ready and awaiting job input.' + '\n\n' + 'Tap right arrow in First-Person Mode to hover-select your spacecraft.' + '\n\n' + 'Press enter to begin building your selected spacecraft.'
+            events = KeyBindings.events["section1"]
+            build_start_key = events["build_starship"].key_str.title()
+            arrow_key = events["arrow_arm_screen"].key_str.title()
+            bay_ready_text = '\n\n'.join((
+                'Construction bay is ready and awaiting job input.',
+                f'Tap \1key\1{arrow_key}\2 in First-Person Mode to hover-select your spacecraft.',
+                f'Press \1key\1{build_start_key}\2 to begin building your selected spacecraft.'
+            ))
             fade_in_text('bay_ready_text', bay_ready_text, Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
 
             add_section_task(self.await_build_command, "await_build_command")
@@ -2547,8 +2555,10 @@ class Section1:
 
     def destroy(self):
 
-        if 'not' not in str(base.render.find('bay_ready_text')):
-            dismiss_info_text('bay_ready_text')
+        text_node = base.a2dTopLeft.find('bay_ready_text')
+
+        if not text_node.is_empty():
+            text_node.detach_node()
 
         if self.arms_instantiated:
             self.left_arm.detach_node()
