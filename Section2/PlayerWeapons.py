@@ -18,11 +18,11 @@ import common
 import random, math
 
 class BlasterProjectile(Projectile):
-    def __init__(self, model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
+    def __init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
                  aoeRadius = 0, blastModel = None,
                  pos = None, damageByTime = False):
         Projectile.__init__(self,
-                            model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
+                            model, mask, range, damage, speed, size, knockback, flinchValue,
                              aoeRadius, blastModel,
                              pos, damageByTime)
 
@@ -32,17 +32,29 @@ class BlasterProjectile(Projectile):
             "expansionFactor" : 1,
         }
 
-        explosion = Explosion(3, "blasterImpact", shaderInputs, "noiseRadial", random.uniform(0, 3.152), random.uniform(0, 3.152))
+        explosion = Explosion(2 + self.damage*0.2, "blasterImpact", shaderInputs, "noiseRadial", random.uniform(0, 3.152), random.uniform(0, 3.152))
         explosion.activate(Vec3(0, 0, 0), self.root.getPos(common.base.render))
         common.currentSection.currentLevel.explosions.append(explosion)
 
         Projectile.impact(self, impactee)
 
 class BlasterWeapon(ProjectileWeapon):
-    def __init__(self):
-        projectile = BlasterProjectile("Assets/Section2/models/blasterShot", True,
+    MODELS = [
+        "blasterShot_small",
+        "blasterShot_med",
+        "blasterShot_large",
+    ]
+    DAMAGE_VALUES = [
+        3.5,
+        7,
+        12
+    ]
+    def __init__(self, powerLevel):
+        modelName = BlasterWeapon.MODELS[powerLevel]
+        damage = BlasterWeapon.DAMAGE_VALUES[powerLevel]
+        projectile = BlasterProjectile("Assets/Section2/models/{0}".format(modelName),
                                         MASK_INTO_ENEMY,
-                                        100, 7, 75, 0.5, 0, 10, 0,
+                                        100, damage, 75, 0.5, 0, 10, 0,
                                         "Assets/Section2/models/blast")
         ProjectileWeapon.__init__(self, projectile)
 
@@ -73,10 +85,10 @@ class BlasterWeapon(ProjectileWeapon):
         ProjectileWeapon.destroy(self)
 
 class Rocket(SeekingProjectile):
-    def __init__(self, model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
+    def __init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
                  aoeRadius = 0, blastModel = None,
                  pos = None, damageByTime = False):
-        SeekingProjectile.__init__(self, model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
+        SeekingProjectile.__init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
                  aoeRadius, blastModel,
                  pos, damageByTime)
 
@@ -111,7 +123,7 @@ class Rocket(SeekingProjectile):
 
 class RocketWeapon(ProjectileWeapon):
     def __init__(self):
-        projectile = Rocket("Assets/Section2/models/rocket", False,
+        projectile = Rocket("Assets/Section2/models/rocket",
                             MASK_INTO_ENEMY,
                             None, 55, 45, 0.7, 20, 0)
         ProjectileWeapon.__init__(self, projectile)

@@ -37,6 +37,10 @@ vert_shader = "Assets/Shared/shaders/portal_sphere.vert"
 frag_shader = "Assets/Shared/shaders/portal_sphere.frag"
 portal_sphere_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 
+vert_shader = "Assets/Shared/shaders/vertex_glow.vert"
+frag_shader = "Assets/Shared/shaders/vertex_glow.frag"
+vertex_glow_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
+
 base.musicManager.setConcurrentSoundLimit(2)
 
 scene_filters = CommonFilters(base.win, base.cam)
@@ -70,6 +74,13 @@ def setOption(sectionID, optionID, newVal):
     if section is None:
         return
     section[optionID] = newVal
+    
+def make_glowing_np(np):
+    np.set_shader(vertex_glow_shader)
+    np.setLightOff(10)
+    np.setBin("unsorted", 1)
+    np.setDepthWrite(False)
+    np.setAttrib(ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne))
 
 def loadParticles(fileName):
     extension = "ptf"
@@ -252,15 +263,13 @@ def create_sphere(segments):
 # The following class is used to associate event handlers with event IDs.
 class Event:
 
-    events = {}
-
-    def __init__(self, event_id, key, handler=None, group_id=""):
+    def __init__(self, event_id, key, key_str, handler=None, group_id=""):
         self.id = event_id
         self.group_id = group_id
         self.default_key = key
         self.key = key
+        self.key_str = key_str
         self._handler = handler if handler else lambda: None
-        self.events.setdefault(group_id, {})[event_id] = self
 
     @property
     def handler(self):
@@ -280,115 +289,155 @@ class Event:
 class KeyBindings:
 
     listener = base
-    bindings = {}
+    events = {}
+    keyboard_map = base.win.get_keyboard_map()
 
     @classmethod
     def add(cls, event_id, key, group_id="", handler=None):
-        event = Event(event_id, key, handler, group_id)
-        cls.bindings.setdefault(group_id, {})[key] = event
+        raw_key = f"raw-{key}"
+
+        if "mouse" in key or "shift" in key or "control" in key or "alt" in key:
+            raw_key = raw_key.replace("raw-", "")
+            key_str = key.replace("mouse1", "mouse left")
+            key_str = key_str.replace("mouse2", "mouse middle")
+            key_str = key_str.replace("mouse3", "mouse right")
+        else:
+            mapped_key = cls.keyboard_map.get_mapped_button(key)
+            key_str = cls.keyboard_map.get_mapped_button_label(key).lower()
+
+        if not key_str:
+            if mapped_key:
+                key_str = str(mapped_key).lower()
+            else:
+                key_str = key
+
+        key_str = key_str.replace("_", " ")
+        event = Event(event_id, raw_key, key_str, handler, group_id)
+        cls.events.setdefault(group_id, {})[event_id] = event
 
     @classmethod
-    def remove(cls, key, group_id=""):
-        del cls.bindings[group_id][key]
+    def remove(cls, event_id, group_id=""):
+        if group_id not in cls.events:
+            return False
 
-        if not cls.bindings[group_id]:
-            del cls.bindings[group_id]
+        events = cls.events[group_id]
+
+        if event_id not in events:
+            return False
+
+        del events[event_id]
+
+        if not cls.events[group_id]:
+            del cls.events[group_id]
+
+        return True
 
     @classmethod
     def clear(cls, group_id=""):
-        del cls.bindings[group_id]
+        if group_id not in cls.events:
+            return False
+
+        del cls.events[group_id]
+
+        return True
 
     @classmethod
     def set_handler(cls, event_id, handler, group_id=""):
-        if group_id not in Event.events:
-            return
+        if group_id not in cls.events:
+            return False
 
-        events = Event.events[group_id]
+        events = cls.events[group_id]
 
         if event_id not in events:
-            return
+            return False
 
         event = events[event_id]
         event.handler = handler
 
+        return True
+
     @classmethod
-    def activate(cls, key, group_id="", once=False):
-        event = cls.bindings.get(group_id, {}).get(key)
+    def activate(cls, event_id, group_id="", once=False):
+        event = cls.events.get(group_id, {}).get(event_id)
 
         if not event:
-            return
+            return False
 
         if once:
-            cls.listener.accept_once(key, event.handler)
+            cls.listener.accept_once(event.key, event.handler)
         else:
-            cls.listener.accept(key, event.handler)
+            cls.listener.accept(event.key, event.handler)
+
+        return True
 
     @classmethod
     def activate_all(cls, group_id="", once=False):
         if once:
-            for key, event in cls.bindings.get(group_id, {}).items():
-                cls.listener.accept_once(key, event.handler)
+            for event in cls.events.get(group_id, {}).values():
+                cls.listener.accept_once(event.key, event.handler)
         else:
-            for key, event in cls.bindings.get(group_id, {}).items():
-                cls.listener.accept(key, event.handler)
+            for event in cls.events.get(group_id, {}).values():
+                cls.listener.accept(event.key, event.handler)
 
     @classmethod
-    def deactivate(cls, key):
-        cls.listener.ignore(key)
+    def deactivate(cls, event_id, group_id=""):
+        event = cls.events.get(group_id, {}).get(event_id)
+
+        if not event:
+            return False
+
+        cls.listener.ignore(event.key)
+
+        return True
 
     @classmethod
     def deactivate_all(cls, group_id=""):
         if group_id is None:  # not recommended if cls.listener == base!!!
             cls.listener.ignore_all()
         else:
-            for key in cls.bindings.get(group_id, {}):
-                cls.listener.ignore(key)
+            for event in cls.events.get(group_id, {}).values():
+                cls.listener.ignore(event.key)
 
     @classmethod
     def rebind(cls, key, event_id, group_id=""):
-        if group_id not in cls.bindings:
-            return
+        if group_id not in cls.events:
+            return False
 
-        group = cls.bindings[group_id]
-
-        event = Event.events[group_id][event_id]
+        events = cls.events[group_id]
+        event = events[event_id]
+        group = {e.key: e for e in events}
         old_key = event.key
 
         if key == old_key:
-            return
+            return False
 
         if key in group:
-            old_event = group[key]
-            old_event.key = None
+            group[key].key = ""
 
-        del group[old_key]
-        group[key] = event
+        event.key = key
+
+        return True
 
     @classmethod
     def reset(cls, event_id, group_id=""):
-        if group_id not in cls.bindings:
-            return
+        event = cls.events.get(group_id, {}).get(event_id)
 
-        group = cls.bindings[group_id]
-        events = Event.events[group_id]
+        if not event:
+            return False
 
-        if event_id not in events:
-            return
-
-        event = events[event_id]
-        del group[event.key]
         event.key = event.default_key
-        group[event.default_key] = event
+
+        return True
 
     @classmethod
     def reset_all(cls, group_id=""):
         if group_id is None:
-            for group_id, group in Event.events.items():
-                for event_id in group:
-                    cls.reset(event_id, group_id)
-        elif group_id in Event.events:
-            for event_id in Event.events[group_id]:
-                cls.reset(event_id, group_id)
+            for events in cls.events.values():
+                for event in events.values():
+                    event.key = event.default_key
+        elif group_id in cls.events:
+            for event in cls.events[group_id].values():
+                event.key = event.default_key
 
     setHandler = set_handler
     activateAll = activate_all
@@ -478,6 +527,11 @@ class TextManager:
         "context_help": [0.01, 1.],
         "multi_page": [0.01, 1.]
     }
+    # define text color for highlighting key-bindings
+    props_mgr = TextPropertiesManager.get_global_ptr()
+    col_prop = TextProperties()
+    col_prop.set_text_color((0, 1, 0, 1))
+    props_mgr.set_properties("key", col_prop)
 
     @classmethod
     def add_text(cls, text_id, text):
@@ -492,8 +546,8 @@ class TextManager:
         if text_id == "multi_page":
             text_node.set_text(text.pop(0))
             cls.text_pages = text
-            key = Event.events["text"]["advance_text"].key
-            cls.text_nodes["context_help"].node().set_text(f"{key.upper()} to advance text")
+            key = KeyBindings.events["text"]["advance_text"].key_str
+            cls.text_nodes["context_help"].node().set_text(f"\1key\1{key.title()}\2 to advance text")
             z = -.2
         else:
             text_node.set_text(text)
@@ -607,7 +661,7 @@ class TextManager:
 
         # allow keeping the help text on screen until the associated key is released
         if text_id == "context_help" and cls.text_alpha_incr[text_id][1] > 0.:
-            key = Event.events["text"]["toggle_help"].key
+            key = KeyBindings.events["text"]["toggle_help"].key
 
             def fade_out_help(task):
                 base.accept_once(f"{key}-up", lambda: cls.toggle_text(text_id))
@@ -639,7 +693,7 @@ def fade_in_text(label, text, screen_pos, color):
     text_1_node.set_alpha_scale(base.text_alpha)
 
     def text_alpha():
-        for x in range(100):
+        while base.text_alpha < 1:
             base.text_alpha += 0.01
             time.sleep(0.01)
             text_1_node.set_alpha_scale(base.text_alpha)
@@ -651,9 +705,17 @@ def dismiss_info_text(text_node):
     t_node.set_alpha_scale(base.text_alpha)
 
     def text_alpha():
-        for x in range(100):
-            base.text_alpha -= 0.01
-            time.sleep(0.01)
-            t_node.set_alpha_scale(base.text_alpha)
+        if base.text_alpha > 0.98:
+            while base.text_alpha > 0:
+                base.text_alpha -= 0.01
+                time.sleep(0.01)
+                t_node.set_alpha_scale(base.text_alpha)
+        else:
+            time.sleep(1)
+            
+            while base.text_alpha > 0:
+                base.text_alpha -= 0.01
+                time.sleep(0.01)
+                t_node.set_alpha_scale(base.text_alpha)
 
     threading2._start_new_thread(text_alpha, ())

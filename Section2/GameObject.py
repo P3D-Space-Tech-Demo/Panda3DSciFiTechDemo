@@ -36,6 +36,18 @@ class GameObject():
             self.actor = Actor(modelName, modelAnims)
         self.actor.reparentTo(self.root)
 
+        glowingThings = self.actor.findAllMatches("**/=glowShader")
+        for glowingThing in glowingThings:
+            common.make_glowing_np(glowingThing)
+
+        billboardThings = self.actor.findAllMatches("**/=billboardEye")
+        for billboardThing in billboardThings:
+            billboardThing.setBillboardPointEye()
+
+        billboardThings = self.actor.findAllMatches("**/=billboardAxis")
+        for billboardThing in billboardThings:
+            billboardThing.setBillboardAxis()
+
         if pos is not None:
             self.root.setPos(pos)
 
@@ -284,6 +296,7 @@ class ShieldedObject():
             shield.setBin("unsorted", 1)
             shield.setDepthWrite(False)
             shield.setTwoSided(True)
+            shield.setShaderAuto(1)
             self.shields.append([shield, 0])
 
     def update(self, dt):

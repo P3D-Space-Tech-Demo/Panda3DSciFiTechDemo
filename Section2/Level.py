@@ -1,5 +1,5 @@
 
-from panda3d.core import Vec3, Vec4, DirectionalLight
+from panda3d.core import Vec3, Vec4, DirectionalLight, Filename, VirtualFileSystem
 
 from Section2.GameObject import *
 from Section2.Trigger import Trigger
@@ -16,9 +16,27 @@ class Level():
     def __init__(self, levelFile):
         self.levelFile = levelFile
 
-        self.geometry = common.base.loader.loadModel("Assets/Section2/levels/" + levelFile)
+        self.geometry = NodePath(PandaNode("level root"))
+        foundPartwiseFile = False
+        index = 0
+        fName = "Assets/Section2/levels/{0}_{1}".format(levelFile, index)
+        virtualFS = VirtualFileSystem.getGlobalPtr()
+        while virtualFS.exists(Filename("{0}.egg".format(fName))):
+            foundPartwiseFile = True
+            loadedNP = common.base.loader.loadModel(fName)
+            loadedNP.reparentTo(self.geometry)
+            index += 1
+            fName = "Assets/Section2/levels/{0}_{1}".format(levelFile, index)
+        if not foundPartwiseFile:
+            loadedNP = common.base.loader.loadModel("Assets/Section2/levels/{0}".format(levelFile))
+            loadedNP.reparentTo(self.geometry)
         self.geometry.reparentTo(common.base.render)
-        self.geometry.setShaderAuto()
+        #self.geometry.setShaderAuto()
+        self.geometry.setShader(common.metal_shader)
+        #mats = self.geometry.findAllMaterials()
+        #for mat in mats:
+        #    print (mat.getRoughness())
+        #    mat.setRoughness(0.8)
 
         try:
             self.scriptObj = importlib.import_module("Assets.Section2.levels.scripts.{0}".format(levelFile))

@@ -106,7 +106,7 @@ class ProjectileWeapon(Weapon):
         return proj
 
 class Projectile(GameObject):
-    def __init__(self, model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
+    def __init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
                  aoeRadius = 0, blastModel = None,
                  pos = None, damageByTime = False):
         GameObject.__init__(self, pos, model, None, 100, speed, None, mask, 0.5)
@@ -136,8 +136,6 @@ class Projectile(GameObject):
 
         self.noZVelocity = False
 
-        self.isAdditive = isAdditive
-
         if blastModel is None:
             self.blastModel = None
             self.blastModelFile = None
@@ -147,17 +145,12 @@ class Projectile(GameObject):
 
     @staticmethod
     def makeRealProjectileFromTemplate(template, projectilePosition):
-        result = template.__class__(template.modelName, template.isAdditive, template.mask, template.range,
+        result = template.__class__(template.modelName, template.mask, template.range,
                             template.damage, template.maxSpeed, template.size,
                             template.knockback, template.flinchValue,
                             template.aoeRadius, template.blastModelFile,
                             pos = projectilePosition, damageByTime = template.damageByTime)
 
-        if template.isAdditive:
-            result.root.setAttrib(ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne))
-            result.root.setLightOff(10)
-            result.root.setBin("unsorted", 1)
-            result.root.setDepthWrite(False)
         result.root.reparentTo(common.currentSection.currentLevel.geometry)
 
         result.generateCollisionObject()
@@ -236,10 +229,10 @@ class Projectile(GameObject):
         GameObject.destroy(self)
 
 class SeekingProjectile(Projectile):
-    def __init__(self, model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
+    def __init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
                  aoeRadius = 0, blastModel = None,
                  pos = None, damageByTime = False):
-        Projectile.__init__(self, model, isAdditive, mask, range, damage, speed, size, knockback, flinchValue,
+        Projectile.__init__(self, model, mask, range, damage, speed, size, knockback, flinchValue,
                  aoeRadius, blastModel,
                  pos, damageByTime)
 

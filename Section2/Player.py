@@ -78,11 +78,11 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
         self.energy = shipSpec.maxEnergy
 
-        for gunPos in shipSpec.gunPositions:
+        for gunPos, gunLevel in shipSpec.gunPositions:
             np = self.actor.attachNewNode(PandaNode("gun node"))
             np.setPos(gunPos)
 
-            gun = BlasterWeapon()
+            gun = BlasterWeapon(gunLevel)
             self.addWeapon(gun, 0, np)
 
         missileSetCounter = 1
@@ -133,7 +133,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         common.base.camera.reparentTo(common.currentSection.currentLevel.geometry)
 
         lens = common.base.camLens
-        lens.setNear(0.03)
+        lens.setNear(0.01)
 
         self.updateCameraLens()
 
@@ -327,17 +327,25 @@ class Player(GameObject, ArmedObject, ShieldedObject):
                                           text_mayChange = True,
                                           text_font = common.fancyFont,
                                           scale = 0.09,
+                                          text_fg = (0.7, 0.8, 1, 1),
                                           frameColor = (1, 1, 1, 1),
                                           relief = None,
                                           parent = self.missileCounterRoot)
+        self.missileCounter.setShaderOff(10)
+        self.missileCounter.setBin("unsorted", 0)
+        self.missileCounter.setLightOff()
 
         self.speedometer = DirectLabel(text = "",
                                        text_mayChange = True,
                                        text_font = common.fancyFont,
                                        scale = 0.09,
+                                       text_fg = (0.7, 0.8, 1, 1),
                                        frameColor = (1, 1, 1, 1),
                                        relief = None,
                                        parent = self.speedometerRoot)
+        self.speedometer.setShaderOff(10)
+        self.speedometer.setBin("unsorted", 0)
+        self.speedometer.setLightOff()
 
         self.updateHealthUI()
         self.updateEnergyUI()
