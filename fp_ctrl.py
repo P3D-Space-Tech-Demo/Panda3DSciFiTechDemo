@@ -30,9 +30,9 @@ base.bullet_max_step = 5
 
 paused_cursor_pos = [0,0]
 
-movementSpeedForward = 15
-movementSpeedBackward = 15
-striveSpeed = 11
+movementSpeedForward = 18
+movementSpeedBackward = 18
+striveSpeed = 13
 
 base.world = BulletWorld()
 base.world.set_gravity(Vec3(0, 0, -9.81))

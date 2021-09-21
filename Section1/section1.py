@@ -1233,7 +1233,7 @@ class DroneCompartment:
 
 class Hangar:
 
-    def __init__(self, job_starter):
+    def __init__(self, job_starter): 
 
         self.model = base.loader.load_model(ASSET_PATH + "models/hangar.gltf")
         self.model.reparent_to(base.render)
@@ -1244,8 +1244,24 @@ class Hangar:
         alcove = self.model.find('**/alcove')
         alcove.set_shader_off()
         alcove.set_shader(metal_shader)
-
         fp_ctrl.make_collision('alcove_brbn', alcove, 0, 0, alcove.get_pos())
+        
+        # make a light for the corridor interior
+        plight_1 = PointLight('scene_light_3')
+        # add plight props here
+        plight_1.set_priority(10)
+        plight_1_node = base.render.attach_new_node(plight_1)
+        plight_1_node.set_pos(180, 0, 7)
+        plight_1_node.node().set_color((0.9, 0.9, 1, 1))
+        # plight_1_node.node().set_attenuation((0.5, 0, 0.05))
+        base.render.set_light(plight_1_node)
+        section_lights.append(plight_1_node)
+
+        # this prevents the corridor light from reflecting overmuch
+        p_topper_actual = self.model.find('p_topper')
+        p_topper_actual.set_light_off(plight_1_node)
+        floor = self.model.find('floor')
+        floor.set_light_off(plight_1_node)
 
         corridor_coll_pos = [(180.83, -12.099, 3.46),  (179.901, 11.5889, 3.46), (199.222, -0.22609, 3.46), (156.69, 6.82736, 3.46), (156.522, -6.79245, 3.46)]
         shape_sizes = [(25, 1, 10), (25, 1, 10), (1, 25, 10), (2, 2, 10), (2, 2, 10)]
@@ -1319,6 +1335,8 @@ class Hangar:
         def hide_corridor():
             if base.camera.get_pos(base.render).x < self.entrance_pos.x:
                 self.corridor_model.hide()
+                corridor_light = base.render.find('scene_light_3')
+                base.render.set_light_off(corridor_light)
 
         def close_entrance_doors(task):
             pos = entrance_door_root.get_pos(base.render)
@@ -1400,7 +1418,9 @@ class Hangar:
                     seq.start()
                     section_intervals.append(self.door_open_intervals)
                     self.corridor_model.show()
-
+                    corridor_light = base.render.find('scene_light_3')
+                    base.render.set_light(corridor_light)
+                    
             if task:
                 return task.cont
 
@@ -1430,6 +1450,7 @@ class Hangar:
         self.forcefield.set_transparency(TransparencyAttrib.M_alpha)
         self.forcefield.set_attrib(color_blend_attrib)
         self.forcefield.set_depth_write(False)
+        self.forcefield.set_shader_off()
         # for cameras inside the active force-field, render the latter with
         # set_depth_test(False) and set_two_sided(True) using set_tag_state(_key),
         # such that it gets rendered on top of everything else, giving the
@@ -1438,6 +1459,7 @@ class Hangar:
 
         self.sliding_panel = self.model.find("**/sliding_panel")
         self.sliding_panel_start_pos = self.sliding_panel.get_pos()
+        fp_ctrl.make_collision('panel_brbn', self.sliding_panel, 0, 0, Vec3())
         self.sliding_panel.set_pos(0., 0., 0.)
         self.elevator_platform = self.model.find("**/elevator_platform")
         self.elevator_platform_start_z = self.elevator_platform.get_z()
@@ -1767,7 +1789,7 @@ class Hangar:
         stair_seq.append(Func(remove_intervals))
         stair_seq.start()
         section_intervals.append(stair_seq)
-
+        
     def replace_procedural_ship(self):
         # this is a hack to make progress on the section
         # before the final ship model goes through the
@@ -1786,9 +1808,6 @@ class Hangar:
         for x in base.render.find_all_matches('**/outer*'):
             x.detach_node()
 
-        for x in base.render.find_all_matches('**/outer*'):
-            x.detach_node()
-
         for x in base.render.find_all_matches('**/front*'):
             x.detach_node()
 
@@ -1799,13 +1818,87 @@ class Hangar:
             x.detach_node()
 
         # load in the playable ship
+        finished_ship = base.loader.load_model('Assets/Shared/models/test_completed_ship_a.gltf')
+        finished_ship.reparent_to(base.render)
+        finished_ship.set_shader_off()
+        finished_ship.set_shader(scene_shader)
+        
+        for x in finished_ship.find_all_matches('*rocket*'):
+            x.set_shader(metal_shader)
+            
+        for x in finished_ship.find_all_matches('*wing*'):
+            x.set_shader(metal_shader)
+            
+        for x in finished_ship.find_all_matches('*d_*'):
+            x.set_shader(metal_shader)
+        
+        interior_coll = finished_ship.find('interior')
+        interior_coll.set_shader(metal_shader)
+        interior_coll.flatten_strong()
+        fp_ctrl.make_collision('interior_coll_brbn', interior_coll, 0, 0, interior_coll.get_pos(base.render))
+        
+        self.slide = finished_ship.find('ramp_actual')
+        self.slide.flatten_strong()
+        fp_ctrl.make_collision('slide_brbn', self.slide, 0, 0, self.slide.get_pos(base.render))
+        
+        slide_coll = base.render.find('slide_brbn')
+        
+        def ramp_seq():
+            self.up_door = finished_ship.find('d_upper')
+            self.down_door = finished_ship.find('d_lower')
+            
+            self.up_door_pos = self.up_door.get_pos(base.render)
+            up_door_pos_adj = Vec3(self.up_door_pos[0], self.up_door_pos[1], self.up_door_pos[2] + 5)
+            self.down_door_pos = self.down_door.get_pos(base.render)
+            down_door_pos_adj = Vec3(self.down_door_pos[0], self.down_door_pos[1], self.down_door_pos[2] - 8)
+            
+            up_door_lerp = LerpPosInterval(self.up_door, 1, up_door_pos_adj)
+            down_door_lerp = LerpPosInterval(self.down_door, 1, down_door_pos_adj)
+            
+            door_par = Parallel()
+            door_par.append(up_door_lerp)
+            door_par.append(down_door_lerp)
+        
+            ramp_1_pos = self.slide.get_pos(base.render)
+            ramp_1_pos = Vec3(ramp_1_pos[0] + 13, ramp_1_pos[1], ramp_1_pos[2] - 2.4)
+            
+            slide_coll_pos = slide_coll.get_pos(base.render)
+            slide_coll_pos = Vec3(slide_coll_pos[0] + 13, slide_coll_pos[1], slide_coll_pos[2] - 2.4)
+        
+            ramp_lerp = LerpPosHprInterval(self.slide, 2, ramp_1_pos, (0, 0, 22))
+            ramp_lerp_2 = LerpPosHprInterval(slide_coll, 2, slide_coll_pos, (0, 0, 22))
+            
+            ramp_par = Parallel()
+            ramp_par.append(ramp_lerp)
+            ramp_par.append(ramp_lerp_2)
+            
+            door_ramp_seq = Sequence()
+            door_ramp_seq.append(door_par)
+            door_ramp_seq.append(ramp_par)
+            door_ramp_seq.start()          
+            
+        self.finished_ship_ready = False
+
+        def ship_ready():
+            while not self.finished_ship_ready:
+                time.sleep(0.1)
+                target = Vec3(30.7101, -15.3108, 7.21)
+                p_dist = (target - base.camera.get_pos(base.render)).length()
+            
+                if p_dist < 20:
+                    self.finished_ship_ready = True
+                    
+                    ramp_seq()
+                    
+        threading2._start_new_thread(ship_ready, ())
+        
         cockpit = base.loader.load_model('Assets/Shared/models/test_cockpit.gltf')
         cockpit.reparent_to(base.render)
-        cockpit.set_pos(0, 0, 10)
+        cockpit.set_pos(0, -32, 9)
         cockpit.set_scale(1)
         cockpit.set_h(90)
         cockpit.set_light(base.render.find_all_matches('**/amblight*')[1])
-
+        
         for a in cockpit.find_all_matches('**/*accent*'):
             a.set_shader_off()
 
@@ -1835,6 +1928,111 @@ class Hangar:
             c_4_inter = LerpPosInterval(c_4, 1.5, (-2, 0, 0), blendType='easeInOut')
 
             joystick_inter = LerpPosInterval(joystick, 1.5, (joy_pos[0], joy_pos[1], joy_pos[2] + 0.75), joy_pos, blendType='easeInOut')
+            
+            def initiate_transition():
+                fp_ctrl.fp_cleanup()            
+            
+                base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
+                base.camera.reparent_to(c_1)
+                base.camLens.fov = 110
+                base.camLens.set_near_far(0.01, 90000)
+                base.camLens.focal_length = 7
+                base.camera.set_h(90)
+                base.camera.set_pos(1.2, 0, 2.9)
+        
+                right_arm = base.render.find_all_matches('**/Armature*')[0]
+                right_arm.set_h(-15)
+                r_pos = right_arm.get_pos()
+                right_arm.set_pos(r_pos[0] + 2, r_pos[1], r_pos[2])
+                right_arm.hide()
+
+                left_arm = base.render.find_all_matches('**/Armature*')[1]
+                left_arm.set_h(15)
+                l_pos = left_arm.get_pos()
+                left_arm.set_pos(l_pos[0] - 2, l_pos[1], l_pos[2] - 0.5)
+                left_arm.hide()
+
+                arm_screen = base.render.find('**/wide_screen_video_display.egg/Plane')
+                as_pos = arm_screen.get_pos()
+                arm_screen.set_pos(as_pos[0] - 2, as_pos[1], as_pos[2] - 0.5)
+                arm_screen.hide()
+
+                # make the blue laser lights white scene lights
+                laser_plights = base.render.find_all_matches("**/plight*")
+                for l in laser_plights:
+                    l.node().set_color(Vec4(1, 1, 1, 1))
+                    l.set_pos(0, 0, 30)
+
+                # load in the outside space skybox
+                cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
+                self.skybox = common.create_skybox(cube_map_name)
+                self.skybox.reparent_to(base.render)
+                self.skybox.set_effect(CompassEffect.make(base.camera, CompassEffect.P_pos))
+                self.skybox.node().set_bounds(OmniBoundingVolume())
+                self.skybox.node().set_final(True)
+                
+                door_left = base.render.find('**/door_left')
+                dl_pos = door_left.get_pos()
+                dl_pos = Vec3(dl_pos[0] + 40, dl_pos[1], dl_pos[2])
+                door_right = base.render.find('**/door_right')
+                dr_pos = door_right.get_pos()
+                dr_pos = Vec3(dr_pos[0] - 40, dr_pos[1], dr_pos[2])
+
+                dl_inter = LerpPosInterval(door_left, 10, dl_pos, blendType='easeInOut')
+                dr_inter = LerpPosInterval(door_right, 10, dr_pos, blendType='easeInOut')
+
+                pit_pos = cockpit.get_pos()
+                pit_pos = Vec3(pit_pos[0], pit_pos[1] - 400, pit_pos[2])
+                joy_pos = joystick.get_pos()
+                joy_pos = Vec3(joy_pos[0], joy_pos[1], joy_pos[2] - 1)
+                ship_pos = finished_ship.get_pos()
+                ship_pos = Vec3(ship_pos[0], ship_pos[1] - 400, ship_pos[2])
+
+                pit_inter = LerpPosInterval(cockpit, 10, pit_pos, blendType='easeIn')
+                joy_inter = LerpPosInterval(joystick, 0.3, joy_pos, blendType='easeInOut')
+                ship_inter = LerpPosInterval(finished_ship, 10, ship_pos, blendType='easeIn')
+
+                def exit_triggered():
+                    fade_in_text('loading', 'Loading...', Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
+                    
+                    common.gameController.startSectionInternal(1, shipSpecs[0])
+
+                load_sec_2 = Func(exit_triggered)
+
+                door_par = Parallel()
+                door_par.append(dl_inter)
+                door_par.append(dr_inter)
+
+                pit_par = Parallel()
+                pit_par.append(pit_inter)
+                pit_par.append(joy_inter)
+                pit_par.append(ship_inter)
+
+                exit_seq = Sequence()
+                exit_seq.append(door_par)
+                exit_seq.append(pit_par)
+                exit_seq.append(load_sec_2)
+                exit_seq.start()
+
+                section_intervals.append(exit_seq)
+                
+                def close_ship_doors():
+                    up_door_lerp = LerpPosInterval(self.up_door, 1, self.up_door_pos)
+                    down_door_lerp = LerpPosInterval(self.down_door, 1, self.down_door_pos)
+                    ramp_lerp = LerpPosHprInterval(self.slide, 0.5, Vec3(), Vec3())
+            
+                    door_par = Parallel()
+                    door_par.append(up_door_lerp)
+                    door_par.append(down_door_lerp)
+                    door_par.append(ramp_lerp)
+
+                    door_ramp_seq = Sequence()
+                    door_ramp_seq.append(door_par)
+                    door_ramp_seq.start()
+                    
+                close_ship_doors()
+
+            initiate = Func(initiate_transition)
 
             def show_joy(t):
                 t = t * 1
@@ -1854,6 +2052,7 @@ class Hangar:
             chair_par_2.append(c_4_inter)
 
             chair_seq = Sequence()
+            chair_seq.append(initiate)
             chair_seq.append(chair_par_1)
             chair_seq.append(chair_par_2)
             chair_seq.append(lf_end)
@@ -1861,93 +2060,21 @@ class Hangar:
             chair_seq.start()
 
             section_intervals.append(chair_seq)
+            
+        self.cockpit_engaged = False
 
-        animate_cockpit()
-
-        # self.left_arm.detach_node()
-        # self.right_arm.detach_node()
-        fp_ctrl.fp_cleanup()
-
-        base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
-        base.camera.reparent_to(cockpit)
-        base.camLens.fov = 110
-        base.camLens.set_near_far(0.01, 90000)
-        base.camLens.focal_length = 7
-        base.camera.set_h(90)
-        base.camera.set_pos(-0.85, 0, 2.9)
-
-        right_arm = base.render.find_all_matches('**/Armature*')[0]
-        right_arm.set_h(-15)
-        r_pos = right_arm.get_pos()
-        right_arm.set_pos(r_pos[0] + 2, r_pos[1], r_pos[2])
-        right_arm.hide()
-
-        left_arm = base.render.find_all_matches('**/Armature*')[1]
-        left_arm.set_h(15)
-        l_pos = left_arm.get_pos()
-        left_arm.set_pos(l_pos[0] - 2, l_pos[1], l_pos[2] - 0.5)
-        left_arm.hide()
-
-        arm_screen = base.render.find('**/wide_screen_video_display.egg/Plane')
-        as_pos = arm_screen.get_pos()
-        arm_screen.set_pos(as_pos[0] - 2, as_pos[1], as_pos[2] - 0.5)
-        arm_screen.hide()
-
-        # right_arm.show()
-        # left_arm.show()
-
-        # make the blue laser lights white scene lights
-        laser_plights = base.render.find_all_matches("**/plight*")
-        for l in laser_plights:
-            l.node().set_color(Vec4(0.1, 0.1, 0.1, 1))
-            # l.set_pos(100, 100, 30)
-
-        # load in the outside space skybox
-        cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
-        self.skybox = common.create_skybox(cube_map_name)
-        self.skybox.reparent_to(base.render)
-        self.skybox.set_effect(CompassEffect.make(base.camera, CompassEffect.P_pos))
-        self.skybox.node().set_bounds(OmniBoundingVolume())
-        self.skybox.node().set_final(True)
-
-        door_left = base.render.find('**/door_left')
-        dl_pos = door_left.get_pos()
-        dl_pos = Vec3(dl_pos[0] + 40, dl_pos[1], dl_pos[2])
-        door_right = base.render.find('**/door_right')
-        dr_pos = door_right.get_pos()
-        dr_pos = Vec3(dr_pos[0] - 40, dr_pos[1], dr_pos[2])
-
-        dl_inter = LerpPosInterval(door_left, 10, dl_pos, blendType='easeInOut')
-        dr_inter = LerpPosInterval(door_right, 10, dr_pos, blendType='easeInOut')
-
-        pit_pos = cockpit.get_pos()
-        pit_pos = Vec3(pit_pos[0], pit_pos[1] - 400, pit_pos[2])
-        joy_pos = joystick.get_pos()
-        joy_pos = Vec3(joy_pos[0], joy_pos[1], joy_pos[2] - 1)
-
-        pit_inter = LerpPosInterval(cockpit, 10, pit_pos, blendType='easeIn')
-        joy_inter = LerpPosInterval(joystick, 0.3, joy_pos, blendType='easeInOut')
-
-        def exit_triggered():
-            common.gameController.startSectionInternal(1, shipSpecs[0])
-
-        load_sec_2 = Func(exit_triggered)
-
-        door_par = Parallel()
-        door_par.append(dl_inter)
-        door_par.append(dr_inter)
-
-        pit_par = Parallel()
-        pit_par.append(pit_inter)
-        pit_par.append(joy_inter)
-
-        exit_seq = Sequence()
-        exit_seq.append(door_par)
-        exit_seq.append(pit_par)
-        exit_seq.append(load_sec_2)
-        exit_seq.start()
-
-        section_intervals.append(exit_seq)
+        def cockpit_check():
+            while not self.cockpit_engaged:
+                time.sleep(0.1)
+                target = Vec3(0.204692, -26.4711, 14.0199)
+                p_dist = (target - base.camera.get_pos(base.render)).length()
+            
+                if p_dist < 1:
+                    self.cockpit_engaged = True
+                    
+                    animate_cockpit()
+                    
+        threading2._start_new_thread(cockpit_check, ())
 
 class Section1:
 
@@ -2158,7 +2285,7 @@ class Section1:
                 if not self.arms_instantiated:
                     fp_ctrl.fp_init(Vec3(192.383, -0.182223, -0.5), z_limit=-4)
 
-                fp_ctrl.enable_fp_camera(fp_height = 5)
+                fp_ctrl.enable_fp_camera(fp_height = 4.75)
 
                 if not self.arms_instantiated:
                     self.arms_instantiated = True
@@ -2554,6 +2681,9 @@ class Section1:
             holo.holo_cleanup()
 
     def destroy(self):
+    
+        # clean up the stand-in finished ship
+        base.render.find('**/d_*').get_parent().detach_node()
 
         text_node = base.a2dTopLeft.find('bay_ready_text')
 
@@ -2565,9 +2695,6 @@ class Section1:
             self.right_arm.detach_node()
             fp_ctrl.fp_cleanup()
 
-        # this is a patch to clean up the cockpit
-        # objects without needing to know anything
-        # about their respective self spaces
         arm_screen = base.render.find('**/wide_screen_video_display.egg/Plane')
         arm_screen.get_parent().detach_node()
 
@@ -2680,7 +2807,7 @@ def initialise(data=None):
     base.render.set_light(plight_2_node)
     section_lights.append(plight_2_node)
 
-    make_simple_spotlight((200, 100, 900), (0, 5, 10), True, 15)
+    make_simple_spotlight((200, 100, 900), (0, 5, 10), False, 15)
     make_simple_spotlight((-200, 0, 2000), (146.4, -3.3, 5.7), False, 15)
     make_simple_spotlight((0, 0, 2000), (-90, 108, 10), False, 15)
     # make_simple_spotlight((0, 0, 1300), (-90, -120, 10), False)
