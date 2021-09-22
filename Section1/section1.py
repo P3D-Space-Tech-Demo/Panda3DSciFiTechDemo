@@ -1993,7 +1993,7 @@ class Hangar:
                 ship_inter = LerpPosInterval(finished_ship, 10, ship_pos, blendType='easeIn')
 
                 def exit_triggered():
-                    fade_in_text('loading', 'Loading...', Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
+                    # fade_in_text('loading', 'Loading...', Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
                     
                     common.gameController.startSectionInternal(1, shipSpecs[0])
 
