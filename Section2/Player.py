@@ -59,8 +59,9 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
         self.dustMovementOffset = 0
 
-        self.thirdPersonShip = common.base.loader.loadModel("Assets/Section2/models/{0}".format(shipSpec.shipModelFileLowPoly))
-        self.thirdPersonShip.setScale(0.5)
+        self.thirdPersonShip = common.base.loader.loadModel("Assets/Shared/models/{0}".format(shipSpec.shipModelFileLowPoly))
+        self.thirdPersonShip.setScale(shipSpec.shipModelScalar*0.5)
+        self.thirdPersonShip.setH(shipSpec.shipModelRotation)
         self.thirdPersonShip.reparentTo(self.actor)
 
         ShieldedObject.__init__(self, self.thirdPersonShip, Vec4(1, 0.3, 0.3, 1), 2.5)

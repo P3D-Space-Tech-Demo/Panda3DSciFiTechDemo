@@ -6,6 +6,7 @@ from Section2.Trigger import Trigger
 from Section2.Spawner import Spawner
 import Section2.SpecificEnemies as SpecificEnemies
 
+from Section2 import TagHandler
 import common
 
 import importlib
@@ -37,6 +38,8 @@ class Level():
         #for mat in mats:
         #    print (mat.getRoughness())
         #    mat.setRoughness(0.8)
+
+        TagHandler.handleGeometryTags(self.geometry)
 
         try:
             self.scriptObj = importlib.import_module("Assets.Section2.levels.scripts.{0}".format(levelFile))

@@ -12,6 +12,7 @@ from panda3d.core import TextureStage, Texture
 from panda3d.core import ColorBlendAttrib
 
 from Section2.CommonValues import *
+from Section2 import TagHandler
 import common
 
 import math, random
@@ -36,17 +37,7 @@ class GameObject():
             self.actor = Actor(modelName, modelAnims)
         self.actor.reparentTo(self.root)
 
-        glowingThings = self.actor.findAllMatches("**/=glowShader")
-        for glowingThing in glowingThings:
-            common.make_glowing_np(glowingThing)
-
-        billboardThings = self.actor.findAllMatches("**/=billboardEye")
-        for billboardThing in billboardThings:
-            billboardThing.setBillboardPointEye()
-
-        billboardThings = self.actor.findAllMatches("**/=billboardAxis")
-        for billboardThing in billboardThings:
-            billboardThing.setBillboardAxis()
+        TagHandler.handleGeometryTags(self.actor)
 
         if pos is not None:
             self.root.setPos(pos)

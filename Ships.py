@@ -25,7 +25,9 @@ shipSpec.maxSpeed = 25
 shipSpec.turnRate = 200
 shipSpec.acceleration = 60
 shipSpec.cockpitModelFile = "STAND_IN/cockpit"
-shipSpec.shipModelFileLowPoly = "STAND_IN/playerShip"
+shipSpec.shipModelFileLowPoly = "test_completed_ship_a.gltf"
+shipSpec.shipModelScalar = 0.2
+shipSpec.shipModelRotation = 180
 shipSpec.weaponSoundBlastersFileName = "Assets/Section2/sounds/playerAttackBlastersMany.ogg"
 
 shipSpecs.append(shipSpec)
@@ -50,7 +52,9 @@ shipSpec.maxSpeed = 18
 shipSpec.turnRate = 150
 shipSpec.acceleration = 40
 shipSpec.cockpitModelFile = "STAND_IN/cockpit"
-shipSpec.shipModelFileLowPoly = "STAND_IN/playerShip"
+shipSpec.shipModelFileLowPoly = "test_completed_ship_a.gltf"
+shipSpec.shipModelScalar = 0.2
+shipSpec.shipModelRotation = 180
 shipSpec.weaponSoundBlastersFileName = "Assets/Section2/sounds/playerAttackBlastersSome.ogg"
 
 shipSpecs.append(shipSpec)
@@ -58,14 +62,14 @@ shipSpecs.append(shipSpec)
 # Heavy missile-platform
 shipSpec = ShipSpec()
 shipSpec.gunPositions = [
-    (Vec3(-1, 1, -2), 0),
-    (Vec3(1, 1, -2), 0),
+    (Vec3(-33, -25.857, 10.9223)*0.333*0.5, 0),
+    (Vec3(33, -25.857, 10.9223)*0.333*0.5, 0),
 ]
 shipSpec.missilePositions = [
-    Vec3(-5, 1, -2),
-    Vec3(-5, 1, 0),
-    Vec3(5, 1, -2),
-    Vec3(5, 1, 0),
+    Vec3(-6.88961, -20.92, 17.737)*0.333*0.5,
+    Vec3(-3.79584, -20.9288, 18.6035)*0.333*0.5,
+    Vec3(6.88961, -20.92, 17.737)*0.333*0.5,
+    Vec3(3.79584, -20.9288, 18.6035)*0.333*0.5,
 ]
 shipSpec.maxEnergy = 50
 shipSpec.shieldRechargeRate = 20
@@ -76,7 +80,9 @@ shipSpec.maxSpeed = 14
 shipSpec.turnRate = 100
 shipSpec.acceleration = 20
 shipSpec.cockpitModelFile = "STAND_IN/cockpit"
-shipSpec.shipModelFileLowPoly = "STAND_IN/playerShip"
+shipSpec.shipModelFileLowPoly = "test_completed_ship_a.gltf"
+shipSpec.shipModelScalar = 0.2
+shipSpec.shipModelRotation = 180
 shipSpec.weaponSoundBlastersFileName = "Assets/Section2/sounds/playerAttackBlastersOne.ogg"
 
 shipSpecs.append(shipSpec)

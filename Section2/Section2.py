@@ -31,7 +31,7 @@ class Section2():
     def __init__(self, actionMusic, peaceMusic):
         common.currentSection = self
         
-        common.dismiss_info_text('loading')
+        #common.dismiss_info_text('loading')
 
         cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
         self.skybox = common.create_skybox(cube_map_name)
