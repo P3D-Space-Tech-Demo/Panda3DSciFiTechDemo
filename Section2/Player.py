@@ -60,6 +60,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         self.dustMovementOffset = 0
 
         self.thirdPersonShip = common.base.loader.loadModel("Assets/Shared/models/{0}".format(shipSpec.shipModelFileLowPoly))
+        common.mirrorShipParts(self.thirdPersonShip)
         self.thirdPersonShip.setScale(shipSpec.shipModelScalar*0.5)
         self.thirdPersonShip.setH(shipSpec.shipModelRotation)
         self.thirdPersonShip.reparentTo(self.actor)

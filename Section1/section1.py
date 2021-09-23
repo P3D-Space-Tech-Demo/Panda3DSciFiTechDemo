@@ -351,7 +351,7 @@ class Worker:
             self.intervals.finish()
             self.intervals.clear_intervals()
             if self.intervals in section_intervals:
-                section_intervals.remove()
+                section_intervals.remove(self.intervals)
 
     @property
     def idle(self):
@@ -1233,7 +1233,7 @@ class DroneCompartment:
 
 class Hangar:
 
-    def __init__(self, job_starter): 
+    def __init__(self, job_starter):
 
         self.model = base.loader.load_model(ASSET_PATH + "models/hangar.gltf")
         self.model.reparent_to(base.render)
@@ -1245,7 +1245,7 @@ class Hangar:
         alcove.set_shader_off()
         alcove.set_shader(metal_shader)
         fp_ctrl.make_collision('alcove_brbn', alcove, 0, 0, alcove.get_pos())
-        
+
         # make a light for the corridor interior
         plight_1 = PointLight('scene_light_3')
         # add plight props here
@@ -1420,7 +1420,7 @@ class Hangar:
                     self.corridor_model.show()
                     corridor_light = base.render.find('scene_light_3')
                     base.render.set_light(corridor_light)
-                    
+
             if task:
                 return task.cont
 
@@ -1789,7 +1789,7 @@ class Hangar:
         stair_seq.append(Func(remove_intervals))
         stair_seq.start()
         section_intervals.append(stair_seq)
-        
+
     def replace_procedural_ship(self):
         # this is a hack to make progress on the section
         # before the final ship model goes through the
@@ -1822,61 +1822,61 @@ class Hangar:
         finished_ship.reparent_to(base.render)
         finished_ship.set_shader_off()
         finished_ship.set_shader(scene_shader)
-        
+
         for x in finished_ship.find_all_matches('*rocket*'):
             x.set_shader(metal_shader)
-            
+
         for x in finished_ship.find_all_matches('*wing*'):
             x.set_shader(metal_shader)
-            
+
         for x in finished_ship.find_all_matches('*d_*'):
             x.set_shader(metal_shader)
-        
+
         interior_coll = finished_ship.find('interior')
         interior_coll.set_shader(metal_shader)
         interior_coll.flatten_strong()
         fp_ctrl.make_collision('interior_coll_brbn', interior_coll, 0, 0, interior_coll.get_pos(base.render))
-        
+
         self.slide = finished_ship.find('ramp_actual')
         self.slide.flatten_strong()
         fp_ctrl.make_collision('slide_brbn', self.slide, 0, 0, self.slide.get_pos(base.render))
-        
+
         slide_coll = base.render.find('slide_brbn')
-        
+
         def ramp_seq():
             self.up_door = finished_ship.find('d_upper')
             self.down_door = finished_ship.find('d_lower')
-            
+
             self.up_door_pos = self.up_door.get_pos(base.render)
             up_door_pos_adj = Vec3(self.up_door_pos[0], self.up_door_pos[1], self.up_door_pos[2] + 5)
             self.down_door_pos = self.down_door.get_pos(base.render)
             down_door_pos_adj = Vec3(self.down_door_pos[0], self.down_door_pos[1], self.down_door_pos[2] - 8)
-            
+
             up_door_lerp = LerpPosInterval(self.up_door, 1, up_door_pos_adj)
             down_door_lerp = LerpPosInterval(self.down_door, 1, down_door_pos_adj)
-            
+
             door_par = Parallel()
             door_par.append(up_door_lerp)
             door_par.append(down_door_lerp)
-        
+
             ramp_1_pos = self.slide.get_pos(base.render)
             ramp_1_pos = Vec3(ramp_1_pos[0] + 13, ramp_1_pos[1], ramp_1_pos[2] - 2.4)
-            
+
             slide_coll_pos = slide_coll.get_pos(base.render)
             slide_coll_pos = Vec3(slide_coll_pos[0] + 13, slide_coll_pos[1], slide_coll_pos[2] - 2.4)
-        
+
             ramp_lerp = LerpPosHprInterval(self.slide, 2, ramp_1_pos, (0, 0, 22))
             ramp_lerp_2 = LerpPosHprInterval(slide_coll, 2, slide_coll_pos, (0, 0, 22))
-            
+
             ramp_par = Parallel()
             ramp_par.append(ramp_lerp)
             ramp_par.append(ramp_lerp_2)
-            
+
             door_ramp_seq = Sequence()
             door_ramp_seq.append(door_par)
             door_ramp_seq.append(ramp_par)
-            door_ramp_seq.start()          
-            
+            door_ramp_seq.start()
+
         self.finished_ship_ready = False
 
         def ship_ready():
@@ -1884,21 +1884,21 @@ class Hangar:
                 time.sleep(0.1)
                 target = Vec3(30.7101, -15.3108, 7.21)
                 p_dist = (target - base.camera.get_pos(base.render)).length()
-            
+
                 if p_dist < 20:
                     self.finished_ship_ready = True
-                    
+
                     ramp_seq()
-                    
+
         threading2._start_new_thread(ship_ready, ())
-        
+
         cockpit = base.loader.load_model('Assets/Shared/models/test_cockpit.gltf')
         cockpit.reparent_to(base.render)
         cockpit.set_pos(0, -32, 9)
         cockpit.set_scale(1)
         cockpit.set_h(90)
         cockpit.set_light(base.render.find_all_matches('**/amblight*')[1])
-        
+
         for a in cockpit.find_all_matches('**/*accent*'):
             a.set_shader_off()
 
@@ -1928,10 +1928,10 @@ class Hangar:
             c_4_inter = LerpPosInterval(c_4, 1.5, (-2, 0, 0), blendType='easeInOut')
 
             joystick_inter = LerpPosInterval(joystick, 1.5, (joy_pos[0], joy_pos[1], joy_pos[2] + 0.75), joy_pos, blendType='easeInOut')
-            
+
             def initiate_transition():
-                fp_ctrl.fp_cleanup()            
-            
+                fp_ctrl.fp_cleanup()
+
                 base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
                 base.camera.reparent_to(c_1)
                 base.camLens.fov = 110
@@ -1939,7 +1939,7 @@ class Hangar:
                 base.camLens.focal_length = 7
                 base.camera.set_h(90)
                 base.camera.set_pos(1.2, 0, 2.9)
-        
+
                 right_arm = base.render.find_all_matches('**/Armature*')[0]
                 right_arm.set_h(-15)
                 r_pos = right_arm.get_pos()
@@ -1970,7 +1970,7 @@ class Hangar:
                 self.skybox.set_effect(CompassEffect.make(base.camera, CompassEffect.P_pos))
                 self.skybox.node().set_bounds(OmniBoundingVolume())
                 self.skybox.node().set_final(True)
-                
+
                 door_left = base.render.find('**/door_left')
                 dl_pos = door_left.get_pos()
                 dl_pos = Vec3(dl_pos[0] + 40, dl_pos[1], dl_pos[2])
@@ -1994,7 +1994,7 @@ class Hangar:
 
                 def exit_triggered():
                     # fade_in_text('loading', 'Loading...', Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
-                    
+
                     common.gameController.startSectionInternal(1, shipSpecs[0])
 
                 load_sec_2 = Func(exit_triggered)
@@ -2015,12 +2015,12 @@ class Hangar:
                 exit_seq.start()
 
                 section_intervals.append(exit_seq)
-                
+
                 def close_ship_doors():
                     up_door_lerp = LerpPosInterval(self.up_door, 1, self.up_door_pos)
                     down_door_lerp = LerpPosInterval(self.down_door, 1, self.down_door_pos)
                     ramp_lerp = LerpPosHprInterval(self.slide, 0.5, Vec3(), Vec3())
-            
+
                     door_par = Parallel()
                     door_par.append(up_door_lerp)
                     door_par.append(down_door_lerp)
@@ -2029,7 +2029,7 @@ class Hangar:
                     door_ramp_seq = Sequence()
                     door_ramp_seq.append(door_par)
                     door_ramp_seq.start()
-                    
+
                 close_ship_doors()
 
             initiate = Func(initiate_transition)
@@ -2060,7 +2060,7 @@ class Hangar:
             chair_seq.start()
 
             section_intervals.append(chair_seq)
-            
+
         self.cockpit_engaged = False
 
         def cockpit_check():
@@ -2068,12 +2068,12 @@ class Hangar:
                 time.sleep(0.1)
                 target = Vec3(0.204692, -26.4711, 14.0199)
                 p_dist = (target - base.camera.get_pos(base.render)).length()
-            
+
                 if p_dist < 1:
                     self.cockpit_engaged = True
-                    
+
                     animate_cockpit()
-                    
+
         threading2._start_new_thread(cockpit_check, ())
 
 class Section1:
@@ -2173,21 +2173,22 @@ class Section1:
 
                         component_id = mirror_node.name
                         model = self.starship_components[component_id.replace("mirror_", "")]
-                        model = model.parent.copy_to(model_root).children[0]
-                        parent = model.parent
-                        parent.set_sx(parent, -1.)
-                        x, y, z = parent.get_pos()
-                        parent.set_pos(0., 0., 0.)
-                        parent.flatten_light()  # bake negative scale into vertices
-                        parent.set_pos(-x, y, z)
-                        geom = model.node().modify_geom(0)
+                        mirror_parent = model.parent.copy_to(model_root)
+                        x, y, z = mirror_parent.get_pos()
+                        mirror_parent.set_pos(0., 0., 0.)
+                        mirror_parent.flatten_light()  # bake orientation and scale into vertices
+                        mirror_parent.set_sx(-1.)
+                        mirror_parent.flatten_light()  # bake negative scale into vertices
+                        mirror_parent.set_pos(-x, y, z)
+                        mirror_model = mirror_parent.children[0]
+                        geom = mirror_model.node().modify_geom(0)
                         geom.reverse_in_place()
 
                         for i in range(geom.get_num_primitives()):
                             prim = geom.modify_primitive(i)
                             prim.set_index_type(GeomEnums.NT_uint32)
 
-                        self.starship_components[component_id] = model
+                        self.starship_components[component_id] = mirror_model
                         mirror_node.detach_node()
 
                     self.jobs = []
@@ -2681,7 +2682,7 @@ class Section1:
             holo.holo_cleanup()
 
     def destroy(self):
-    
+
         # clean up the stand-in finished ship
         base.render.find('**/d_*').get_parent().detach_node()
 

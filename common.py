@@ -719,3 +719,17 @@ def dismiss_info_text(text_node):
                 t_node.set_alpha_scale(base.text_alpha)
 
     threading2._start_new_thread(text_alpha, ())
+
+def mirror_ship_parts(model):
+    for left_node in model.find_all_matches("**/*_left*"):
+        right_node = left_node.copy_to(model)
+        x, y, z = right_node.get_pos()
+        right_node.set_pos(0., 0., 0.)
+        right_node.flatten_light()  # bake orientation and scale into vertices
+        right_node.set_sx(-1.)
+        right_node.flatten_light()  # bake negative scale into vertices
+        right_node.set_pos(-x, y, z)
+        geom = right_node.children[0].node().modify_geom(0)
+        geom.reverse_in_place()
+
+mirrorShipParts = mirror_ship_parts
