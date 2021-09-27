@@ -41,6 +41,10 @@ vert_shader = "Assets/Shared/shaders/vertex_glow.vert"
 frag_shader = "Assets/Shared/shaders/vertex_glow.frag"
 vertex_glow_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
 
+vert_shader = "Assets/Shared/shaders/flame_glow.vert"
+frag_shader = "Assets/Shared/shaders/flame_glow.frag"
+flame_glow_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
+
 base.musicManager.setConcurrentSoundLimit(2)
 
 scene_filters = CommonFilters(base.win, base.cam)
@@ -75,12 +79,26 @@ def setOption(sectionID, optionID, newVal):
         return
     section[optionID] = newVal
     
-def make_glowing_np(np):
-    np.set_shader(vertex_glow_shader)
+def make_glowing_np(np, shader_program = vertex_glow_shader):
+    np.set_shader(shader_program)
     np.setLightOff(10)
     np.setBin("unsorted", 1)
     np.setDepthWrite(False)
     np.setAttrib(ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne))
+
+def make_engine_flame(np):
+    glow = np.find("**/glow")
+    flame = np.find("**/flame")
+
+    if glow is not None and not glow.isEmpty():
+        make_glowing_np(glow)
+    if flame is not None and not flame.isEmpty():
+        make_glowing_np(flame, shader_program = flame_glow_shader)
+        update_engine_flame(flame, Vec2(0, 0), 0)
+
+def update_engine_flame(flame_np, direction_vector, power):
+    flame_np.set_shader_input("power", power)
+    flame_np.set_shader_input("direction", direction_vector)
 
 def loadParticles(fileName):
     extension = "ptf"

@@ -63,6 +63,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         common.mirrorShipParts(self.thirdPersonShip)
         self.thirdPersonShip.setScale(shipSpec.shipModelScalar*0.5)
         self.thirdPersonShip.setH(shipSpec.shipModelRotation)
+        self.thirdPersonShip.setPos(shipSpec.shipModelOffset*shipSpec.shipModelScalar*0.5)
         self.thirdPersonShip.reparentTo(self.actor)
 
         ShieldedObject.__init__(self, self.thirdPersonShip, Vec4(1, 0.3, 0.3, 1), 2.5)
@@ -100,6 +101,21 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         self.missileSetIndex = 0
 
         self.maxRadarRange = 700
+
+        self.engineFlames = []
+        for enginePos, engineScale in shipSpec.enginePositions:
+            flame = common.base.loader.loadModel("Assets/Shared/models/shipEngineFlame")
+            flame.reparentTo(self.thirdPersonShip)
+            flame.setH(shipSpec.shipModelRotation)
+            flame.setScale(1*engineScale/shipSpec.shipModelScalar)
+            flame.setPos(enginePos)
+            common.make_engine_flame(flame)
+            flame.hide()
+            self.engineFlames.append(flame)
+
+        self.engineFlameTargetScale = 0
+        self.engineFlameCurrentScale = 0
+        self.engineFlameSpeed = 0
 
         light = PointLight("basic light")
         light.setColor(Vec4(1, 1, 1, 1))
@@ -568,12 +584,17 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         right = quat.getRight()
         up = quat.getUp()
 
+        self.engineFlameTargetScale = 0
+        self.engineFlameSpeed = 5
         if keys["up"]:
             self.walking = True
             self.velocity += forward*self.acceleration*dt
+            self.engineFlameTargetScale = 1
+            self.engineFlameSpeed = 20
         if keys["down"]:
             self.walking = True
             self.velocity -= forward*self.acceleration*dt
+            self.engineFlameSpeed = 20
         if keys["left"]:
             self.walking = True
             self.velocity -= right*self.acceleration*dt
@@ -587,6 +608,40 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         else:
             if self.engineSound.status() == AudioSound.PLAYING:
                 self.engineSound.stop()
+
+        dFlame = self.engineFlameTargetScale - self.engineFlameCurrentScale
+        newScale = self.engineFlameCurrentScale + dFlame * self.engineFlameSpeed * dt
+        showFlame = True
+        if self.engineFlameTargetScale <= 0:
+            if newScale <= 0.01:
+                newScale = 0
+                showFlame = False
+        else:
+            if newScale > 1:
+                newScale = 1
+        for flame in self.engineFlames:
+            if showFlame:
+                if flame.isHidden():
+                    flame.show()
+                fire = flame.find("**/flame")
+                #fire.setSy(newScale)
+                #fire.setSx(newScale*0.5 + 0.5)
+                #fire.setSz(newScale*0.5 + 0.5)
+                #fire.setShaderInput("flameScalar", newScale)
+
+                pt1 = fire.getPos(render)
+                pt2 = fire.getPos(render) - self.thirdPersonShip.getQuat(render).getForward()*0.1
+                diff = pt2 - pt1
+                diff = self.thirdPersonShip.getRelativeVector(render, diff)
+
+                common.update_engine_flame(fire, diff, newScale)
+
+                flame.find("**/glow").setScale(newScale)
+                flame.setColorScale(newScale, newScale, newScale, 1)
+            else:
+                if not flame.isHidden():
+                    flame.hide()
+        self.engineFlameCurrentScale = newScale
 
         mouseWatcher = common.base.mouseWatcherNode
         if mouseWatcher.hasMouse():
