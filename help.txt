@@ -3,7 +3,7 @@ The game is composed of several chapters, each with its own distinct gameplay. I
 Chapter 1: First-person movement and ship-selection
 Chapter 2: Six-degrees-of-freedom space -flight and -combat
 Chapter 3: First-person shooting
-Chapter 4: ???
+Chapter 4: First-person interaction, and an on-screen choice
 
 To see the controls for the current section while playing, press the F1 key.
 
