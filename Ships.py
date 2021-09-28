@@ -20,11 +20,11 @@ shipSpec.missilePositions = [
     Vec3(6.37786, -7.58767, 15.1449)
 ]
 shipSpec.enginePositions = [
-    (Vec3(0, -25.4772, 12.6016), 1),
-    (Vec3(3.76468, -23.5428, 15.4289), 0),
-    (Vec3(-3.76468, -23.5428, 15.4289), 0),
-    (Vec3(4.4059, -25.4772, 9.16152), 1),
-    (Vec3(-4.4059, -25.4772, 9.16152), 1),
+    (Vec3(0, 25.4772, 12.6016), 1.5),
+    (Vec3(3.76468, 23.5428, 15.4289), 0.8),
+    (Vec3(-3.76468, 23.5428, 15.4289), 0.8),
+    (Vec3(4.4059, 25.4772, 9.16152), 1.5),
+    (Vec3(-4.4059, 25.4772, 9.16152), 1.5),
 ]
 shipSpec.maxEnergy = 200
 shipSpec.shieldRechargeRate = 7
@@ -35,7 +35,7 @@ shipSpec.maxSpeed = 25
 shipSpec.turnRate = 200
 shipSpec.acceleration = 60
 shipSpec.cockpitModelFile = "STAND_IN/cockpit"
-shipSpec.shipModelFileLowPoly = "test_completed_ship_a.gltf"
+shipSpec.shipModelFileLowPoly = "starship_light_untextured.gltf"
 shipSpec.shipModelScalar = 0.2
 shipSpec.shipModelRotation = 180
 shipSpec.shipModelOffset = Vec3(0, 0, -8.4625)
@@ -51,8 +51,12 @@ shipSpec.gunPositions = [
     (Vec3(2, 1, -2), 1)
 ]
 shipSpec.missilePositions = [
-    Vec3(-2, 1, -2),
-    Vec3(2, 1, -2),
+    Vec3(-0.9716, 45.84, 7.28),
+    Vec3(0.9716, 45.84, 7.28),
+    Vec3(-4.203, 45.86, 7.504),
+    Vec3(-5.79, 45.84, 7.555),
+    Vec3(4.203, 45.86, 7.504),
+    Vec3(5.79, 45.84, 7.555),
 ]
 shipSpec.enginePositions = [
     (Vec3(0, 51, 11), 1),
@@ -71,7 +75,7 @@ shipSpec.cockpitModelFile = "STAND_IN/cockpit"
 shipSpec.shipModelFileLowPoly = "test_completed_ship_a.gltf"
 shipSpec.shipModelScalar = 0.2
 shipSpec.shipModelRotation = 180
-shipSpec.shipModelOffset = Vec3(0, 0, 0)
+shipSpec.shipModelOffset = Vec3(0, 0, -7.6009)
 shipSpec.weaponSoundBlastersFileName = "Assets/Section2/sounds/playerAttackBlastersSome.ogg"
 
 shipSpecs.append(shipSpec)
@@ -89,9 +93,9 @@ shipSpec.missilePositions = [
     Vec3(3.79584, 20.9288, 18.6035),
 ]
 shipSpec.enginePositions = [
-    (Vec3(0, -22.9886, 10.6874), 1),
-    (Vec3(-5.62418, -20.5345, 10.5101), 0.5),
-    (Vec3(5.62418, -20.5345, 10.5101), 0.5),
+    (Vec3(0, 51.84, 10.6874), 1),
+    (Vec3(-5.62418, 49.38, 10.5101), 0.5),
+    (Vec3(5.62418, 49.38, 10.5101), 0.5),
 ]
 shipSpec.maxEnergy = 50
 shipSpec.shieldRechargeRate = 20
@@ -102,7 +106,7 @@ shipSpec.maxSpeed = 14
 shipSpec.turnRate = 100
 shipSpec.acceleration = 20
 shipSpec.cockpitModelFile = "STAND_IN/cockpit"
-shipSpec.shipModelFileLowPoly = "test_completed_ship_a.gltf"
+shipSpec.shipModelFileLowPoly = "starship_heavy_untextured.gltf"
 shipSpec.shipModelScalar = 0.2
 shipSpec.shipModelRotation = 180
 shipSpec.shipModelOffset = Vec3(0, -14.421, -10.806)

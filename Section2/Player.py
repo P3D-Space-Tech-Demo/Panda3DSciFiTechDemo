@@ -83,7 +83,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
         for gunPos, gunLevel in shipSpec.gunPositions:
             np = self.actor.attachNewNode(PandaNode("gun node"))
-            np.setPos(gunPos*shipSpec.shipModelScalar*0.5)
+            np.setPos((gunPos + shipSpec.shipModelOffset)*shipSpec.shipModelScalar*0.5)
 
             gun = BlasterWeapon(gunLevel)
             self.addWeapon(gun, 0, np)
@@ -91,7 +91,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         missileSetCounter = 1
         for missilePos in shipSpec.missilePositions:
             np = self.actor.attachNewNode(PandaNode("missile node"))
-            np.setPos(missilePos*shipSpec.shipModelScalar*0.5)
+            np.setPos((missilePos + shipSpec.shipModelOffset)*shipSpec.shipModelScalar*0.5)
 
             gun = RocketWeapon()
             self.addWeapon(gun, missileSetCounter, np)

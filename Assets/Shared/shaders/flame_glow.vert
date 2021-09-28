@@ -20,7 +20,9 @@ void main()
 
     vec4 projectedDirection = p3d_ModelViewMatrix*vec4(direction, 1);
 
-    float dotProd = dot((basePt - zeroPt).xy, projectedDirection.xy);
+    float normalisationScalar = 3/(-zeroPt.z);
+
+    float dotProd = dot((basePt - zeroPt).xy, projectedDirection.xy)*normalisationScalar;
     float scalar = cos(dotProd*1.571 + 3.142) + 1;//pow(dotProd, 2);
     scalar *= scalar;
     //scalar *= 10;
@@ -28,8 +30,8 @@ void main()
     scalar *= step(0, dotProd);
     //mew = scalar;
     vec4 adjustedVertex = vec4(p3d_Vertex);
-    adjustedVertex.xy += projectedDirection.xy*(scalar*10*(1.0 - max(0, projectedDirection.z)))*power;
-    adjustedVertex.xy *= (power*0.5 + 0.5)*0.5*abs(projectedDirection.z);
+    adjustedVertex.xy += projectedDirection.xy*(scalar*10*(1.0 - max(0, projectedDirection.z*normalisationScalar)))*power;
+    adjustedVertex.xy *= (power*0.5 + 0.5)*0.5*abs(projectedDirection.z)*normalisationScalar;
     //adjustedVertex.y *= 1 + abs(adjustedVertex.x);
 
     gl_Position = p3d_ModelViewProjectionMatrix*adjustedVertex;
