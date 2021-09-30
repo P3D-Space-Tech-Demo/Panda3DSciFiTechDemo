@@ -1,4 +1,4 @@
-from panda3d.core import PandaNode, Vec3, Vec2
+from panda3d.core import PandaNode, Vec4, Vec3, Vec2
 
 from Section2.Enemy import FighterEnemy
 from Section2.GameObject import ArmedObject, GameObject, FRICTION
@@ -37,6 +37,23 @@ class BasicEnemy(FighterEnemy):
         gun = BasicEnemyBlaster()
         self.addWeapon(gun, 0, weaponPoint)
 
+        engineNPs = self.actor.findAllMatches("**/engineFlame*")
+        self.engineData = []
+        for np in engineNPs:
+            scale = np.getScale().x
+            np.setScale(1)
+            pos = np.getPos()
+            np.removeNode()
+
+            flame = common.base.loader.loadModel("Assets/Shared/models/shipEngineFlame")
+            flame.reparentTo(self.actor)
+            flame.setPos(pos)
+            glow = flame.find("**/glow")
+            glow.setScale(scale, 1, scale)
+            common.make_engine_flame(flame, Vec3(1, 0.75, 0.2), Vec4(1, 0.4, 0.1, 1))
+
+            self.engineData.append((flame, scale))
+
         #self.colliderNP.show()
 
     def setupExplosion(self):
@@ -55,6 +72,11 @@ class BasicEnemy(FighterEnemy):
 
     def update(self, player, dt):
         FighterEnemy.update(self, player, dt)
+        diff = -self.actor.getQuat(render).getForward()
+        #diff = fire.getRelativeVector(render, diff)
+        for engineFlame, enginePower in self.engineData:
+            fire = engineFlame.find("**/flame")
+            common.update_engine_flame(fire, diff, enginePower)
 
     def runLogic(self, player, dt):
         FighterEnemy.runLogic(self, player, dt)

@@ -5,36 +5,32 @@ in vec4 p3d_Color;
 
 uniform mat4 p3d_ModelViewProjectionMatrix;
 uniform mat4 p3d_ModelViewMatrix;
+uniform mat4 p3d_ModelMatrix;
+uniform mat4 trans_world_to_model;
+uniform mat4 trans_world_to_clip;
 
 uniform float power;
 uniform vec3 direction;
 
 //out float mew;
 
-out vec4 vertexColour;
+out float intensity;
 
 void main()
 {
-    vec4 zeroPt = p3d_ModelViewMatrix*vec4(0, 0, 0, 1);
-    vec4 basePt = p3d_ModelViewMatrix*p3d_Vertex;
+    vec4 zeroPt = p3d_ModelMatrix*vec4(0, 0, 0, 1);
+    vec4 basePt = p3d_ModelMatrix*p3d_Vertex;
 
-    vec4 projectedDirection = p3d_ModelViewMatrix*vec4(direction, 1);
+    float dotProd = dot((basePt - zeroPt).xyz/0.58957, direction);
+    float lengthScalar = length(p3d_Vertex.xyz)/0.58957;
+    dotProd *= dotProd*dotProd;
 
-    float normalisationScalar = 3/(-zeroPt.z);
+    vec4 vert = vec4(p3d_Vertex);
+    vert.xy *= 1 + (power*0.5 + 0.5)*0.25;
+    vert = p3d_ModelMatrix*vert;
+    vert += vec4(direction*max(0, dotProd)*40, 0)*power;
 
-    float dotProd = dot((basePt - zeroPt).xy, projectedDirection.xy)*normalisationScalar;
-    float scalar = cos(dotProd*1.571 + 3.142) + 1;//pow(dotProd, 2);
-    scalar *= scalar;
-    //scalar *= 10;
-    //scalar = pow(scalar, 5);
-    scalar *= step(0, dotProd);
-    //mew = scalar;
-    vec4 adjustedVertex = vec4(p3d_Vertex);
-    adjustedVertex.xy += projectedDirection.xy*(scalar*10*(1.0 - max(0, projectedDirection.z*normalisationScalar)))*power;
-    adjustedVertex.xy *= (power*0.5 + 0.5)*0.5*abs(projectedDirection.z)*normalisationScalar;
-    //adjustedVertex.y *= 1 + abs(adjustedVertex.x);
+    gl_Position = trans_world_to_clip*vert;
 
-    gl_Position = p3d_ModelViewProjectionMatrix*adjustedVertex;
-
-    vertexColour = p3d_Color;
+    intensity = p3d_Color.x;
 }

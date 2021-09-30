@@ -103,13 +103,15 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         self.maxRadarRange = 700
 
         self.engineFlames = []
+        flameColourGradients = Vec3(0.329, 0.502, 1)
+        glowColour = Vec4(0, 0.1, 0.95, 1)
         for enginePos, engineScale in shipSpec.enginePositions:
             flame = common.base.loader.loadModel("Assets/Shared/models/shipEngineFlame")
             flame.reparentTo(self.thirdPersonShip)
             flame.setH(shipSpec.shipModelRotation)
             flame.setScale(1*engineScale/shipSpec.shipModelScalar)
             flame.setPos(enginePos)
-            common.make_engine_flame(flame)
+            common.make_engine_flame(flame, flameColourGradients, glowColour)
             flame.hide()
             self.engineFlames.append(flame)
 
@@ -624,15 +626,9 @@ class Player(GameObject, ArmedObject, ShieldedObject):
                 if flame.isHidden():
                     flame.show()
                 fire = flame.find("**/flame")
-                #fire.setSy(newScale)
-                #fire.setSx(newScale*0.5 + 0.5)
-                #fire.setSz(newScale*0.5 + 0.5)
-                #fire.setShaderInput("flameScalar", newScale)
 
-                pt1 = fire.getPos(render)
-                pt2 = fire.getPos(render) - self.thirdPersonShip.getQuat(render).getForward()*0.1
-                diff = pt2 - pt1
-                diff = self.thirdPersonShip.getRelativeVector(render, diff)
+                diff = self.thirdPersonShip.getQuat(render).getForward()
+                #diff = self.thirdPersonShip.getRelativeVector(render, diff)
 
                 common.update_engine_flame(fire, diff, newScale)
 

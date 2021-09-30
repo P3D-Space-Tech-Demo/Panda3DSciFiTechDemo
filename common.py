@@ -86,14 +86,16 @@ def make_glowing_np(np, shader_program = vertex_glow_shader):
     np.setDepthWrite(False)
     np.setAttrib(ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne))
 
-def make_engine_flame(np):
+def make_engine_flame(np, flameColourGradients, glowColour):
     glow = np.find("**/glow")
     flame = np.find("**/flame")
 
     if glow is not None and not glow.isEmpty():
         make_glowing_np(glow)
+        glow.setColorScale(glowColour)
     if flame is not None and not flame.isEmpty():
         make_glowing_np(flame, shader_program = flame_glow_shader)
+        flame.setShaderInput("flameColourGradients", flameColourGradients)
         update_engine_flame(flame, Vec2(0, 0), 0)
 
 def update_engine_flame(flame_np, direction_vector, power):
