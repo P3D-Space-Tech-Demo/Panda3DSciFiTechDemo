@@ -2173,7 +2173,7 @@ class Section1:
 
                         component_id = mirror_node.name
                         model = self.starship_components[component_id.replace("mirror_", "")]
-                        mirror_parent = model.parent.copy_to(model_root)
+                        mirror_parent = model.parent.copy_to(model.parent.parent)
                         x, y, z = mirror_parent.get_pos()
                         mirror_parent.set_pos(0., 0., 0.)
                         mirror_parent.flatten_light()  # bake orientation and scale into vertices

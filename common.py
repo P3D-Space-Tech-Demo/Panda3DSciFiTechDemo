@@ -742,7 +742,7 @@ def dismiss_info_text(text_node):
 
 def mirror_ship_parts(model):
     for left_node in model.find_all_matches("**/*_left*"):
-        right_node = left_node.copy_to(model)
+        right_node = left_node.copy_to(left_node.parent)
         x, y, z = right_node.get_pos()
         right_node.set_pos(0., 0., 0.)
         right_node.flatten_light()  # bake orientation and scale into vertices
