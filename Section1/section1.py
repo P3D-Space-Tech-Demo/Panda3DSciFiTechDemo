@@ -1848,12 +1848,17 @@ class Hangar:
             self.down_door = finished_ship.find('d_lower')
 
             self.up_door_pos = self.up_door.get_pos(base.render)
+            self.up_door_hpr = self.up_door.get_hpr()
             up_door_pos_adj = Vec3(self.up_door_pos[0], self.up_door_pos[1], self.up_door_pos[2] + 5)
+            up_door_hpr_adj = Vec3(self.up_door_hpr[0], self.up_door_hpr[1], self.up_door_hpr[2] - 50)
+            
             self.down_door_pos = self.down_door.get_pos(base.render)
+            self.down_door_hpr = self.down_door.get_hpr()
             down_door_pos_adj = Vec3(self.down_door_pos[0], self.down_door_pos[1], self.down_door_pos[2] - 8)
+            down_door_hpr_adj = Vec3(self.down_door_hpr[0], self.down_door_hpr[1], self.down_door_hpr[2] + 50)
 
-            up_door_lerp = LerpPosInterval(self.up_door, 1, up_door_pos_adj)
-            down_door_lerp = LerpPosInterval(self.down_door, 1, down_door_pos_adj)
+            up_door_lerp = LerpHprInterval(self.up_door, 1, up_door_hpr_adj)
+            down_door_lerp = LerpHprInterval(self.down_door, 1, down_door_hpr_adj)
 
             door_par = Parallel()
             door_par.append(up_door_lerp)
@@ -1995,7 +2000,7 @@ class Hangar:
                 def exit_triggered():
                     # fade_in_text('loading', 'Loading...', Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
 
-                    common.gameController.startSectionInternal(1, shipSpecs[0])
+                    common.gameController.startSectionInternal(1, shipSpecs[1])
 
                 load_sec_2 = Func(exit_triggered)
 
@@ -2017,8 +2022,8 @@ class Hangar:
                 section_intervals.append(exit_seq)
 
                 def close_ship_doors():
-                    up_door_lerp = LerpPosInterval(self.up_door, 1, self.up_door_pos)
-                    down_door_lerp = LerpPosInterval(self.down_door, 1, self.down_door_pos)
+                    up_door_lerp = LerpHprInterval(self.up_door, 1, self.up_door_hpr)
+                    down_door_lerp = LerpHprInterval(self.down_door, 1, self.down_door_hpr)
                     ramp_lerp = LerpPosHprInterval(self.slide, 0.5, Vec3(), Vec3())
 
                     door_par = Parallel()
