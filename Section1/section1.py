@@ -1822,6 +1822,9 @@ class Hangar:
         finished_ship.reparent_to(base.render)
         finished_ship.set_shader_off()
         finished_ship.set_shader(scene_shader)
+        
+        # mirror the ship parts
+        mirror_ship_parts(finished_ship)
 
         for x in finished_ship.find_all_matches('*rocket*'):
             x.set_shader(metal_shader)
@@ -1830,6 +1833,9 @@ class Hangar:
             x.set_shader(metal_shader)
 
         for x in finished_ship.find_all_matches('*d_*'):
+            x.set_shader(metal_shader)
+            
+        for x in finished_ship.find_all_matches('*thruster*'):
             x.set_shader(metal_shader)
 
         interior_coll = finished_ship.find('interior')
