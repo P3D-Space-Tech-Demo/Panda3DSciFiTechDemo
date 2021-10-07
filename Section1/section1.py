@@ -1837,6 +1837,9 @@ class Hangar:
             
         for x in finished_ship.find_all_matches('*thruster*'):
             x.set_shader(metal_shader)
+            
+        for x in finished_ship.find_all_matches('*blaster*'):
+            x.set_shader(metal_shader)
 
         interior_coll = finished_ship.find('interior')
         interior_coll.set_shader(metal_shader)
