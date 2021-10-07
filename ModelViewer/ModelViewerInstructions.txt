@@ -1,0 +1,43 @@
+
+~~~~~~~~~~~~~~~
+THE BASICS
+~~~~~~~~~~~~~~~
+
+The basic steps to viewing a model are as follows:
+
+ * (Optional) Enter the desired directory in the text-box at the top-left
+ * Press the button labelled "Scan Dir." (beside the text-box)
+ * Presuming that model-files were found, look through the resultant list in the scroll-frame below the text-box
+ * Presuming that the desired model is present, click on its button
+ * Press one of the shader-buttons at the top-right to apply a shader
+
+
+~~~~~~~~~~~~~~~
+CONTROLS
+~~~~~~~~~~~~~~~
+
+ * To rotate the model, hold the left mouse-button and drag the mouse.
+
+ * To scale the model, hold the right mouse-button and drag the mouse up or down.
+
+ * To fit the model to the viewing-area, press the button at the bottom-right.
+
+
+~~~~~~~~~~~~~~~
+NOTES
+~~~~~~~~~~~~~~~
+
+The directory to be scanned is set relative to the working directory of the program, I believe.
+
+The directory-scan is recursive, and thus should gather model-files from not only the indicated directory, but all below it, too.
+
+The default directory is "../Assets/"--i.e. the base asset folder.
+
+When the program is started, no shader is active--a shader is only applied by the pressing of one of the shader-buttons at the top-right of the view.
+
+It should be safe to repeat the scanning process, whether with the same directory or another.
+
+It should be safe to load multiple models one after another.
+
+You should be able to swap back and forth between shaders at will.
+

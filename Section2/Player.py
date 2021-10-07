@@ -81,21 +81,33 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
         self.energy = shipSpec.maxEnergy
 
+        self.gunPositions = {}              # third-person pos, first-person pos
+
+        cockpitEyePos = (shipSpec.cockpitEyePos + shipSpec.shipModelOffset)*shipSpec.shipModelScalar*0.5
+
         for gunPos, gunLevel in shipSpec.gunPositions:
             np = self.actor.attachNewNode(PandaNode("gun node"))
-            np.setPos((gunPos + shipSpec.shipModelOffset)*shipSpec.shipModelScalar*0.5)
+
+            gunPosThirdPerson = (gunPos + shipSpec.shipModelOffset)*shipSpec.shipModelScalar*0.5
+            gunPosFirstPerson = (gunPos - shipSpec.cockpitEyePos)*0.5
 
             gun = BlasterWeapon(gunLevel)
             self.addWeapon(gun, 0, np)
 
+            self.gunPositions[gun] = (gunPosThirdPerson, gunPosFirstPerson)
+
         missileSetCounter = 1
         for missilePos in shipSpec.missilePositions:
             np = self.actor.attachNewNode(PandaNode("missile node"))
-            np.setPos((missilePos + shipSpec.shipModelOffset)*shipSpec.shipModelScalar*0.5)
+
+            gunPosThirdPerson = (missilePos + shipSpec.shipModelOffset)*shipSpec.shipModelScalar*0.5
+            gunPosFirstPerson = (missilePos - shipSpec.cockpitEyePos)*0.5
 
             gun = RocketWeapon()
             self.addWeapon(gun, missileSetCounter, np)
             missileSetCounter += 1
+
+            self.gunPositions[gun] = (gunPosThirdPerson, gunPosFirstPerson)
 
         self.numMissileSets = missileSetCounter - 1
         self.missileSetIndex = 0
@@ -448,6 +460,9 @@ class Player(GameObject, ArmedObject, ShieldedObject):
             self.energyBar.reparentTo(self.energyBarRootThirdPerson)
             self.missileCounter.reparentTo(self.missileCounterRootThirdPerson)
             self.speedometer.reparentTo(self.speedometerRootThirdPerson)
+
+            for gun, (thirdPersonPos, firstPersonPos) in self.gunPositions.items():
+                self.weaponNPs[gun].setPos(thirdPersonPos)
         else:
             self.dustTunnel.show()
             self.cameraTarget.setY(0)
@@ -468,6 +483,9 @@ class Player(GameObject, ArmedObject, ShieldedObject):
             self.energyBar.reparentTo(self.energyBarRoot)
             self.missileCounter.reparentTo(self.missileCounterRoot)
             self.speedometer.reparentTo(self.speedometerRoot)
+
+            for gun, (thirdPersonPos, firstPersonPos) in self.gunPositions.items():
+                self.weaponNPs[gun].setPos(firstPersonPos)
 
     def forceCameraPosition(self):
         common.base.camera.setPos(self.cameraTarget, 0, 0, 0)

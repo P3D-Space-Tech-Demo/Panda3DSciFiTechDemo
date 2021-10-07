@@ -35,6 +35,7 @@ shipSpec.maxSpeed = 25
 shipSpec.turnRate = 200
 shipSpec.acceleration = 60
 shipSpec.cockpitModelFile = "STAND_IN/cockpit"
+shipSpec.cockpitEyePos = Vec3(0, 0.65743, 15.384)
 shipSpec.shipModelFileLowPoly = "starship_light_untextured.gltf"
 shipSpec.shipModelScalar = 0.2
 shipSpec.shipModelRotation = 180
@@ -46,9 +47,9 @@ shipSpecs.append(shipSpec)
 # Medium fighter
 shipSpec = ShipSpec()
 shipSpec.gunPositions = [
-    (Vec3(-2, 1, -2), 1),
-    (Vec3(0, 1, -2), 1),
-    (Vec3(2, 1, -2), 1)
+    (Vec3(7.43, 48.36, 11.93), 1),
+    (Vec3(-7.43, 48.36, 11.93), 1),
+    (Vec3(0, 27.12, 15.77), 1)
 ]
 shipSpec.missilePositions = [
     Vec3(-0.9716, 45.84, 7.28),
@@ -72,6 +73,7 @@ shipSpec.maxSpeed = 18
 shipSpec.turnRate = 150
 shipSpec.acceleration = 40
 shipSpec.cockpitModelFile = "STAND_IN/cockpit"
+shipSpec.cockpitEyePos = Vec3(0, 36.36, 13.3)
 shipSpec.shipModelFileLowPoly = "test_completed_ship_a.gltf"
 shipSpec.shipModelScalar = 0.2
 shipSpec.shipModelRotation = 180
@@ -106,6 +108,7 @@ shipSpec.maxSpeed = 14
 shipSpec.turnRate = 100
 shipSpec.acceleration = 20
 shipSpec.cockpitModelFile = "STAND_IN/cockpit"
+shipSpec.cockpitEyePos = Vec3(0, 36.609, 14.582)
 shipSpec.shipModelFileLowPoly = "starship_heavy_untextured.gltf"
 shipSpec.shipModelScalar = 0.2
 shipSpec.shipModelRotation = 180

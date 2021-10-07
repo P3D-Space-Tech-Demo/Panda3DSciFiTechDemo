@@ -15,6 +15,7 @@ class ShipSpec():
         self.turnRate = 1
         self.acceleration = 1
         self.cockpitModelFile = ""
+        self.cockpitEyePos = Vec3(0, 0, 0)
         self.shipModelFileHighPoly = ""
         self.shipModelFileLowPoly = ""
         self.shipModelScalar = 1
