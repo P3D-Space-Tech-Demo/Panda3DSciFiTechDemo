@@ -58,14 +58,14 @@ def apply_hologram(input_model, pos_adj = Vec3(0, 0, 0), scale_adj = 1):
     input_model.set_shader_input("screen", tex_distort)
     # distortion setup ends
 
-def make_wire(wire_model, pos_adj = Vec3(0, 0, 0), scale_adj = 1):
+def make_wire(wire_model, pos_adj = Vec3(0, 0, 0), scale_adj = 1, alpha = 0.4, render_space = base.render):
     # wireframe model
     wire_model.set_pos(pos_adj)
     wire_model.set_scale(scale_adj)
-    wire_model.reparent_to(base.render)
+    wire_model.reparent_to(render_space)
     wire_model.set_transparency(TransparencyAttrib.M_dual)
     wire_model.set_render_mode_wireframe()
-    wire_model.set_alpha_scale(0.4)
+    wire_model.set_alpha_scale(alpha)
 
 def holo_cleanup():
     base.graphics_engine.remove_window(objects_to_clean_up["distort_buff"])
