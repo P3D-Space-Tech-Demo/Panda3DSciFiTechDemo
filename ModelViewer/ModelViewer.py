@@ -51,7 +51,7 @@ class Game(ShowBase):
                                     command = self.scanDirectory)
 
         self.scroller = DirectScrolledFrame(parent = self.a2dTopLeft,
-                                            frameSize = (0, 1.07, -1.75, 0),
+                                            frameSize = (0, 1.07, -1.825, 0),
                                             pos = (0.0225, 0, -0.15),
                                             canvasSize = (0, 1, -1, 0)
                                             )
@@ -81,6 +81,22 @@ class Game(ShowBase):
                                              extraArgs = [metal_shader],
                                              scale = 0.07)
 
+        self.turntableCheck = DirectCheckButton(parent = self.a2dBottomLeft,
+                                                text = "Turntable\nRotation",
+                                                pos = (1.07 + 0.1, 0, 0.105),
+                                                text_align = TextNode.ALeft,
+                                                command = self.setTurntableState,
+                                                scale = 0.07)
+
+        self.turnTableSlider = DirectSlider(parent = self.a2dBottomLeft,
+                                            text = "Turntable Speed",
+                                            pos = (1.07 + 0.925, 0, 0.07),
+                                            text_pos = (0, 0.095),
+                                            value = 50,
+                                            range = (0, 200),
+                                            scale = 0.5,
+                                            text_scale = 0.125)
+
         self.modelBase = self.render.attachNewNode(PandaNode("model base"))
         self.modelBase.setPos(11.7, 40, 0)
         self.currentModel = None
@@ -92,6 +108,9 @@ class Game(ShowBase):
         self.rightMouseDownPos = None
         self.scalingScalar = 3
         self.baseScale = 1
+
+        self.turnTableActive = False
+        self.turnTableAxis = Vec3(0, -0.4, 1).normalized()
 
         light = DirectionalLight("directional light")
         light.setColor(Vec4(1, 1, 1, 1))
@@ -173,6 +192,9 @@ class Game(ShowBase):
             scalar = 35 / largestDimension
             self.currentModel.setScale(scalar)
 
+    def setTurntableState(self, state):
+        self.turnTableActive = state
+
     def setSceneShader(self, shaderRef):
         self.modelBase.setShader(shaderRef)
 
@@ -214,6 +236,11 @@ class Game(ShowBase):
                 offset = diff.length()
                 if offset > 0.000001:
                     self.currentModel.setScale(self.render, self.baseScale * pow(2, -diff.y * self.scalingScalar))
+
+        if self.turnTableActive:
+            quat = Quat()
+            quat.setFromAxisAngle(self.turnTableSlider.getValue()*globalClock.getDt(), self.turnTableAxis)
+            self.modelBase.setQuat(self.render, self.modelBase.getQuat(self.render) * quat)
 
         return task.cont
 

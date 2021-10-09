@@ -22,6 +22,8 @@ CONTROLS
 
  * To fit the model to the viewing-area, press the button at the bottom-right.
 
+ * To toggle automated turntable-rotation of the model, check or uncheck the checkbox at the bottom-left.
+
 
 ~~~~~~~~~~~~~~~
 NOTES
