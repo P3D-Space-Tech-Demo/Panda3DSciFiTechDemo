@@ -583,7 +583,7 @@ class Game():
         nice_seq.append(nice)
         nice_seq.loop()
         
-        screen_ship_3 = base.loader.load_model('Assets/Shared/models/starship_b_for_wire.gltf')
+        screen_ship_3 = base.loader.load_model('Assets/Shared/models/starship_c_for_wire.gltf')
         common.mirror_ship_parts(screen_ship_3)
         screen_ship_3.reparent_to(self.mirror_render)
         screen_ship_3.set_scale(0.5)
