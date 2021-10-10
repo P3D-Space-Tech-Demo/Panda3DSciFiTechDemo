@@ -1,7 +1,7 @@
 
 from direct.showbase.ShowBase import ShowBase
 
-from panda3d.core import WindowProperties, TextNode, Vec4, Vec3, Vec2, VirtualFileSystem, Filename, Texture, PandaNode
+from panda3d.core import WindowProperties, TextNode, Vec4, Vec3, Vec2, VirtualFileSystem, Filename, Texture, PandaNode, Quat, Point3
 from direct.stdpy.file import *
 from direct.gui.DirectGui import *
 
@@ -18,7 +18,8 @@ from panda3d.core import NodePath
 from direct.filter.CommonFilters import CommonFilters
 from panda3d.core import TransparencyAttrib
 from panda3d.core import AmbientLight, PointLight
-from direct.interval.IntervalGlobal import LerpHprInterval, Sequence
+from direct.interval.IntervalGlobal import (LerpPosInterval, LerpHprInterval, LerpColorScaleInterval,
+    Func, Wait, Sequence, Parallel)
 import random
 import holo
 from panda3d.core import CompassEffect
@@ -537,6 +538,8 @@ class Game():
             pass
 
     def motion_menu(self):
+        from collections import deque
+
         # add a render to texture 3D space for the backdrop/background
         ASSET_PATH = "Assets/Section1/"
 
@@ -558,43 +561,64 @@ class Game():
         self.mirror_filters.set_exposure_adjust(1.8)
         self.mirror_filters.set_gamma_adjust(1.3)
 
+        self.motion_parallels = []
+
+        def remove_parallel(parallel):
+            self.motion_parallels.remove(parallel)
+
+        def move_ship(ship):
+            uf = random.uniform
+            hpr = (-90., uf(0., 360.), uf(60., 120.))
+            quat = Quat()
+            quat.set_hpr(hpr)
+            dir_vec = quat.get_right() * -1.
+            start_pos = quat.xform(Point3(0., 0., uf(-50., -20.)))
+            end_pos = start_pos + dir_vec * 200.
+            ship.set_r(uf(0., 360.))
+            ship.parent.set_pos(start_pos)
+            ship.parent.look_at(end_pos)
+            ship.set_alpha_scale(0.)
+            duration = uf(10., 15.)
+            pos_lerp = LerpPosInterval(ship.parent, duration, end_pos)
+            fade_in_lerp = LerpColorScaleInterval(ship, 2., (1., 1., 1., .3))
+            fade_out_lerp = LerpColorScaleInterval(ship, 2., (1., 1., 1., 0.))
+            seq = Sequence()
+            par = Parallel()
+            seq.append(fade_in_lerp)
+            seq.append(Wait(duration - 4.))
+            seq.append(fade_out_lerp)
+            seq.append(Func(lambda: remove_parallel(par)))
+            par.append(pos_lerp)
+            par.append(seq)
+            par.start()
+            self.motion_parallels.append(par)
+
+        def move_next_ship(task):
+            uf = random.uniform
+            delay = random.uniform(5., 10.)
+            move_ship(ships[0])
+            ships.rotate()
+            base.task_mgr.add(move_next_ship, "move_next_ship", delay=delay)
+
         # mirror scene model load-in
         # reparent to mirror render node
-        screen_ship_1 = base.loader.load_model('Assets/Shared/models/test_completed_ship_a.gltf')
-        common.mirror_ship_parts(screen_ship_1)
-        screen_ship_1.reparent_to(self.mirror_render)
-        screen_ship_1.set_scale(0.5)
-        holo.make_wire(screen_ship_1, pos_adj = (0, 0, 5), scale_adj = 0.5, alpha = 0.1, render_space = self.mirror_render)
-        screen_ship_1.set_transparency(TransparencyAttrib.M_dual)
+        filenames = (
+            'Assets/Shared/models/test_completed_ship_a.gltf',
+            'Assets/Shared/models/starship_b_for_wire.gltf',
+            'Assets/Shared/models/starship_c_for_wire.gltf'
+        )
+        ships = deque()
 
-        nice = LerpHprInterval(screen_ship_1, 120, (-360, 0, 0))
-        nice_seq = Sequence()
-        nice_seq.append(nice)
-        nice_seq.loop()
+        for filename in filenames:
+            screen_ship = base.loader.load_model(filename)
+            common.mirror_ship_parts(screen_ship)
+            pivot = self.mirror_render.attachNewNode("ship_pivot")
+            holo.make_wire(screen_ship, pos_adj=(0, 0, 5), scale_adj=0.5, alpha=0.2, render_space=pivot)
+            screen_ship.set_y(-100.)
+            screen_ship.set_h(180.)
+            ships.append(screen_ship)
 
-        screen_ship_2 = base.loader.load_model('Assets/Shared/models/starship_b_for_wire.gltf')
-        common.mirror_ship_parts(screen_ship_2)
-        screen_ship_2.reparent_to(self.mirror_render)
-        screen_ship_2.set_scale(0.5)
-        holo.make_wire(screen_ship_2, pos_adj = (0, 0, 25), scale_adj = 0.5, alpha = 0.1, render_space = self.mirror_render)
-        screen_ship_2.set_transparency(TransparencyAttrib.M_dual)
-
-        nice = LerpHprInterval(screen_ship_2, 120, (360, 0, 0))
-        nice_seq = Sequence()
-        nice_seq.append(nice)
-        nice_seq.loop()
-
-        screen_ship_3 = base.loader.load_model('Assets/Shared/models/starship_c_for_wire.gltf')
-        common.mirror_ship_parts(screen_ship_3)
-        screen_ship_3.reparent_to(self.mirror_render)
-        screen_ship_3.set_scale(0.5)
-        holo.make_wire(screen_ship_3, pos_adj = (0, 0, -5), scale_adj = 0.5, alpha = 0.1, render_space = self.mirror_render)
-        screen_ship_3.set_transparency(TransparencyAttrib.M_dual)
-
-        nice = LerpHprInterval(screen_ship_3, 120, (360, 0, 0))
-        nice_seq = Sequence()
-        nice_seq.append(nice)
-        nice_seq.loop()
+        base.task_mgr.add(move_next_ship, "move_next_ship")
 
         # load in the space background
         cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
@@ -1036,6 +1060,13 @@ class Game():
         self.mirror_filters.del_high_dynamic_range()
         self.mirror_filters.del_exposure_adjust()
         self.mirror_filters.del_gamma_adjust()
+
+        base.task_mgr.remove("move_next_ship")
+
+        for parallel in self.motion_parallels:
+            parallel.pause()
+
+        self.motion_parallels = []
 
         self.currentSectionIndex = index
         self.currentSectionData = data
