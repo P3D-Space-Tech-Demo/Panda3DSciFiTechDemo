@@ -14,6 +14,8 @@ import common
 
 from Ships import shipSpecs
 
+from menu_anim import MenuBackdropAnimation
+
 TAG_PREVIOUS_MENU = "predecessor"
 
 OPTION_FILE_DIR = "."
@@ -99,7 +101,7 @@ class Game():
         common.base.win.requestProperties(properties)
 
         common.gameController = self
-        
+
         common.fancyFont = common.base.loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf",
                                                        pointSize = 8, lineHeight = 1)
 
@@ -118,9 +120,11 @@ class Game():
         ### Main Menu
 
         self.mainMenuBackdrop = DirectFrame(
-                                            frameSize = (-1/common.base.aspect2d.getSx(), 1/common.base.aspect2d.getSx(), -1, 1),
-                                            frameTexture = "Assets/Shared/tex/mainMenuBack.png"
-                                           )
+            frameSize=(-1/common.base.aspect2d.getSx(), 1/common.base.aspect2d.getSx(), -1, 1),
+            frameTexture="Assets/Shared/tex/mainMenuBack.png"
+        )
+
+        self.menuBackdropAnim = MenuBackdropAnimation(self.mainMenuBackdrop)
 
         self.titleHolder = self.mainMenuBackdrop.attachNewNode(PandaNode("title holder"))
         self.titleHolder.setPos(0, 0, 0.6)
@@ -402,7 +406,7 @@ class Game():
         btn = Game.makeButton("Quit", self.quit, self.gameOverScreen, Game.BUTTON_SIZE_MED, leftAligned = False)
         btn.setPos(0, 0, -0.25)
         btn.setTransparency(True)
-        
+
         ### Pause menu
 
         self.pauseMenu = DirectDialog(frameSize = (-0.5, 0.5, -0.7, 0.7),
@@ -874,6 +878,8 @@ class Game():
         self.mainMenuBackdrop.show()
         self.mainMenuPanel.show()
 
+        self.menuBackdropAnim = MenuBackdropAnimation(self.mainMenuBackdrop)
+
         self.currentMenu = None
 
     def openOptions(self):
@@ -883,7 +889,7 @@ class Game():
     def openHelp(self):
         self.helpMenu.show()
         self.currentMenu = self.helpMenu
-        
+
     def openPauseMenu(self):
         properties = WindowProperties()
         properties.setCursorHidden(False)
@@ -923,6 +929,9 @@ class Game():
         self.mainMenuPanel.hide()
         self.mainMenuBackdrop.hide()
         self.currentMenu = None
+
+        self.menuBackdropAnim.destroy()
+        self.menuBackdropAnim = None
 
         self.currentSectionIndex = index
         self.currentSectionData = data
