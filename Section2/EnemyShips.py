@@ -54,6 +54,10 @@ class BasicEnemy(FighterEnemy):
 
             self.engineData.append((flame, scale))
 
+        landingGearNPs = self.actor.findAllMatches("**/landingGear*")
+        for np in landingGearNPs:
+            np.hide()
+
         #self.colliderNP.show()
 
     def setupExplosion(self):

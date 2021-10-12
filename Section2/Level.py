@@ -95,6 +95,12 @@ class Level():
         self.lightNP.setHpr(135, -45, 0)
         self.geometry.setLight(self.lightNP)
 
+        light2 = DirectionalLight("directional light")
+        light2.setColor(Vec4(0.15, 0.15, 0.3, 1))
+        self.light2NP = self.geometry.attachNewNode(light2)
+        self.light2NP.setHpr(-135, 45, 0)
+        self.geometry.setLight(self.light2NP)
+
         for spawnerName in self.spawnersToActivate:
             self.activateSpawner(spawnerName)
 

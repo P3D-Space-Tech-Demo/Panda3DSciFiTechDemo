@@ -113,13 +113,13 @@ class Game(ShowBase):
         self.turnTableAxis = Vec3(0, -0.4, 1).normalized()
 
         light = DirectionalLight("directional light")
-        light.setColor(Vec4(1, 1, 1, 1))
+        light.setColor(Vec4(1, 1, 1, 1)*3.142)
         self.lightNP = self.modelBase.attachNewNode(light)
         self.lightNP.setHpr(135, -45, 0)
         self.modelBase.setLight(self.lightNP)
 
         light = DirectionalLight("directional light")
-        light.setColor(Vec4(0.4, 0.45, 0.6, 1))
+        light.setColor(Vec4(0.4, 0.45, 0.6, 1)*3.142)
         self.lightNP2 = self.modelBase.attachNewNode(light)
         self.lightNP2.setHpr(-135, 45, 0)
         self.modelBase.setLight(self.lightNP2)
