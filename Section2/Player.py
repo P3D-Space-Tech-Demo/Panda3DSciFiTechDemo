@@ -90,6 +90,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
             gunPosThirdPerson = (gunPos + shipSpec.shipModelOffset)*shipSpec.shipModelScalar*0.5
             gunPosFirstPerson = (gunPos - shipSpec.cockpitEyePos)*0.5
+            gunPosFirstPerson.y = min(gunPosFirstPerson.y, 0)
 
             gun = BlasterWeapon(gunLevel)
             self.addWeapon(gun, 0, np)
@@ -102,6 +103,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
             gunPosThirdPerson = (missilePos + shipSpec.shipModelOffset)*shipSpec.shipModelScalar*0.5
             gunPosFirstPerson = (missilePos - shipSpec.cockpitEyePos)*0.5
+            gunPosFirstPerson.y = min(gunPosFirstPerson.y, 0)
 
             gun = RocketWeapon()
             self.addWeapon(gun, missileSetCounter, np)
