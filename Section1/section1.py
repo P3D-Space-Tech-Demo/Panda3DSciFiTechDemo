@@ -2009,7 +2009,9 @@ class Hangar:
                 def exit_triggered():
                     # fade_in_text('loading', 'Loading...', Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
 
-                    common.gameController.startSectionInternal(1, shipSpecs[1])
+                    self.skybox.detach_node()
+#                    common.gameController.startSectionInternal(1, shipSpecs[1])
+                    common.gameController.startSectionIntro(1, shipSpecs[1])
 
                 load_sec_2 = Func(exit_triggered)
 

@@ -923,6 +923,12 @@ class Game():
         menu.hide()
         self.startSectionInternal(sectionIndex, data)
 
+    def startSectionIntro(self, index, data):
+        self.cleanupCurrentSection()
+
+        sectionModule = self.sections[index][0]
+        sectionModule.startIntro(data)
+
     def startSectionInternal(self, index, data):
         self.cleanupCurrentSection()
 
@@ -930,8 +936,9 @@ class Game():
         self.mainMenuBackdrop.hide()
         self.currentMenu = None
 
-        self.menuBackdropAnim.destroy()
-        self.menuBackdropAnim = None
+        if self.menuBackdropAnim:
+            self.menuBackdropAnim.destroy()
+            self.menuBackdropAnim = None
 
         self.currentSectionIndex = index
         self.currentSectionData = data

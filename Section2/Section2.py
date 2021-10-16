@@ -17,6 +17,7 @@ from Section2.Player import *
 from Section2.Enemy import *
 from Section2.Level import Level
 from Section2.EndPortal import SphericalPortalSystem
+from Section2.intro import Intro
 
 import common
 from common import KeyBindings
@@ -329,6 +330,9 @@ class Section2():
         self.updateTask = None
 
         common.currentSection = None
+
+def startIntro(data):
+    Intro(data)
 
 def initialise(shipSpec):
 

@@ -126,7 +126,7 @@ class Game(ShowBase):
 
         lens = OrthographicLens()
         lens.setFilmSize(Vec2(70, 70))
-        lens.setNearFar(1, 100)
+        lens.setNearFar(-1000, 10000)
         self.camNode.setLens(lens)
         self.camLens = lens
 
