@@ -9,10 +9,12 @@ from direct.interval.IntervalGlobal import (
     Parallel
 )
 from direct.stdpy.file import *
+from direct.stdpy import threading2
 from direct.filter.CommonFilters import CommonFilters
 from collections import deque
 
 import random
+import time
 import common
 import holo
 
@@ -23,20 +25,22 @@ class MenuBackdropAnimation:
 
         # add a render to texture 3D space for the backdrop/background
         ASSET_PATH = "Assets/Section1/"
+        
+        self.continue_while = True
 
         self.mirror_buffer = base.win.make_texture_buffer("mirror_buff", 2048, 2048)
         menu_backdrop["frameTexture"] = self.mirror_buffer.get_texture()
         self.mirror_render = NodePath("mirror_render")
         self.mirror_render.set_shader(common.metal_shader)
 
-        mirror_cam = base.make_camera(self.mirror_buffer)
-        mirror_cam.reparent_to(self.mirror_render)
-        mirror_cam.set_pos(0, -20, 5)
-        mirror_cam.set_hpr(0, 25, 0)
-        mirror_cam.node().get_lens().set_focal_length(10)
-        mirror_cam.node().get_lens().set_fov(90)
+        self.mirror_cam = base.make_camera(self.mirror_buffer)
+        self.mirror_cam.reparent_to(self.mirror_render)
+        self.mirror_cam.set_pos(0, -20, 5)
+        self.mirror_cam.set_hpr(0, 25, 0)
+        self.mirror_cam.node().get_lens().set_focal_length(10)
+        self.mirror_cam.node().get_lens().set_fov(90)
 
-        self.mirror_filters = CommonFilters(self.mirror_buffer, mirror_cam)
+        self.mirror_filters = CommonFilters(self.mirror_buffer, self.mirror_cam)
         self.mirror_filters.set_bloom(intensity=5)
         self.mirror_filters.set_high_dynamic_range()
         self.mirror_filters.set_exposure_adjust(1.8)
@@ -68,7 +72,7 @@ class MenuBackdropAnimation:
         cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
         self.menu_skybox = common.create_skybox(cube_map_name)
         self.menu_skybox.reparent_to(self.mirror_render)
-        self.menu_skybox.set_effect(CompassEffect.make(mirror_cam, CompassEffect.P_pos))
+        self.menu_skybox.set_effect(CompassEffect.make(self.mirror_cam, CompassEffect.P_pos))
         self.menu_skybox.node().set_bounds(OmniBoundingVolume())
         self.menu_skybox.node().set_final(True)
 
@@ -86,6 +90,8 @@ class MenuBackdropAnimation:
             # group the lights close to each other to create a sun effect
             plight_1_node.set_pos(random.uniform(-21, -20), random.uniform(-21, -20), random.uniform(20, 21))
             self.mirror_render.set_light(plight_1_node)
+            
+        threading2._start_new_thread(self.check_win_size, ())
 
         if anim_type == 1:
             self.start_animation_type_1()
@@ -113,6 +119,8 @@ class MenuBackdropAnimation:
 
         self.motion_intervals = []
         self.ships = deque()
+        
+        self.continue_while = False
 
     def start_animation_type_1(self):
         """ Rotate the wireframe ship models """
@@ -189,3 +197,15 @@ class MenuBackdropAnimation:
             base.task_mgr.add(move_next_ship, "move_next_ship", delay=delay)
 
         base.task_mgr.add(move_next_ship, "move_next_ship")
+        
+    def check_win_size(self):
+        while self.continue_while:
+            time.sleep(0.1)
+            
+            if -1/common.base.aspect2d.get_sx() > -3:
+                self.mirror_cam.node().get_lens().set_focal_length(-1/common.base.aspect2d.get_sx() * -10)
+                self.mirror_cam.node().get_lens().set_fov(-1/common.base.aspect2d.get_sx() * -50)
+            
+            elif -1/common.base.aspect2d.get_sx() < -3:
+                pass
+        
