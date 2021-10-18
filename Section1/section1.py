@@ -2002,9 +2002,9 @@ class Hangar:
                 ship_pos = finished_ship.get_pos()
                 ship_pos = Vec3(ship_pos[0], ship_pos[1] - 400, ship_pos[2])
 
-                pit_inter = LerpPosInterval(cockpit, 10, pit_pos, blendType='easeIn')
+                pit_inter = LerpPosInterval(cockpit, 4, pit_pos, blendType='easeIn')
                 joy_inter = LerpPosInterval(joystick, 0.3, joy_pos, blendType='easeInOut')
-                ship_inter = LerpPosInterval(finished_ship, 10, ship_pos, blendType='easeIn')
+                ship_inter = LerpPosInterval(finished_ship, 4, ship_pos, blendType='easeIn')
 
                 def exit_triggered():
                     def end_seq_1():
