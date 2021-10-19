@@ -740,6 +740,8 @@ def dismiss_info_text(text_node):
                     time.sleep(0.01)
                     t_node.set_alpha_scale(base.text_alpha)
                     
+        threading2._start_new_thread(text_alpha, ())
+                    
     except:
         print('No info text to dismiss, passing...')
 
