@@ -116,6 +116,31 @@ class Intro:
         seq.append(Wait(end_dur))
         par.start()
 
+        # The following code is borrowed from `Player.py`; it implements rocket engine flames.
+
+        self.engineFlames = []
+        flameColourGradients = Vec3(0.329, 0.502, 1)
+        glowColour = Vec4(0, 0.1, 0.95, 1)
+        for enginePos, engineScale in shipSpec.enginePositions:
+            flame = common.base.loader.loadModel("Assets/Shared/models/shipEngineFlame")
+            flame.reparentTo(self.ship)
+            flame.setH(shipSpec.shipModelRotation)
+            flame.setScale(1*engineScale/shipSpec.shipModelScalar)
+            flame.setPos(enginePos)
+            common.make_engine_flame(flame, flameColourGradients, glowColour)
+            self.engineFlames.append(flame)
+
+        self.engineFlameTargetScale = 0
+        self.engineFlameCurrentScale = 0
+        self.engineFlameSpeed = 0
+
+        light = PointLight("basic light")
+        light.setColor(Vec4(1, 1, 1, 1))
+        light.setAttenuation((1, 0.1, 0.01))
+        self.lightNP = self.scene_root.attachNewNode(light)
+        self.lightNP.setZ(1)
+        self.scene_root.setLight(self.lightNP)
+
     def play(self, task):
         dt = globalClock.get_dt()
         d_r = self.wheel_rot_speed * dt
@@ -130,6 +155,26 @@ class Intro:
         d_y = self.ship_speed * dt
         self.ship.set_y(self.ship, -d_y)
         base.camera.look_at(self.ship)
+
+        # The following code is borrowed from `Player.py`; it implements rocket engine flames.
+
+        self.engineFlameTargetScale = 1
+        self.engineFlameSpeed = 20
+
+        dFlame = self.engineFlameTargetScale - self.engineFlameCurrentScale
+        newScale = self.engineFlameCurrentScale + dFlame * self.engineFlameSpeed * dt
+        if newScale > 1:
+            newScale = 1
+        for flame in self.engineFlames:
+            fire = flame.find("**/flame")
+
+            diff = self.ship.getQuat(self.scene_root).getForward()
+
+            common.update_engine_flame(fire, diff, newScale)
+
+            flame.find("**/glow").setScale(newScale)
+            flame.setColorScale(newScale, newScale, newScale, 1)
+        self.engineFlameCurrentScale = newScale
 
         return task.cont
 
