@@ -721,24 +721,27 @@ def fade_in_text(label, text, screen_pos, color):
     threading2._start_new_thread(text_alpha, ())
 
 def dismiss_info_text(text_node):
-    t_node = base.a2dTopLeft.find(text_node)
-    t_node.set_alpha_scale(base.text_alpha)
 
-    def text_alpha():
-        if base.text_alpha > 0.98:
-            while base.text_alpha > 0:
-                base.text_alpha -= 0.01
-                time.sleep(0.01)
-                t_node.set_alpha_scale(base.text_alpha)
-        else:
-            time.sleep(1)
+    try:
+        t_node = base.a2dTopLeft.find(text_node)
+        t_node.set_alpha_scale(base.text_alpha)
+
+        def text_alpha():
+            if base.text_alpha > 0.98:
+                while base.text_alpha > 0:
+                    base.text_alpha -= 0.01
+                    time.sleep(0.01)
+                    t_node.set_alpha_scale(base.text_alpha)
+            else:
+                time.sleep(1)
             
-            while base.text_alpha > 0:
-                base.text_alpha -= 0.01
-                time.sleep(0.01)
-                t_node.set_alpha_scale(base.text_alpha)
-
-    threading2._start_new_thread(text_alpha, ())
+                while base.text_alpha > 0:
+                    base.text_alpha -= 0.01
+                    time.sleep(0.01)
+                    t_node.set_alpha_scale(base.text_alpha)
+                    
+    except:
+        print('No info text to dismiss, passing...')
 
 def mirror_ship_parts(model):
     for left_node in model.find_all_matches("**/*_left*"):
