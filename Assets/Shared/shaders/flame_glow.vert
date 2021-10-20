@@ -11,6 +11,7 @@ uniform mat4 trans_world_to_clip;
 
 uniform float power;
 uniform vec3 direction;
+uniform float flameScalar;
 
 //out float mew;
 
@@ -21,8 +22,8 @@ void main()
     vec4 zeroPt = p3d_ModelMatrix*vec4(0, 0, 0, 1);
     vec4 basePt = p3d_ModelMatrix*p3d_Vertex;
 
-    float dotProd = dot((basePt - zeroPt).xyz/0.58957, direction);
-    float lengthScalar = length(p3d_Vertex.xyz)/0.58957;
+    float dotProd = dot((basePt - zeroPt).xyz*flameScalar, direction);
+    float lengthScalar = length(p3d_Vertex.xyz)*flameScalar;
     dotProd *= dotProd*dotProd;
 
     vec4 vert = vec4(p3d_Vertex);

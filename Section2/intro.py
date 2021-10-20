@@ -127,7 +127,7 @@ class Intro:
             flame.setH(shipSpec.shipModelRotation)
             flame.setScale(1*engineScale/shipSpec.shipModelScalar)
             flame.setPos(enginePos)
-            common.make_engine_flame(flame, flameColourGradients, glowColour)
+            common.make_engine_flame(flame, flameColourGradients, glowColour, flameScalar = 15)
             self.engineFlames.append(flame)
 
         self.engineFlameTargetScale = 0
