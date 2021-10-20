@@ -2007,7 +2007,7 @@ class Hangar:
                 ship_inter = LerpPosInterval(finished_ship, 4, ship_pos, blendType='easeIn')
 
                 def exit_triggered():
-                    def end_seq_1():
+                    '''def end_seq_1():
                         fade_in_text('loading', 'Loading...', Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
                         # dismiss_info_text('loading')
                         
@@ -2018,7 +2018,9 @@ class Hangar:
                     seq = Sequence()
                     seq.append(Func(end_seq_1))
                     seq.append(Func(end_seq_2))
-                    seq.start()
+                    seq.start()'''
+                    self.skybox.detach_node()
+                    common.gameController.startSectionIntro(1, shipSpecs[1])
 
                 load_sec_2 = Func(exit_triggered)
 
