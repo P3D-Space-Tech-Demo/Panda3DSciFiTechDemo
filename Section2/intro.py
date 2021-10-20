@@ -6,6 +6,17 @@ class Intro:
 
     def __init__(self, shipSpec):
 
+        events = KeyBindings.events["section2_intro"]
+        skip_key = events["start_section2"].key_str
+        events = KeyBindings.events["text"]
+        help_toggle_key = events["toggle_help"].key_str
+        # info text
+        info_text = '\n'.join((
+            f'Press \1key\1{skip_key.title()}\2 to skip',
+            f'\nToggle This Help: \1key\1{help_toggle_key.title()}\2'
+        ))
+        TextManager.add_text("context_help", info_text)
+
         self.data = shipSpec
         base.task_mgr.add(self.play, "play_intro")
 
@@ -31,14 +42,14 @@ class Intro:
         light2.set_color((4.5, 4.5, 5., 1.))
         light2_np = self.scene_root.attach_new_node(light2)
         light2_np.set_hpr(-135., 45., 0.)
+        self.scene_root.set_light(light1_np)
+        self.scene_root.set_light(light2_np)
+        self.scene_root.set_shader(metal_shader)
 
         base.camera.reparent_to(self.scene_root)
 
         mothership = base.loader.load_model("Assets/Shared/models/player_mothership.gltf")
         mothership.reparent_to(self.scene_root)
-        mothership.set_shader(metal_shader)
-        mothership.set_light(light1_np)
-        mothership.set_light(light2_np)
         self.mothership = mothership
 
         hangar_exit = mothership.find("**/hangar_door_left_node")
@@ -185,7 +196,32 @@ class Intro:
         self.intervals = None
         base.task_mgr.remove("play_intro")
 
-        KeyBindings.deactivateAll("section2_intro")
+        KeyBindings.deactivate_all("section2_intro")
+
+        TextManager.remove_text()
+
+        base.graphics_engine.render_frame()
+
+        img = PNMImage()
+        base.win.get_screenshot(img)
+        img.gaussian_filter(5.)
+        img *= (.3, .3, .3, 1.)
+        cm = CardMaker("load_screen")
+        cm.set_frame_fullscreen_quad()
+        load_screen = base.render2d.attach_new_node(cm.generate())
+        tex = Texture()
+        tex.load(img)
+        load_screen.set_texture(tex)
+
+        base.text_alpha = 1.
+        fade_in_text('loading', 'Loading...', Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
+
+        base.graphics_engine.render_frame()
+        base.graphics_engine.render_frame()
+
+        text_node = base.a2dTopLeft.find('loading')
+        text_node.detach_node()
+        load_screen.detach_node()
 
         common.gameController.startSectionInternal(1, self.data)
 
