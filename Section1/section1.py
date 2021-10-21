@@ -2379,10 +2379,11 @@ class Section1:
                     section_intervals.append(nice_seq)
 
                     # reparent to mirror render node
-                    self.screen_ship_2 = base.loader.load_model(ASSET_PATH + "models/worker_drone.gltf")
+                    self.screen_ship_2 = base.loader.load_model(ASSET_PATH + "models/light_spec_screen_select.gltf")
                     self.screen_ship_2.reparent_to(self.mirror_render)
                     self.screen_ship_2.set_pos(-15, 0, 10)
                     self.screen_ship_2.set_scale(2)
+                    mirror_ship_parts(self.screen_ship_2)
                     nice = LerpHprInterval(self.screen_ship_2, 5, (360, 360, 360))
                     nice_seq = Sequence()
                     nice_seq.append(nice)
@@ -2390,10 +2391,11 @@ class Section1:
                     section_intervals.append(nice_seq)
 
                     # reparent to mirror render node
-                    self.screen_ship_3 = base.loader.load_model(ASSET_PATH + "models/worker_bot.gltf")
+                    self.screen_ship_3 = base.loader.load_model(ASSET_PATH + "models/heavy_spec_screen_select.gltf")
                     self.screen_ship_3.reparent_to(self.mirror_render)
                     self.screen_ship_3.set_pos(15, 0, 10)
                     self.screen_ship_3.set_scale(2)
+                    mirror_ship_parts(self.screen_ship_3)
                     nice = LerpHprInterval(self.screen_ship_3, 5, (360, 360, 360))
                     nice_seq = Sequence()
                     nice_seq.append(nice)
