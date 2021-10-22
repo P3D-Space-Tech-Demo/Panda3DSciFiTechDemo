@@ -1,3 +1,4 @@
+from direct.actor.Actor import Actor
 import common
 from common import *
 import fp_ctrl
@@ -141,27 +142,6 @@ class Section3:
                 clip_1_pos = clip_1.get_pos()
                 clip_1.hide()
 
-                '''def show_clip(t):
-                    t = t * 1
-
-                    clip_1.show()
-
-                lf_end = LerpFunc(show_clip, fromData=2.5, toData=4, duration=0)
-
-                def reload_true(t):
-                    t = t * 1
-
-                    base.drop_clip_toggle = True
-
-                rl_true = LerpFunc(reload_true, fromData=2.5, toData=4, duration=0)
-
-                def reload_false(t):
-                    t = t * 1
-
-                    base.drop_clip_toggle = False
-
-                rl_false = LerpFunc(reload_false, fromData=2.5, toData=4, duration=0)'''
-
                 def show_clip():
                     clip_1.show()
 
@@ -242,6 +222,38 @@ class Section3:
 
         self.hg_1.set_shader(metal_shader)
         self.hg_1.set_light(amb_light_node)
+        
+        self.load_gunhand()
+        
+    def load_gunhand(self):
+
+        right_grip_hand = Actor(ASSET_PATH_1 + "models/player_right_arm_GRIP_FIRE_ANIM_1.gltf")
+        right_grip_hand.reparent_to(base.cam)
+        right_grip_hand.set_pos(0.125, 0.145, -0.05)
+        right_grip_hand.set_h(15)
+        
+        squeeze_anim = right_grip_hand.get_anim_control('ArmatureAction')
+        squeeze_anim.set_play_rate(15)
+        
+        print(right_grip_hand.get_anim_names())
+        print(right_grip_hand.get_num_frames('ArmatureAction'))
+        print(squeeze_anim)
+        
+        suit_right_sleeve = base.loader.load_model(ASSET_PATH_1 + "models/player_right_arm_SCALED_SLEEVE.gltf")
+        suit_right_sleeve.reparent_to(base.cam)
+        suit_right_sleeve.set_pos(right_grip_hand.get_pos())
+        suit_right_sleeve.set_h(right_grip_hand.get_h())
+        
+        def squeeze_fire():
+            squeeze_anim.play()
+            
+        base.accept('mouse1', squeeze_fire)
+        
+        def armature_init(wait_period):
+            time.sleep(wait_period)
+            squeeze_anim.play()
+            
+        threading2._start_new_thread(armature_init, (0.1,))
 
     def pauseGame(self):
 
