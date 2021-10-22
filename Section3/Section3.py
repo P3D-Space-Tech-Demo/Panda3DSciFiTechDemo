@@ -243,6 +243,7 @@ class Section3:
         self.suit_right_sleeve.reparent_to(base.cam)
         self.suit_right_sleeve.set_pos(self.right_grip_hand.get_pos())
         self.suit_right_sleeve.set_h(self.right_grip_hand.get_h())
+        self.suit_right_sleeve.node().set_final(True)
         
         def squeeze_fire():
             squeeze_anim.play()
