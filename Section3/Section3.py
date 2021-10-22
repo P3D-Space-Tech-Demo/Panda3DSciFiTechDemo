@@ -227,22 +227,22 @@ class Section3:
         
     def load_gunhand(self):
 
-        right_grip_hand = Actor(ASSET_PATH_1 + "models/player_right_arm_GRIP_FIRE_ANIM_1.gltf")
-        right_grip_hand.reparent_to(base.cam)
-        right_grip_hand.set_pos(0.125, 0.145, -0.05)
-        right_grip_hand.set_h(15)
+        self.right_grip_hand = Actor(ASSET_PATH_1 + "models/player_right_arm_GRIP_FIRE_ANIM_1.gltf")
+        self.right_grip_hand.reparent_to(base.cam)
+        self.right_grip_hand.set_pos(0.125, 0.145, -0.05)
+        self.right_grip_hand.set_h(15)
         
-        squeeze_anim = right_grip_hand.get_anim_control('ArmatureAction')
+        squeeze_anim = self.right_grip_hand.get_anim_control('ArmatureAction')
         squeeze_anim.set_play_rate(15)
         
-        print(right_grip_hand.get_anim_names())
-        print(right_grip_hand.get_num_frames('ArmatureAction'))
+        print(self.right_grip_hand.get_anim_names())
+        print(self.right_grip_hand.get_num_frames('ArmatureAction'))
         print(squeeze_anim)
         
-        suit_right_sleeve = base.loader.load_model(ASSET_PATH_1 + "models/player_right_arm_SCALED_SLEEVE.gltf")
-        suit_right_sleeve.reparent_to(base.cam)
-        suit_right_sleeve.set_pos(right_grip_hand.get_pos())
-        suit_right_sleeve.set_h(right_grip_hand.get_h())
+        self.suit_right_sleeve = base.loader.load_model(ASSET_PATH_1 + "models/player_right_arm_SCALED_SLEEVE.gltf")
+        self.suit_right_sleeve.reparent_to(base.cam)
+        self.suit_right_sleeve.set_pos(self.right_grip_hand.get_pos())
+        self.suit_right_sleeve.set_h(self.right_grip_hand.get_h())
         
         def squeeze_fire():
             squeeze_anim.play()
@@ -287,6 +287,9 @@ class Section3:
         ramp = base.render.find('ramp')
         base.world.remove(ramp.node())
         ramp.detach_node()
+        
+        self.right_grip_hand.detach_node()
+        self.suit_right_sleeve.detach_node()
 
         TextManager.remove_text()
 
