@@ -2372,6 +2372,7 @@ class Section1:
                     self.screen_ship_1.reparent_to(self.mirror_render)
                     self.screen_ship_1.set_pos(0, 0, 10)
                     self.screen_ship_1.set_scale(7)
+                    mirror_ship_parts(self.screen_ship_1)
                     nice = LerpHprInterval(self.screen_ship_1, 5, (360, 360, 360))
                     nice_seq = Sequence()
                     nice_seq.append(nice)
@@ -2518,10 +2519,7 @@ class Section1:
             job.is_assigned = True
             self.add_mirror_job(job)
 
-            try:
-                dismiss_info_text('bay_ready_text')
-            except:
-                print('No info text present.')
+            dismiss_info_text('bay_ready_text')
 
         else:
             events = KeyBindings.events["section1"]

@@ -100,12 +100,7 @@ class MenuBackdropAnimation:
 
     def destroy(self):
         # cleanup for the 3D menu
-        print(self.mirror_render.find_all_matches('**'))
-
         self.mirror_render.children.detach()
-
-        print('remaining objects:')
-        print(self.mirror_render.find_all_matches('**'))
 
         self.mirror_filters.del_bloom()
         self.mirror_filters.del_high_dynamic_range()

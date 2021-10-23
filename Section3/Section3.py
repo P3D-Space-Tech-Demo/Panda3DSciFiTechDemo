@@ -232,6 +232,7 @@ class Section3:
         self.right_grip_hand.reparent_to(base.cam)
         self.right_grip_hand.set_pos(0.125, 0.145, -0.05)
         self.right_grip_hand.set_h(15)
+        self.right_grip_hand.node().set_final(True)
 
         squeeze_anim = self.right_grip_hand.get_anim_control('ArmatureAction')
         squeeze_anim.set_play_rate(15)
@@ -239,12 +240,6 @@ class Section3:
         print(self.right_grip_hand.get_anim_names())
         print(self.right_grip_hand.get_num_frames('ArmatureAction'))
         print(squeeze_anim)
-
-        '''self.suit_right_sleeve = base.loader.load_model(ASSET_PATH_1 + "models/player_right_arm_SCALED_SLEEVE.gltf")
-        self.suit_right_sleeve.reparent_to(base.cam)
-        self.suit_right_sleeve.set_pos(self.right_grip_hand.get_pos())
-        self.suit_right_sleeve.set_h(self.right_grip_hand.get_h())
-        self.suit_right_sleeve.node().set_final(True)'''
 
         def squeeze_fire():
             squeeze_anim.play()
