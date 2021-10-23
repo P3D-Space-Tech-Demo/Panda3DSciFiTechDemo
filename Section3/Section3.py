@@ -131,8 +131,8 @@ class Section3:
         self.hg_1 = base.loader.load_model(ASSET_PATH_1 + "models/sec3_handgun_1.gltf")
         self.hg_1.reparent_to(render)
         self.hg_1.reparent_to(base.cam)
-        self.hg_1.set_y(base.cam, 0.3)
-        self.hg_1.set_x(base.cam, 0.1)
+#        self.hg_1.set_y(base.cam, 0.3)
+#        self.hg_1.set_x(base.cam, 0.1)
 
         base.drop_clip_toggle = False
 
@@ -222,38 +222,39 @@ class Section3:
 
         self.hg_1.set_shader(metal_shader)
         self.hg_1.set_light(amb_light_node)
-        
+
         self.load_gunhand()
-        
+        self.hg_1.set_pos(self.right_grip_hand, 0.011319, 0.152317, 0.054291)
+
     def load_gunhand(self):
 
-        self.right_grip_hand = Actor(ASSET_PATH_1 + "models/player_right_arm_GRIP_FIRE_ANIM_1.gltf")
+        self.right_grip_hand = Actor(ASSET_PATH_1 + "models/player_right_arm_GRIP_FIRE_ANIM_2.gltf")
         self.right_grip_hand.reparent_to(base.cam)
         self.right_grip_hand.set_pos(0.125, 0.145, -0.05)
         self.right_grip_hand.set_h(15)
-        
+
         squeeze_anim = self.right_grip_hand.get_anim_control('ArmatureAction')
         squeeze_anim.set_play_rate(15)
-        
+
         print(self.right_grip_hand.get_anim_names())
         print(self.right_grip_hand.get_num_frames('ArmatureAction'))
         print(squeeze_anim)
-        
-        self.suit_right_sleeve = base.loader.load_model(ASSET_PATH_1 + "models/player_right_arm_SCALED_SLEEVE.gltf")
+
+        '''self.suit_right_sleeve = base.loader.load_model(ASSET_PATH_1 + "models/player_right_arm_SCALED_SLEEVE.gltf")
         self.suit_right_sleeve.reparent_to(base.cam)
         self.suit_right_sleeve.set_pos(self.right_grip_hand.get_pos())
         self.suit_right_sleeve.set_h(self.right_grip_hand.get_h())
-        self.suit_right_sleeve.node().set_final(True)
-        
+        self.suit_right_sleeve.node().set_final(True)'''
+
         def squeeze_fire():
             squeeze_anim.play()
-            
+
         base.accept('mouse1', squeeze_fire)
-        
+
         def armature_init(wait_period):
             time.sleep(wait_period)
             squeeze_anim.play()
-            
+
         threading2._start_new_thread(armature_init, (0.1,))
 
     def pauseGame(self):
@@ -288,9 +289,9 @@ class Section3:
         ramp = base.render.find('ramp')
         base.world.remove(ramp.node())
         ramp.detach_node()
-        
+
         self.right_grip_hand.detach_node()
-        self.suit_right_sleeve.detach_node()
+#        self.suit_right_sleeve.detach_node()
 
         TextManager.remove_text()
 
