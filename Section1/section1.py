@@ -4,6 +4,7 @@ import fp_ctrl
 import holo
 from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode
 from Ships import shipSpecs
+from collections import deque
 
 ASSET_PATH = "Assets/Section1/"
 SHADOW_MASK = BitMask32.bit(1)
@@ -2159,7 +2160,7 @@ class Section1:
         compartment.model.set_pos(0., 0., 50.)
         add_section_task(compartment.handle_next_request, "handle_compartment_requests")
 
-        def build_starship(ship = "starship_a"):
+        def build_starship():
             if self.arms_instantiated:
                 if not self.jobs_started:
                     if self.music.status() == 1:
@@ -2173,16 +2174,8 @@ class Section1:
 
                     self.holo_ship.show()
 
-                    if self.right_taps == 1:
-                        ship = "starship_a"
-
-                    elif self.right_taps == 2:
-                        ship = "starship_b"
-
-                    elif self.right_taps == 3:
-                        ship = "starship_c"
-
-                    starship_id = ship  # should be determined by user
+#                    starship_id = ["starship_c", "starship_a", "starship_b"][self.ship_indices[0]]
+                    starship_id = "starship_a"
                     self.starship_components = {}
 
                     self.model_root = model_root = base.loader.load_model(f"{ASSET_PATH}models/{starship_id}.bam")
@@ -2266,9 +2259,8 @@ class Section1:
 
         self.hangar = Hangar(self.start_jobs)
 
-        self.right_taps = 1
-        # base.accept('arrow_right', self.arrow_arm_screen)
-        KeyBindings.set_handler("arrow_arm_screen", self.arrow_arm_screen, "section1")
+        KeyBindings.set_handler("ship_select_prev", lambda: self.select_ship(1), "section1")
+        KeyBindings.set_handler("ship_select_next", lambda: self.select_ship(-1), "section1")
 
         # set up camera control
         entrance_pos = Point3(self.hangar.entrance_pos)
@@ -2336,11 +2328,13 @@ class Section1:
                     self.mirror_render.set_shader(metal_shader)
 
                     mirror_cam = base.make_camera(mirror_buffer)
-                    mirror_cam.reparent_to(self.mirror_render)
+                    self.holo_display_cam_pivot = self.mirror_render.attach_new_node("cam_pivot")
+                    mirror_cam.reparent_to(self.holo_display_cam_pivot)
                     mirror_cam.set_pos(0, -20, 5)
-                    mirror_cam.set_hpr(0, 25, 0)
+                    mirror_cam.set_p(-25.)
                     mirror_cam.node().get_lens().set_focal_length(10)
-                    mirror_cam.node().get_lens().set_fov(90)
+                    mirror_cam.node().get_lens().set_fov(50)
+                    self.ship_indices = deque([0, 1, 2])
 
                     mirror_filters = CommonFilters(mirror_buffer, mirror_cam)
                     # mirror_filters.set_high_dynamic_range()
@@ -2366,49 +2360,33 @@ class Section1:
                     mirror_model.set_light(amb_light_node)
                     section_lights.append(amb_light_node)
 
-                    # mirror scene model load-in
-                    # reparent to mirror render node
-                    self.screen_ship_1 = base.loader.load_model(ASSET_PATH + "models/starship_a_screen_select.gltf")
-                    self.screen_ship_1.reparent_to(self.mirror_render)
-                    self.screen_ship_1.set_pos(0, 0, 10)
-                    self.screen_ship_1.set_scale(7)
-                    mirror_ship_parts(self.screen_ship_1)
-                    nice = LerpHprInterval(self.screen_ship_1, 5, (360, 360, 360))
-                    nice_seq = Sequence()
-                    nice_seq.append(nice)
-                    nice_seq.loop()
-                    section_intervals.append(nice_seq)
+                    model_file_paths = (
+                        ASSET_PATH + "models/light_spec_screen_select.gltf",
+                        ASSET_PATH + "models/starship_a_screen_select.gltf",
+                        ASSET_PATH + "models/heavy_spec_screen_select.gltf"
+                    )
+                    # holo-display scene model load-in
+                    holo_models = [base.loader.load_model(p) for p in model_file_paths]
+                    model_pivots = [self.mirror_render.attach_new_node("pivot") for _ in holo_models]
 
-                    # reparent to mirror render node
-                    self.screen_ship_2 = base.loader.load_model(ASSET_PATH + "models/light_spec_screen_select.gltf")
-                    self.screen_ship_2.reparent_to(self.mirror_render)
-                    self.screen_ship_2.set_pos(-15, 0, 10)
-                    self.screen_ship_2.set_scale(2)
-                    mirror_ship_parts(self.screen_ship_2)
-                    nice = LerpHprInterval(self.screen_ship_2, 5, (360, 360, 360))
-                    nice_seq = Sequence()
-                    nice_seq.append(nice)
-                    nice_seq.loop()
-                    section_intervals.append(nice_seq)
-
-                    # reparent to mirror render node
-                    self.screen_ship_3 = base.loader.load_model(ASSET_PATH + "models/heavy_spec_screen_select.gltf")
-                    self.screen_ship_3.reparent_to(self.mirror_render)
-                    self.screen_ship_3.set_pos(15, 0, 10)
-                    self.screen_ship_3.set_scale(2)
-                    mirror_ship_parts(self.screen_ship_3)
-                    nice = LerpHprInterval(self.screen_ship_3, 5, (360, 360, 360))
-                    nice_seq = Sequence()
-                    nice_seq.append(nice)
-                    nice_seq.loop()
-                    section_intervals.append(nice_seq)
+                    for i, (holo_model, model_pivot) in enumerate(zip(holo_models, model_pivots)):
+                        # reparent to holo-display render node
+                        mirror_ship_parts(holo_model)
+                        holo_model.reparent_to(model_pivot)
+                        holo_model.set_y(-10.)
+                        holo_model.set_scale(2.)
+                        model_pivot.set_r(180.)
+                        model_pivot.set_h(120. * i)
+                        ival = LerpHprInterval(holo_model, 5, (360., 0., 0.))
+                        ival.loop()
+                        section_intervals.append(ival)
 
                     # mirror scene lighting
                     # point light generator
                     for x in range(3):
                         plight_1 = PointLight('mirror_light')
                         # add plight props here
-                        plight_1_node = self.mirror_render.attach_new_node(plight_1)
+                        plight_1_node = self.holo_display_cam_pivot.attach_new_node(plight_1)
                         # group the lights close to each other to create a sun effect
                         plight_1_node.set_pos(random.uniform(-21, -20), random.uniform(-21, -20), random.uniform(20, 21))
                         self.mirror_render.set_light(plight_1_node)
@@ -2429,75 +2407,25 @@ class Section1:
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
 
-    def arrow_arm_screen(self):
+    def select_ship(self, direction):
 
-        if self.right_taps == 1:
+        self.ship_indices.rotate(direction)
+        ship_index = self.ship_indices[0]
+        KeyBindings.deactivate("ship_select_prev", "section1")
+        KeyBindings.deactivate("ship_select_next", "section1")
+        prev_h = self.holo_display_cam_pivot.get_h()
+        hpr = (prev_h - 120. * direction, 0., 0.)
 
-            self.right_taps = 2
-            # screen_ship_1 was the first to be shown at a scale of 7
-            # so we'll give it a special scale check to prevent overscaling
-            if self.screen_ship_1.get_scale() > 2:
-                def make_smaller():
-                    model_current_scale = self.screen_ship_1.get_scale()
-                    for x in range(50):
-                        model_current_scale -= 0.1
-                        self.screen_ship_1.set_scale(model_current_scale)
-                        time.sleep(0.001)
+        def enable_controls():
+            KeyBindings.activate("ship_select_prev", "section1")
+            KeyBindings.activate("ship_select_next", "section1")
 
-                threading2._start_new_thread(make_smaller, ())
-
-            def make_bigger():
-                model_current_scale = self.screen_ship_3.get_scale()
-                for x in range(50):
-                    model_current_scale += 0.1
-                    self.screen_ship_3.set_scale(model_current_scale)
-                    time.sleep(0.001)
-
-            threading2._start_new_thread(make_bigger, ())
-
-        elif self.right_taps == 2:
-
-            self.right_taps = 3
-
-            def make_smaller():
-                model_current_scale = self.screen_ship_3.get_scale()
-                for x in range(50):
-                    model_current_scale -= 0.1
-                    self.screen_ship_3.set_scale(model_current_scale)
-                    time.sleep(0.001)
-
-            threading2._start_new_thread(make_smaller, ())
-
-            def make_bigger():
-                model_current_scale = self.screen_ship_2.get_scale()
-                for x in range(50):
-                    model_current_scale += 0.1
-                    self.screen_ship_2.set_scale(model_current_scale)
-                    time.sleep(0.001)
-
-            threading2._start_new_thread(make_bigger, ())
-
-        elif self.right_taps == 3:
-
-            self.right_taps = 1
-
-            def make_smaller():
-                model_current_scale = self.screen_ship_2.get_scale()
-                for x in range(50):
-                    model_current_scale -= 0.1
-                    self.screen_ship_2.set_scale(model_current_scale)
-                    time.sleep(0.001)
-
-            threading2._start_new_thread(make_smaller, ())
-
-            def make_bigger():
-                model_current_scale = self.screen_ship_1.get_scale()
-                for x in range(50):
-                    model_current_scale += 0.1
-                    self.screen_ship_1.set_scale(model_current_scale)
-                    time.sleep(0.001)
-
-            threading2._start_new_thread(make_bigger, ())
+        ival = LerpHprInterval(self.holo_display_cam_pivot, .5, hpr, blendType="easeInOut")
+        seq = Sequence()
+        seq.append(ival)
+        seq.append(Func(enable_controls))
+        seq.start()
+        section_intervals.append(seq)
 
     def toggle_music(self):
         if self.music.status() == 2:
@@ -2524,10 +2452,11 @@ class Section1:
         else:
             events = KeyBindings.events["section1"]
             build_start_key = events["build_starship"].key_str.title()
-            arrow_key = events["arrow_arm_screen"].key_str.title()
+            key_prev = events["ship_select_prev"].key_str.title()
+            key_next = events["ship_select_next"].key_str.title()
             bay_ready_text = '\n\n'.join((
                 'Construction bay is ready and awaiting job input.',
-                f'Tap \1key\1{arrow_key}\2 in First-Person Mode to hover-select your spacecraft.',
+                f'Tap \1key\1{key_prev}\2 / \1key\1{key_next}\2 in First-Person Mode to hover-select your spacecraft.',
                 f'Press \1key\1{build_start_key}\2 to begin building your selected spacecraft.'
             ))
             fade_in_text('bay_ready_text', bay_ready_text, Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
@@ -2852,4 +2781,5 @@ KeyBindings.add("open_pause_menu", "escape", "section1")
 KeyBindings.add("cam_switch", "\\", "section1")
 KeyBindings.add("toggle_music", "p", "section1")
 KeyBindings.add("build_starship", "enter", "section1")
-KeyBindings.add("arrow_arm_screen", "arrow_right", "section1")
+KeyBindings.add("ship_select_prev", "arrow_left", "section1")
+KeyBindings.add("ship_select_next", "arrow_right", "section1")
