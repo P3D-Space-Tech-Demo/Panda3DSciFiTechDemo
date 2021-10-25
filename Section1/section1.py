@@ -274,6 +274,141 @@ class FocusCamera:
             return cls.idle
 
 
+# The following class implements a holographic display that emanates from the
+# emitter on the left sleeve of the player character's spacesuit.
+class HoloDisplay:
+    tex_buffer = None
+    scene_root = None
+    cam_pivot = None
+    model = None
+    ship_indices = deque([0, 1, 2])
+
+    @classmethod
+    def setup(cls, left_arm):
+        # Create the spacesuit arm holo-display.
+
+        # make a new texture buffer, render node, and attach a camera
+        cls.tex_buffer = base.win.make_texture_buffer("display_buff", 512, 512)
+        cls.scene_root = NodePath("scene_root")
+        cls.scene_root.set_shader(metal_shader)
+
+        cam = base.make_camera(cls.tex_buffer)
+        cls.cam_pivot = cls.scene_root.attach_new_node("cam_pivot")
+        cam.reparent_to(cls.cam_pivot)
+        cam.set_pos(0, -20, 5)
+        cam.set_p(-25.)
+        cam.node().get_lens().set_focal_length(10)
+        cam.node().get_lens().set_fov(50)
+
+        display_filters = CommonFilters(cls.tex_buffer, cam)
+        # display_filters.set_high_dynamic_range()
+        display_filters.set_exposure_adjust(1.1)
+        # display_filters.set_gamma_adjust(1.3)
+
+        # load in a display object model in normal render space
+        model = base.loader.load_model(ASSET_PATH + 'models/wide_screen_video_display.egg')
+        model.set_pos(119.466, 4.90663, 3.46)
+        model.look_at(79.4992, 3.56733, 4.35998)
+        model.set_shader_off()
+        model.set_transparency(TransparencyAttrib.M_dual)
+        model.reparent_to(left_arm)
+        model.set_scale(0.5)
+        model.set_pos(-0.5, -0.3, 1)
+        cls.model = model
+
+        amb_light = AmbientLight('amblight_2')
+        amb_light.set_priority(50)
+        amb_light.set_color((1, 1, 1, 1))
+        amb_light_node = model.attach_new_node(amb_light)
+        model.set_light(amb_light_node)
+        section_lights.append(amb_light_node)
+
+        model_file_paths = (
+            ASSET_PATH + "models/light_spec_screen_select.gltf",
+            ASSET_PATH + "models/starship_a_screen_select.gltf",
+            ASSET_PATH + "models/heavy_spec_screen_select.gltf"
+        )
+        # holo-display scene model load-in
+        holo_models = [base.loader.load_model(p) for p in model_file_paths]
+        model_pivots = [cls.scene_root.attach_new_node("pivot") for _ in holo_models]
+
+        for i, (holo_model, model_pivot) in enumerate(zip(holo_models, model_pivots)):
+            mirror_ship_parts(holo_model)
+            holo_model.reparent_to(model_pivot)
+            holo_model.set_y(-10.)
+            holo_model.set_scale(2.)
+            model_pivot.set_r(180.)
+            model_pivot.set_h(120. * i)
+            ival = LerpHprInterval(holo_model, 5, (360., 0., 0.))
+            ival.loop()
+            section_intervals.append(ival)
+
+        # display scene lighting
+        # point light generator
+        for x in range(3):
+            plight_1 = PointLight('display_light')
+            # add plight props here
+            plight_1_node = cls.cam_pivot.attach_new_node(plight_1)
+            # group the lights close to each other to create a sun effect
+            plight_1_node.set_pos(random.uniform(-21, -20), random.uniform(-21, -20), random.uniform(20, 21))
+            cls.scene_root.set_light(plight_1_node)
+            section_lights.append(plight_1_node)
+
+        # set the live buffer texture to the display model in normal render space
+        model.set_texture(cls.tex_buffer.get_texture())
+
+        KeyBindings.set_handler("ship_select_prev", lambda: cls.select_ship(1), "section1")
+        KeyBindings.set_handler("ship_select_next", lambda: cls.select_ship(-1), "section1")
+        KeyBindings.activate("ship_select_prev", "section1")
+        KeyBindings.activate("ship_select_next", "section1")
+
+    @classmethod
+    def destroy(cls):
+        if not cls.tex_buffer:
+            return
+
+        base.graphics_engine.remove_window(cls.tex_buffer)
+        cls.tex_buffer = None
+        cls.scene_root.detach_node()
+        cls.scene_root = None
+        cls.model.detach_node()
+        cls.model = None
+
+    @classmethod
+    def switch_on(cls): pass
+
+    @classmethod
+    def switch_off(cls):
+        pass
+
+        '''screen = cls.model.find('**/Plane')
+        x, y, z = screen.get_pos()
+        screen.set_pos(x - 2, y, z - 0.5)
+        screen.hide()'''
+
+    @classmethod
+    def select_ship(cls, direction):
+        cls.ship_indices.rotate(direction)
+        KeyBindings.deactivate("ship_select_prev", "section1")
+        KeyBindings.deactivate("ship_select_next", "section1")
+        prev_h = cls.cam_pivot.get_h()
+        hpr = (prev_h - 120. * direction, 0., 0.)
+
+        def enable_controls():
+            KeyBindings.activate("ship_select_prev", "section1")
+            KeyBindings.activate("ship_select_next", "section1")
+
+        ival = LerpHprInterval(cls.cam_pivot, .5, hpr, blendType="easeInOut")
+        seq = Sequence()
+        seq.append(ival)
+        seq.append(Func(enable_controls))
+        seq.start()
+
+    @classmethod
+    def get_selected_ship_id(cls):
+        return ["starship_c", "starship_a", "starship_b"][cls.ship_indices[0]]
+
+
 class IdleWorkers:
 
     workers = {"bot": [], "drone": []}
@@ -1817,7 +1952,7 @@ class Hangar:
 
         for x in base.render.find_all_matches('**/back_wing*'):
             x.detach_node()
-            
+
         self.finished_ship = ''
         self.finished_ship_ready = False
 
@@ -1827,10 +1962,10 @@ class Hangar:
             finished_ship.reparent_to(base.render)
             finished_ship.set_shader_off()
             finished_ship.set_shader(scene_shader)
-            
+
             print('load_ship task is executing...')
             print(finished_ship)
-            
+
             self.finished_ship = finished_ship
 
             # mirror the ship parts
@@ -1844,13 +1979,13 @@ class Hangar:
 
             for x in finished_ship.find_all_matches('*d_*'):
                 x.set_shader(metal_shader)
-            
+
             for x in finished_ship.find_all_matches('*thruster*'):
                 x.set_shader(metal_shader)
-            
+
             for x in finished_ship.find_all_matches('*blaster*'):
                 x.set_shader(metal_shader)
-                
+
             interior_coll = finished_ship.find('interior')
             interior_coll.set_shader(metal_shader)
             interior_coll.flatten_strong()
@@ -1870,7 +2005,7 @@ class Hangar:
                 self.up_door_hpr = self.up_door.get_hpr()
                 up_door_pos_adj = Vec3(self.up_door_pos[0], self.up_door_pos[1], self.up_door_pos[2] + 5)
                 up_door_hpr_adj = Vec3(self.up_door_hpr[0], self.up_door_hpr[1], self.up_door_hpr[2] - 50)
-            
+
                 self.down_door_pos = self.down_door.get_pos(base.render)
                 self.down_door_hpr = self.down_door.get_hpr()
                 down_door_pos_adj = Vec3(self.down_door_pos[0], self.down_door_pos[1], self.down_door_pos[2] - 8)
@@ -1915,9 +2050,9 @@ class Hangar:
                         ramp_seq()
 
             threading2._start_new_thread(ship_ready, ())
-        
+
         task = taskMgr.add(load_ship())
-        
+
         def deferred_load_1():
             check = True
             while check:
@@ -1926,7 +2061,7 @@ class Hangar:
                 if len(str(self.finished_ship)) > 3:
                     print('check condition met')
                     check = False
-                    
+
                     cockpit = base.loader.load_model('Assets/Shared/models/test_cockpit.gltf')
                     cockpit.reparent_to(base.render)
                     cockpit.set_pos(0, -32, 9)
@@ -1953,7 +2088,7 @@ class Hangar:
                         c_1 = cockpit.find('**/chair')
                         c_2 = cockpit.find('**/accent_rot')
                         c_3 = cockpit.find('**/chair_bottom_accent')
-                        c_4 = cockpit.find('**/chair_cyl')	
+                        c_4 = cockpit.find('**/chair_cyl')
 
                         c_1_rot = LerpHprInterval(c_1, 3.5, Vec3(), blendType='easeInOut')
                         c_2_rot = LerpHprInterval(c_2, 3.5, Vec3(), blendType='easeInOut')
@@ -1988,12 +2123,6 @@ class Hangar:
                             l_pos = left_arm.get_pos()
                             left_arm.set_pos(l_pos[0] - 2, l_pos[1], l_pos[2] - 0.5)
                             left_arm.hide()
-
-
-                            arm_screen = base.render.find('**/wide_screen_video_display.egg/Plane')
-                            as_pos = arm_screen.get_pos()
-                            arm_screen.set_pos(as_pos[0] - 2, as_pos[1], as_pos[2] - 0.5)
-                            arm_screen.hide()
 
                             # make the blue laser lights white scene lights
                             laser_plights = base.render.find_all_matches("**/plight*")
@@ -2120,7 +2249,7 @@ class Hangar:
                                 animate_cockpit()
 
                     threading2._start_new_thread(cockpit_check, ())
-        
+
         threading2._start_new_thread(deferred_load_1, ())
 
 
@@ -2196,7 +2325,7 @@ class Section1:
 
                     self.holo_ship.show()
 
-#                    starship_id = ["starship_c", "starship_a", "starship_b"][self.ship_indices[0]]
+#                    starship_id = HoloDisplay.get_selected_ship_id()
                     starship_id = "starship_a"
                     self.starship_components = {}
 
@@ -2281,9 +2410,6 @@ class Section1:
 
         self.hangar = Hangar(self.start_jobs)
 
-        KeyBindings.set_handler("ship_select_prev", lambda: self.select_ship(1), "section1")
-        KeyBindings.set_handler("ship_select_next", lambda: self.select_ship(-1), "section1")
-
         # set up camera control
         entrance_pos = Point3(self.hangar.entrance_pos)
         entrance_pos.x += 33
@@ -2343,79 +2469,7 @@ class Section1:
                     self.left_arm.set_h(-10)
                     self.left_arm.set_scale(0.2)
 
-                    # the spacesuit arm holo-display begins
-                    # make a new texture buffer, render node, and attach a camera
-                    mirror_buffer = base.win.make_texture_buffer("mirror_buff", 512, 512)
-                    self.mirror_render = NodePath("mirror_render")
-                    self.mirror_render.set_shader(metal_shader)
-
-                    mirror_cam = base.make_camera(mirror_buffer)
-                    self.holo_display_cam_pivot = self.mirror_render.attach_new_node("cam_pivot")
-                    mirror_cam.reparent_to(self.holo_display_cam_pivot)
-                    mirror_cam.set_pos(0, -20, 5)
-                    mirror_cam.set_p(-25.)
-                    mirror_cam.node().get_lens().set_focal_length(10)
-                    mirror_cam.node().get_lens().set_fov(50)
-                    self.ship_indices = deque([0, 1, 2])
-
-                    mirror_filters = CommonFilters(mirror_buffer, mirror_cam)
-                    # mirror_filters.set_high_dynamic_range()
-                    mirror_filters.set_exposure_adjust(1.1)
-                    # mirror_filters.set_gamma_adjust(1.3)
-
-                    # load in a mirror/display object model in normal render space
-                    mirror_model = base.loader.loadModel(ASSET_PATH + 'models/wide_screen_video_display.egg')
-                    mirror_model.reparent_to(base.render)
-                    mirror_model.set_pos(119.466, 4.90663, 3.46)
-                    mirror_model.look_at(79.4992, 3.56733, 4.35998)
-                    mirror_model.set_shader_off()
-                    mirror_model.set_transparency(TransparencyAttrib.M_dual)
-                    mirror_model.reparent_to(self.left_arm)
-                    # mirror_model.set_h(90)
-                    mirror_model.set_scale(0.5)
-                    mirror_model.set_pos(-0.5, -0.3, 1)
-
-                    amb_light = AmbientLight('amblight_2')
-                    amb_light.set_priority(50)
-                    amb_light.set_color((1, 1, 1, 1))
-                    amb_light_node = mirror_model.attach_new_node(amb_light)
-                    mirror_model.set_light(amb_light_node)
-                    section_lights.append(amb_light_node)
-
-                    model_file_paths = (
-                        ASSET_PATH + "models/light_spec_screen_select.gltf",
-                        ASSET_PATH + "models/starship_a_screen_select.gltf",
-                        ASSET_PATH + "models/heavy_spec_screen_select.gltf"
-                    )
-                    # holo-display scene model load-in
-                    holo_models = [base.loader.load_model(p) for p in model_file_paths]
-                    model_pivots = [self.mirror_render.attach_new_node("pivot") for _ in holo_models]
-
-                    for i, (holo_model, model_pivot) in enumerate(zip(holo_models, model_pivots)):
-                        # reparent to holo-display render node
-                        mirror_ship_parts(holo_model)
-                        holo_model.reparent_to(model_pivot)
-                        holo_model.set_y(-10.)
-                        holo_model.set_scale(2.)
-                        model_pivot.set_r(180.)
-                        model_pivot.set_h(120. * i)
-                        ival = LerpHprInterval(holo_model, 5, (360., 0., 0.))
-                        ival.loop()
-                        section_intervals.append(ival)
-
-                    # mirror scene lighting
-                    # point light generator
-                    for x in range(3):
-                        plight_1 = PointLight('mirror_light')
-                        # add plight props here
-                        plight_1_node = self.holo_display_cam_pivot.attach_new_node(plight_1)
-                        # group the lights close to each other to create a sun effect
-                        plight_1_node.set_pos(random.uniform(-21, -20), random.uniform(-21, -20), random.uniform(20, 21))
-                        self.mirror_render.set_light(plight_1_node)
-                        section_lights.append(plight_1_node)
-
-                    # set the live buffer texture to the mirror/display model in normal render space
-                    mirror_model.set_texture(mirror_buffer.get_texture())
+                    HoloDisplay.setup(self.left_arm)
 
                 else:
                     self.right_arm.show()
@@ -2428,26 +2482,6 @@ class Section1:
         add_section_task(self.move_camera, "move_camera")
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
-
-    def select_ship(self, direction):
-
-        self.ship_indices.rotate(direction)
-        ship_index = self.ship_indices[0]
-        KeyBindings.deactivate("ship_select_prev", "section1")
-        KeyBindings.deactivate("ship_select_next", "section1")
-        prev_h = self.holo_display_cam_pivot.get_h()
-        hpr = (prev_h - 120. * direction, 0., 0.)
-
-        def enable_controls():
-            KeyBindings.activate("ship_select_prev", "section1")
-            KeyBindings.activate("ship_select_next", "section1")
-
-        ival = LerpHprInterval(self.holo_display_cam_pivot, .5, hpr, blendType="easeInOut")
-        seq = Sequence()
-        seq.append(ival)
-        seq.append(Func(enable_controls))
-        seq.start()
-        section_intervals.append(seq)
 
     def toggle_music(self):
         if self.music.status() == 2:
@@ -2691,6 +2725,7 @@ class Section1:
         self.cam_target.detach_node()
         self.cam_target = None
         FocusCamera.destroy()
+        HoloDisplay.destroy()
 
         for tmp_node in base.render.find_all_matches("**/tmp_node"):
             tmp_node.detach_node()
