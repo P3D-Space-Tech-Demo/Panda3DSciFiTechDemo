@@ -1817,290 +1817,312 @@ class Hangar:
 
         for x in base.render.find_all_matches('**/back_wing*'):
             x.detach_node()
-
-        # load in the playable ship
-        finished_ship = base.loader.load_model('Assets/Shared/models/test_completed_ship_a.gltf')
-        finished_ship.reparent_to(base.render)
-        finished_ship.set_shader_off()
-        finished_ship.set_shader(scene_shader)
-        
-        # mirror the ship parts
-        mirror_ship_parts(finished_ship)
-
-        for x in finished_ship.find_all_matches('*rocket*'):
-            x.set_shader(metal_shader)
-
-        for x in finished_ship.find_all_matches('*wing*'):
-            x.set_shader(metal_shader)
-
-        for x in finished_ship.find_all_matches('*d_*'):
-            x.set_shader(metal_shader)
             
-        for x in finished_ship.find_all_matches('*thruster*'):
-            x.set_shader(metal_shader)
-            
-        for x in finished_ship.find_all_matches('*blaster*'):
-            x.set_shader(metal_shader)
-
-        interior_coll = finished_ship.find('interior')
-        interior_coll.set_shader(metal_shader)
-        interior_coll.flatten_strong()
-        fp_ctrl.make_collision('interior_coll_brbn', interior_coll, 0, 0, interior_coll.get_pos(base.render))
-
-        self.slide = finished_ship.find('ramp_actual')
-        self.slide.flatten_strong()
-        fp_ctrl.make_collision('slide_brbn', self.slide, 0, 0, self.slide.get_pos(base.render))
-
-        slide_coll = base.render.find('slide_brbn')
-
-        def ramp_seq():
-            self.up_door = finished_ship.find('d_upper')
-            self.down_door = finished_ship.find('d_lower')
-
-            self.up_door_pos = self.up_door.get_pos(base.render)
-            self.up_door_hpr = self.up_door.get_hpr()
-            up_door_pos_adj = Vec3(self.up_door_pos[0], self.up_door_pos[1], self.up_door_pos[2] + 5)
-            up_door_hpr_adj = Vec3(self.up_door_hpr[0], self.up_door_hpr[1], self.up_door_hpr[2] - 50)
-            
-            self.down_door_pos = self.down_door.get_pos(base.render)
-            self.down_door_hpr = self.down_door.get_hpr()
-            down_door_pos_adj = Vec3(self.down_door_pos[0], self.down_door_pos[1], self.down_door_pos[2] - 8)
-            down_door_hpr_adj = Vec3(self.down_door_hpr[0], self.down_door_hpr[1], self.down_door_hpr[2] + 50)
-
-            up_door_lerp = LerpHprInterval(self.up_door, 1, up_door_hpr_adj)
-            down_door_lerp = LerpHprInterval(self.down_door, 1, down_door_hpr_adj)
-
-            door_par = Parallel()
-            door_par.append(up_door_lerp)
-            door_par.append(down_door_lerp)
-
-            ramp_1_pos = self.slide.get_pos(base.render)
-            ramp_1_pos = Vec3(ramp_1_pos[0] + 13, ramp_1_pos[1], ramp_1_pos[2] - 2.4)
-
-            slide_coll_pos = slide_coll.get_pos(base.render)
-            slide_coll_pos = Vec3(slide_coll_pos[0] + 13, slide_coll_pos[1], slide_coll_pos[2] - 2.4)
-
-            ramp_lerp = LerpPosHprInterval(self.slide, 2, ramp_1_pos, (0, 0, 22))
-            ramp_lerp_2 = LerpPosHprInterval(slide_coll, 2, slide_coll_pos, (0, 0, 22))
-
-            ramp_par = Parallel()
-            ramp_par.append(ramp_lerp)
-            ramp_par.append(ramp_lerp_2)
-
-            door_ramp_seq = Sequence()
-            door_ramp_seq.append(door_par)
-            door_ramp_seq.append(ramp_par)
-            door_ramp_seq.start()
-
+        self.finished_ship = ''
         self.finished_ship_ready = False
 
-        def ship_ready():
-            while not self.finished_ship_ready:
-                time.sleep(0.1)
-                target = Vec3(30.7101, -15.3108, 7.21)
-                p_dist = (target - base.camera.get_pos(base.render)).length()
+        # load in the playable ship
+        async def load_ship():
+            finished_ship = await base.loader.load_model('Assets/Shared/models/test_completed_ship_a.gltf', blocking=False)
+            finished_ship.reparent_to(base.render)
+            finished_ship.set_shader_off()
+            finished_ship.set_shader(scene_shader)
+            
+            print('load_ship task is executing...')
+            print(finished_ship)
+            
+            self.finished_ship = finished_ship
 
-                if p_dist < 20:
-                    self.finished_ship_ready = True
+            # mirror the ship parts
+            mirror_ship_parts(finished_ship)
 
-                    ramp_seq()
+            for x in finished_ship.find_all_matches('*rocket*'):
+                x.set_shader(metal_shader)
 
-        threading2._start_new_thread(ship_ready, ())
+            for x in finished_ship.find_all_matches('*wing*'):
+                x.set_shader(metal_shader)
 
-        cockpit = base.loader.load_model('Assets/Shared/models/test_cockpit.gltf')
-        cockpit.reparent_to(base.render)
-        cockpit.set_pos(0, -32, 9)
-        cockpit.set_scale(1)
-        cockpit.set_h(90)
-        cockpit.set_light(base.render.find_all_matches('**/amblight*')[1])
+            for x in finished_ship.find_all_matches('*d_*'):
+                x.set_shader(metal_shader)
+            
+            for x in finished_ship.find_all_matches('*thruster*'):
+                x.set_shader(metal_shader)
+            
+            for x in finished_ship.find_all_matches('*blaster*'):
+                x.set_shader(metal_shader)
+                
+            interior_coll = finished_ship.find('interior')
+            interior_coll.set_shader(metal_shader)
+            interior_coll.flatten_strong()
+            fp_ctrl.make_collision('interior_coll_brbn', interior_coll, 0, 0, interior_coll.get_pos(base.render))
 
-        for a in cockpit.find_all_matches('**/*accent*'):
-            a.set_shader_off()
+            self.slide = finished_ship.find('ramp_actual')
+            self.slide.flatten_strong()
+            fp_ctrl.make_collision('slide_brbn', self.slide, 0, 0, self.slide.get_pos(base.render))
 
-        for t in cockpit.find_all_matches('**/*track*'):
-            t.set_shader_off()
+            slide_coll = base.render.find('slide_brbn')
 
-        joystick = base.loader.load_model('Assets/Shared/models/joystick.gltf')
-        joystick.reparent_to(base.render)
-        joystick.set_h(90)
-        joystick.set_pos(0, 0, 10)
-        joy_pos = joystick.get_pos()
-        joystick.set_shader_off()
-        joystick.hide()
+            def ramp_seq():
+                self.up_door = finished_ship.find('d_upper')
+                self.down_door = finished_ship.find('d_lower')
 
-        def animate_cockpit():
-            c_1 = cockpit.find('**/chair')
-            c_2 = cockpit.find('**/accent_rot')
-            c_3 = cockpit.find('**/chair_bottom_accent')
-            c_4 = cockpit.find('**/chair_cyl')
+                self.up_door_pos = self.up_door.get_pos(base.render)
+                self.up_door_hpr = self.up_door.get_hpr()
+                up_door_pos_adj = Vec3(self.up_door_pos[0], self.up_door_pos[1], self.up_door_pos[2] + 5)
+                up_door_hpr_adj = Vec3(self.up_door_hpr[0], self.up_door_hpr[1], self.up_door_hpr[2] - 50)
+            
+                self.down_door_pos = self.down_door.get_pos(base.render)
+                self.down_door_hpr = self.down_door.get_hpr()
+                down_door_pos_adj = Vec3(self.down_door_pos[0], self.down_door_pos[1], self.down_door_pos[2] - 8)
+                down_door_hpr_adj = Vec3(self.down_door_hpr[0], self.down_door_hpr[1], self.down_door_hpr[2] + 50)
 
-            c_1_rot = LerpHprInterval(c_1, 3.5, Vec3(), blendType='easeInOut')
-            c_2_rot = LerpHprInterval(c_2, 3.5, Vec3(), blendType='easeInOut')
-
-            c_1_inter = LerpPosInterval(c_1, 1.5, (-2, -0.002, 0), blendType='easeInOut')
-            c_2_inter = LerpPosInterval(c_2, 1.5, (-2, -0.002, 0), blendType='easeInOut')
-            c_3_inter = LerpPosInterval(c_3, 1.5, (-2, -0.002, -0.464), blendType='easeInOut')
-            c_4_inter = LerpPosInterval(c_4, 1.5, (-2, 0, 0), blendType='easeInOut')
-
-            joystick_inter = LerpPosInterval(joystick, 1.5, (joy_pos[0], joy_pos[1], joy_pos[2] + 0.75), joy_pos, blendType='easeInOut')
-
-            def initiate_transition():
-                fp_ctrl.fp_cleanup()
-
-                base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
-                base.camera.reparent_to(c_1)
-                base.camLens.fov = 110
-                base.camLens.set_near_far(0.01, 90000)
-                base.camLens.focal_length = 7
-                base.camera.set_h(90)
-                base.camera.set_pos(1.2, 0, 2.9)
-
-                right_arm = base.render.find_all_matches('**/Armature*')[0]
-                right_arm.set_h(-15)
-                r_pos = right_arm.get_pos()
-                right_arm.set_pos(r_pos[0] + 2, r_pos[1], r_pos[2])
-                right_arm.hide()
-
-                left_arm = base.render.find_all_matches('**/Armature*')[1]
-                left_arm.set_h(15)
-                l_pos = left_arm.get_pos()
-                left_arm.set_pos(l_pos[0] - 2, l_pos[1], l_pos[2] - 0.5)
-                left_arm.hide()
-
-                arm_screen = base.render.find('**/wide_screen_video_display.egg/Plane')
-                as_pos = arm_screen.get_pos()
-                arm_screen.set_pos(as_pos[0] - 2, as_pos[1], as_pos[2] - 0.5)
-                arm_screen.hide()
-
-                # make the blue laser lights white scene lights
-                laser_plights = base.render.find_all_matches("**/plight*")
-                for l in laser_plights:
-                    l.node().set_color(Vec4(1, 1, 1, 1))
-                    l.set_pos(0, 0, 30)
-
-                # load in the outside space skybox
-                cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
-                self.skybox = common.create_skybox(cube_map_name)
-                self.skybox.reparent_to(base.render)
-                self.skybox.set_effect(CompassEffect.make(base.camera, CompassEffect.P_pos))
-                self.skybox.node().set_bounds(OmniBoundingVolume())
-                self.skybox.node().set_final(True)
-
-                door_left = base.render.find('**/door_left')
-                dl_pos = door_left.get_pos()
-                dl_pos = Vec3(dl_pos[0] + 40, dl_pos[1], dl_pos[2])
-                door_right = base.render.find('**/door_right')
-                dr_pos = door_right.get_pos()
-                dr_pos = Vec3(dr_pos[0] - 40, dr_pos[1], dr_pos[2])
-
-                dl_inter = LerpPosInterval(door_left, 10, dl_pos, blendType='easeInOut')
-                dr_inter = LerpPosInterval(door_right, 10, dr_pos, blendType='easeInOut')
-
-                pit_pos = cockpit.get_pos()
-                pit_pos = Vec3(pit_pos[0], pit_pos[1] - 400, pit_pos[2])
-                joy_pos = joystick.get_pos()
-                joy_pos = Vec3(joy_pos[0], joy_pos[1], joy_pos[2] - 1)
-                ship_pos = finished_ship.get_pos()
-                ship_pos = Vec3(ship_pos[0], ship_pos[1] - 400, ship_pos[2])
-
-                pit_inter = LerpPosInterval(cockpit, 4, pit_pos, blendType='easeIn')
-                joy_inter = LerpPosInterval(joystick, 0.3, joy_pos, blendType='easeInOut')
-                ship_inter = LerpPosInterval(finished_ship, 4, ship_pos, blendType='easeIn')
-
-                def exit_triggered():
-                    '''def end_seq_1():
-                        fade_in_text('loading', 'Loading...', Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
-                        # dismiss_info_text('loading')
-                        
-                    def end_seq_2():
-                        self.skybox.detach_node()
-                        common.gameController.startSectionIntro(1, shipSpecs[1])
-                        
-                    seq = Sequence()
-                    seq.append(Func(end_seq_1))
-                    seq.append(Func(end_seq_2))
-                    seq.start()'''
-                    self.skybox.detach_node()
-                    common.gameController.startSectionIntro(1, shipSpecs[1])
-
-                load_sec_2 = Func(exit_triggered)
+                up_door_lerp = LerpHprInterval(self.up_door, 1, up_door_hpr_adj)
+                down_door_lerp = LerpHprInterval(self.down_door, 1, down_door_hpr_adj)
 
                 door_par = Parallel()
-                door_par.append(dl_inter)
-                door_par.append(dr_inter)
+                door_par.append(up_door_lerp)
+                door_par.append(down_door_lerp)
 
-                pit_par = Parallel()
-                pit_par.append(pit_inter)
-                pit_par.append(joy_inter)
-                pit_par.append(ship_inter)
+                ramp_1_pos = self.slide.get_pos(base.render)
+                ramp_1_pos = Vec3(ramp_1_pos[0] + 13, ramp_1_pos[1], ramp_1_pos[2] - 2.4)
 
-                exit_seq = Sequence()
-                exit_seq.append(door_par)
-                exit_seq.append(pit_par)
-                exit_seq.append(load_sec_2)
-                exit_seq.start()
+                slide_coll_pos = slide_coll.get_pos(base.render)
+                slide_coll_pos = Vec3(slide_coll_pos[0] + 13, slide_coll_pos[1], slide_coll_pos[2] - 2.4)
 
-                section_intervals.append(exit_seq)
+                ramp_lerp = LerpPosHprInterval(self.slide, 2, ramp_1_pos, (0, 0, 22))
+                ramp_lerp_2 = LerpPosHprInterval(slide_coll, 2, slide_coll_pos, (0, 0, 22))
 
-                def close_ship_doors():
-                    up_door_lerp = LerpHprInterval(self.up_door, 1, self.up_door_hpr)
-                    down_door_lerp = LerpHprInterval(self.down_door, 1, self.down_door_hpr)
-                    ramp_lerp = LerpPosHprInterval(self.slide, 0.5, Vec3(), Vec3())
+                ramp_par = Parallel()
+                ramp_par.append(ramp_lerp)
+                ramp_par.append(ramp_lerp_2)
 
-                    door_par = Parallel()
-                    door_par.append(up_door_lerp)
-                    door_par.append(down_door_lerp)
-                    door_par.append(ramp_lerp)
+                door_ramp_seq = Sequence()
+                door_ramp_seq.append(door_par)
+                door_ramp_seq.append(ramp_par)
+                door_ramp_seq.start()
 
-                    door_ramp_seq = Sequence()
-                    door_ramp_seq.append(door_par)
-                    door_ramp_seq.start()
+            self.finished_ship_ready = False
 
-                close_ship_doors()
+            def ship_ready():
+                while not self.finished_ship_ready:
+                    time.sleep(0.1)
+                    target = Vec3(30.7101, -15.3108, 7.21)
+                    p_dist = (target - base.camera.get_pos(base.render)).length()
 
-            initiate = Func(initiate_transition)
+                    if p_dist < 20:
+                        self.finished_ship_ready = True
 
-            def show_joy(t):
-                t = t * 1
+                        ramp_seq()
 
-                joystick.show()
-
-            lf_end = LerpFunc(show_joy, fromData=2.5, toData=4, duration=0)
-
-            chair_par_1 = Parallel()
-            chair_par_1.append(c_1_rot)
-            chair_par_1.append(c_2_rot)
-
-            chair_par_2 = Parallel()
-            chair_par_2.append(c_1_inter)
-            chair_par_2.append(c_2_inter)
-            chair_par_2.append(c_3_inter)
-            chair_par_2.append(c_4_inter)
-
-            chair_seq = Sequence()
-            chair_seq.append(initiate)
-            chair_seq.append(chair_par_1)
-            chair_seq.append(chair_par_2)
-            chair_seq.append(lf_end)
-            chair_seq.append(joystick_inter)
-            chair_seq.start()
-
-            section_intervals.append(chair_seq)
-
-        self.cockpit_engaged = False
-
-        def cockpit_check():
-            while not self.cockpit_engaged:
+            threading2._start_new_thread(ship_ready, ())
+        
+        task = taskMgr.add(load_ship())
+        
+        def deferred_load_1():
+            check = True
+            while check:
                 time.sleep(0.1)
-                target = Vec3(0.204692, -26.4711, 14.0199)
-                p_dist = (target - base.camera.get_pos(base.render)).length()
+                print('check_load continuing...')
+                if len(str(self.finished_ship)) > 3:
+                    print('check condition met')
+                    check = False
+                    
+                    cockpit = base.loader.load_model('Assets/Shared/models/test_cockpit.gltf')
+                    cockpit.reparent_to(base.render)
+                    cockpit.set_pos(0, -32, 9)
+                    cockpit.set_scale(1)
+                    cockpit.set_h(90)
+                    cockpit.set_light(base.render.find_all_matches('**/amblight*')[1])
 
-                if p_dist < 1:
-                    self.cockpit_engaged = True
+                    for a in cockpit.find_all_matches('**/*accent*'):
+                        a.set_shader_off()
 
-                    animate_cockpit()
+                    for t in cockpit.find_all_matches('**/*track*'):
+                        t.set_shader_off()
 
-        threading2._start_new_thread(cockpit_check, ())
+                    joystick = base.loader.load_model('Assets/Shared/models/joystick.gltf')
+                    joystick.reparent_to(base.render)
+                    joystick.set_h(90)
+                    joystick.set_pos(0, 0, 10)
+                    joy_pos = joystick.get_pos()
+                    joystick.set_shader_off()
+                    joystick.hide()
+
+                    def animate_cockpit():
+
+                        c_1 = cockpit.find('**/chair')
+                        c_2 = cockpit.find('**/accent_rot')
+                        c_3 = cockpit.find('**/chair_bottom_accent')
+                        c_4 = cockpit.find('**/chair_cyl')	
+
+                        c_1_rot = LerpHprInterval(c_1, 3.5, Vec3(), blendType='easeInOut')
+                        c_2_rot = LerpHprInterval(c_2, 3.5, Vec3(), blendType='easeInOut')
+
+                        c_1_inter = LerpPosInterval(c_1, 1.5, (-2, -0.002, 0), blendType='easeInOut')
+                        c_2_inter = LerpPosInterval(c_2, 1.5, (-2, -0.002, 0), blendType='easeInOut')
+                        c_3_inter = LerpPosInterval(c_3, 1.5, (-2, -0.002, -0.464), blendType='easeInOut')
+                        c_4_inter = LerpPosInterval(c_4, 1.5, (-2, 0, 0), blendType='easeInOut')
+
+                        joystick_inter = LerpPosInterval(joystick, 1.5, (joy_pos[0], joy_pos[1], joy_pos[2] + 0.75), joy_pos, blendType='easeInOut')
+
+                        def initiate_transition():
+                            fp_ctrl.fp_cleanup()
+
+                            base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
+                            base.camera.reparent_to(c_1)
+
+                            base.camLens.fov = 110
+                            base.camLens.set_near_far(0.01, 90000)
+                            base.camLens.focal_length = 7
+                            base.camera.set_h(90)
+                            base.camera.set_pos(1.2, 0, 2.9)
+
+                            right_arm = base.render.find_all_matches('**/Armature*')[0]
+                            right_arm.set_h(-15)
+                            r_pos = right_arm.get_pos()
+                            right_arm.set_pos(r_pos[0] + 2, r_pos[1], r_pos[2])
+                            right_arm.hide()
+
+                            left_arm = base.render.find_all_matches('**/Armature*')[1]
+                            left_arm.set_h(15)
+                            l_pos = left_arm.get_pos()
+                            left_arm.set_pos(l_pos[0] - 2, l_pos[1], l_pos[2] - 0.5)
+                            left_arm.hide()
+
+
+                            arm_screen = base.render.find('**/wide_screen_video_display.egg/Plane')
+                            as_pos = arm_screen.get_pos()
+                            arm_screen.set_pos(as_pos[0] - 2, as_pos[1], as_pos[2] - 0.5)
+                            arm_screen.hide()
+
+                            # make the blue laser lights white scene lights
+                            laser_plights = base.render.find_all_matches("**/plight*")
+                            for l in laser_plights:
+                                l.node().set_color(Vec4(1, 1, 1, 1))
+                                l.set_pos(0, 0, 30)
+
+                            # load in the outside space skybox
+                            cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
+                            self.skybox = common.create_skybox(cube_map_name)
+                            self.skybox.reparent_to(base.render)
+                            self.skybox.set_effect(CompassEffect.make(base.camera, CompassEffect.P_pos))
+
+                            self.skybox.node().set_bounds(OmniBoundingVolume())
+                            self.skybox.node().set_final(True)
+
+                            door_left = base.render.find('**/door_left')
+                            dl_pos = door_left.get_pos()
+                            dl_pos = Vec3(dl_pos[0] + 40, dl_pos[1], dl_pos[2])
+                            door_right = base.render.find('**/door_right')
+                            dr_pos = door_right.get_pos()
+                            dr_pos = Vec3(dr_pos[0] - 40, dr_pos[1], dr_pos[2])
+
+                            dl_inter = LerpPosInterval(door_left, 10, dl_pos, blendType='easeInOut')
+
+                            dr_inter = LerpPosInterval(door_right, 10, dr_pos, blendType='easeInOut')
+
+                            pit_pos = cockpit.get_pos()
+                            pit_pos = Vec3(pit_pos[0], pit_pos[1] - 400, pit_pos[2])
+                            joy_pos = joystick.get_pos()
+                            joy_pos = Vec3(joy_pos[0], joy_pos[1], joy_pos[2] - 1)
+
+                            ship_pos = self.finished_ship.get_pos()
+                            ship_pos = Vec3(ship_pos[0], ship_pos[1] - 400, ship_pos[2])
+
+
+                            pit_inter = LerpPosInterval(cockpit, 4, pit_pos, blendType='easeIn')
+                            joy_inter = LerpPosInterval(joystick, 0.3, joy_pos, blendType='easeInOut')
+
+                            ship_inter = LerpPosInterval(self.finished_ship, 4, ship_pos, blendType='easeIn')
+
+
+                            def exit_triggered():
+                                self.skybox.detach_node()
+                                common.gameController.startSectionIntro(1, shipSpecs[1])
+
+                            load_sec_2 = Func(exit_triggered)
+
+                            door_par = Parallel()
+                            door_par.append(dl_inter)
+                            door_par.append(dr_inter)
+
+                            pit_par = Parallel()
+                            pit_par.append(pit_inter)
+                            pit_par.append(joy_inter)
+                            pit_par.append(ship_inter)
+
+                            exit_seq = Sequence()
+                            exit_seq.append(door_par)
+                            exit_seq.append(pit_par)
+                            exit_seq.append(load_sec_2)
+                            exit_seq.start()
+
+                            section_intervals.append(exit_seq)
+
+                            def close_ship_doors():
+                                up_door_lerp = LerpHprInterval(self.up_door, 1, self.up_door_hpr)
+                                down_door_lerp = LerpHprInterval(self.down_door, 1, self.down_door_hpr)
+                                ramp_lerp = LerpPosHprInterval(self.slide, 0.5, Vec3(), Vec3())
+
+                                door_par = Parallel()
+                                door_par.append(up_door_lerp)
+                                door_par.append(down_door_lerp)
+                                door_par.append(ramp_lerp)
+
+
+                                door_ramp_seq = Sequence()
+                                door_ramp_seq.append(door_par)
+                                door_ramp_seq.start()
+
+                            close_ship_doors()
+
+                        initiate = Func(initiate_transition)
+
+                        def show_joy(t):
+                            t = t * 1
+
+                            joystick.show()
+
+                        lf_end = LerpFunc(show_joy, fromData=2.5, toData=4, duration=0)
+
+
+                        chair_par_1 = Parallel()
+                        chair_par_1.append(c_1_rot)
+                        chair_par_1.append(c_2_rot)
+
+                        chair_par_2 = Parallel()
+                        chair_par_2.append(c_1_inter)
+                        chair_par_2.append(c_2_inter)
+                        chair_par_2.append(c_3_inter)
+                        chair_par_2.append(c_4_inter)
+
+                        chair_seq = Sequence()
+                        chair_seq.append(initiate)
+                        chair_seq.append(chair_par_1)
+                        chair_seq.append(chair_par_2)
+                        chair_seq.append(lf_end)
+                        chair_seq.append(joystick_inter)
+                        chair_seq.start()
+
+                        section_intervals.append(chair_seq)
+
+                    self.cockpit_engaged = False
+
+                    def cockpit_check():
+                        while not self.cockpit_engaged:
+                            time.sleep(0.1)
+                            target = Vec3(0.204692, -26.4711, 14.0199)
+                            p_dist = (target - base.camera.get_pos(base.render)).length()
+
+                            if p_dist < 1:
+                                self.cockpit_engaged = True
+
+                                animate_cockpit()
+
+                    threading2._start_new_thread(cockpit_check, ())
+        
+        threading2._start_new_thread(deferred_load_1, ())
+
 
 class Section1:
 
