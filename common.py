@@ -759,3 +759,14 @@ def mirror_ship_parts(model):
         geom.reverse_in_place()
 
 mirrorShipParts = mirror_ship_parts
+
+models = {}
+
+def preload_models(model_paths):
+    async def load_models():
+        async for model in base.loader.load_model(model_paths, blocking=False):
+            path = model_paths.pop(0)
+            _, section_id, model_group_id, filename = path.split("/")
+            models.setdefault(section_id, {}).setdefault(model_group_id, {})[filename] = model
+            print("Loaded", path)
+    base.task_mgr.add(load_models())

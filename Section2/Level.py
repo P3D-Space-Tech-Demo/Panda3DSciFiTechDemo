@@ -18,7 +18,12 @@ class Level():
         self.levelFile = levelFile
 
         self.geometry = NodePath(PandaNode("level root"))
-        foundPartwiseFile = False
+        models = common.models["Section2"]["levels"]
+        for index in range(5):
+            loadedNP = models["{0}_{1}.egg.pz".format(levelFile, index)]
+            loadedNP.copyTo(self.geometry)
+
+        '''foundPartwiseFile = False
         index = 0
         fName = "Assets/Section2/levels/{0}_{1}".format(levelFile, index)
         virtualFS = VirtualFileSystem.getGlobalPtr()
@@ -30,7 +35,7 @@ class Level():
             fName = "Assets/Section2/levels/{0}_{1}".format(levelFile, index)
         if not foundPartwiseFile:
             loadedNP = common.base.loader.loadModel("Assets/Section2/levels/{0}".format(levelFile))
-            loadedNP.reparentTo(self.geometry)
+            loadedNP.reparentTo(self.geometry)'''
         self.geometry.reparentTo(common.base.render)
         #self.geometry.setShaderAuto()
         self.geometry.setShader(common.metal_shader)
@@ -256,7 +261,8 @@ class Level():
             self.lightNP = None
 
         if self.geometry is not None:
-            self.geometry.removeNode()
+#            self.geometry.removeNode()
+            self.geometry.detachNode()
             self.geometry = None
 
         if self.exit is not None:

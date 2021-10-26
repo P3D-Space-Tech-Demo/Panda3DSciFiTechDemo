@@ -128,11 +128,10 @@ class Section3:
 
         base.accept('f4', print_player_pos)
 
-        self.hg_1 = base.loader.load_model(ASSET_PATH_1 + "models/sec3_handgun_1.gltf")
-        self.hg_1.reparent_to(render)
-        self.hg_1.reparent_to(base.cam)
-#        self.hg_1.set_y(base.cam, 0.3)
-#        self.hg_1.set_x(base.cam, 0.1)
+        models = common.models["Section3"]["models"]
+        self.hg_1 = models["sec3_handgun_1.gltf"].copy_to(base.cam)
+#        self.hg_1 = base.loader.load_model(ASSET_PATH_1 + "models/sec3_handgun_1.gltf")
+#        self.hg_1.reparent_to(base.cam)
 
         base.drop_clip_toggle = False
 
@@ -207,8 +206,10 @@ class Section3:
 
         KeyBindings.set_handler("reload_gun", drop_clip, "section3")
 
-        self.model = base.loader.load_model(ASSET_PATH_1 + "levels/tunnel_drop_1.gltf")
-        self.model.reparent_to(base.render)
+        models = common.models["Section3"]["levels"]
+        self.model = models["tunnel_drop_1.gltf"].copy_to(base.render)
+#        self.model = base.loader.load_model(ASSET_PATH_1 + "levels/tunnel_drop_1.gltf")
+#        self.model.reparent_to(base.render)
         self.model.flatten_strong()
 
         fp_ctrl.make_collision('ramp', self.model, 0, 0, target_pos = Vec3(0, 0, 0), hpr_adj = Vec3(0, 0, 0), scale_adj = 1)
