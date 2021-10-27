@@ -71,7 +71,6 @@ class Section3:
     def loadStationSegmentOne(self):
 
         self.intervals = []
-        self.hg_while = True
         base.static_pos = Vec3(-5.29407, -15.2641, 2.66)
 
         render.set_shader_off()
@@ -131,8 +130,6 @@ class Section3:
 
         models = common.models["Section3"]["models"]
         self.hg_1 = models["sec3_handgun_1.gltf"].copy_to(base.cam)
-#        self.hg_1 = base.loader.load_model(ASSET_PATH_1 + "models/sec3_handgun_1.gltf")
-#        self.hg_1.reparent_to(base.cam)
 
         base.drop_clip_toggle = False
 
@@ -209,8 +206,6 @@ class Section3:
 
         models = common.models["Section3"]["levels"]
         self.model = models["tunnel_drop_1.gltf"].copy_to(base.render)
-#        self.model = base.loader.load_model(ASSET_PATH_1 + "levels/tunnel_drop_1.gltf")
-#        self.model.reparent_to(base.render)
         self.model.flatten_strong()
 
         fp_ctrl.make_collision('ramp', self.model, 0, 0, target_pos = Vec3(), hpr_adj = Vec3(), scale_adj = 1)
@@ -226,48 +221,31 @@ class Section3:
         self.hg_1.set_light(amb_light_node)
 
         self.load_gunhand()
-        # self.hg_1.set_pos(self.right_grip_hand, 0.011319, 0.152317, 0.054291)
-        
-        def check_hg_1_pos():
-            while self.hg_while:
-                time.sleep(0.1)
-                
-                try:
-                    self.hg_1.set_pos(self.right_grip_hand, 0.011319, 0.152317, 0.054291)
-                    self.hg_while = False
-                except:
-                    print('async gunhand not yet initialized, passing...')
-                    
-        threading2._start_new_thread(check_hg_1_pos, ())
+        self.hg_1.set_pos(self.right_grip_hand, 0.011319, 0.152317, 0.054291)
 
     def load_gunhand(self):
-        async def grip_thread():
-            self.right_grip_hand = Actor(ASSET_PATH_1 + "models/player_right_arm_GRIP_FIRE_ANIM_2.gltf")
-            self.right_grip_hand.reparent_to(base.cam)
-            self.right_grip_hand.set_pos(0.125, 0.145, -0.05)
-            self.right_grip_hand.set_h(15)
-            self.right_grip_hand.node().set_final(True)
-            print(self.right_grip_hand.get_pos(base.render))
-                 
-            squeeze_anim = self.right_grip_hand.get_anim_control('ArmatureAction')
-            squeeze_anim.set_play_rate(15)
 
-            print(self.right_grip_hand.get_anim_names())
-            print(self.right_grip_hand.get_num_frames('ArmatureAction'))
-            print(squeeze_anim)
+        models = common.models["Section3"]["models"]
+        self.right_grip_hand = Actor(models["player_right_arm_GRIP_FIRE_ANIM_2.gltf"])
+        self.right_grip_hand.reparent_to(base.cam)
+        self.right_grip_hand.set_pos(0.125, 0.145, -0.05)
+        self.right_grip_hand.set_h(15)
+        self.right_grip_hand.node().set_final(True)
 
-            def squeeze_fire():
-                squeeze_anim.play()
+        squeeze_anim = self.right_grip_hand.get_anim_control('ArmatureAction')
+        squeeze_anim.set_play_rate(15)
 
-            base.accept('mouse1', squeeze_fire)
+        print(self.right_grip_hand.get_anim_names())
+        print(self.right_grip_hand.get_num_frames('ArmatureAction'))
+        print(squeeze_anim)
 
-            def armature_init(wait_period):
-                time.sleep(wait_period)
-                squeeze_anim.play()
+        KeyBindings.set_handler("fire_gun", squeeze_anim.play, "section3")
 
-            threading2._start_new_thread(armature_init, (0.1,))
-        
-        base.taskMgr.add(grip_thread())
+        def armature_init(wait_period):
+            time.sleep(wait_period)
+            squeeze_anim.play()
+
+        threading2._start_new_thread(armature_init, (0.1,))
 
     def pauseGame(self):
 
@@ -303,9 +281,10 @@ class Section3:
         ramp.detach_node()
 
         self.right_grip_hand.detach_node()
-#        self.suit_right_sleeve.detach_node()
 
         TextManager.remove_text()
+
+        KeyBindings.deactivate_all("section3")
 
         fp_ctrl.fp_cleanup()
 
@@ -339,3 +318,4 @@ def initialise(data=None):
 
 KeyBindings.add("open_pause_menu", "escape", "section3")
 KeyBindings.add("reload_gun", "r", "section3")
+KeyBindings.add("fire_gun", "mouse1", "section3")
