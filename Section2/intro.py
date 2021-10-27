@@ -48,8 +48,10 @@ class Intro:
 
         base.camera.reparent_to(self.scene_root)
 
-        mothership = base.loader.load_model("Assets/Shared/models/player_mothership.gltf")
-        mothership.reparent_to(self.scene_root)
+        models = common.models["Shared"]["models"]
+        mothership = models["player_mothership.gltf"].copy_to(self.scene_root)
+#        mothership = base.loader.load_model("Assets/Shared/models/player_mothership.gltf")
+#        mothership.reparent_to(self.scene_root)
         self.mothership = mothership
 
         hangar_exit = mothership.find("**/hangar_door_left_node")
@@ -73,9 +75,10 @@ class Intro:
             wheel_copy = wheel.copy_to(wheel_node)
             self.wheels.append(wheel_copy)
 
-        ship = base.loader.load_model(f"Assets/Shared/models/{shipSpec.shipModelFileLowPoly}")
+#        ship = base.loader.load_model(f"Assets/Shared/models/{shipSpec.shipModelFileLowPoly}")
+        ship = models[shipSpec.shipModelFileLowPoly].copy_to(hangar_exit)
         common.mirror_ship_parts(ship)
-        ship.reparent_to(hangar_exit)
+#        ship.reparent_to(hangar_exit)
         ship.set_pos(100., -50., 0.)
         ship.set_h(80.)
         self.ship = ship
@@ -133,8 +136,9 @@ class Intro:
         flameColourGradients = Vec3(0.329, 0.502, 1)
         glowColour = Vec4(0, 0.1, 0.95, 1)
         for enginePos, engineScale in shipSpec.enginePositions:
-            flame = common.base.loader.loadModel("Assets/Shared/models/shipEngineFlame")
-            flame.reparentTo(self.ship)
+            flame = models["shipEngineFlame.egg"].copy_to(self.ship)
+#            flame = common.base.loader.loadModel("Assets/Shared/models/shipEngineFlame")
+#            flame.reparentTo(self.ship)
             flame.setH(shipSpec.shipModelRotation)
             flame.setScale(1*engineScale/shipSpec.shipModelScalar)
             flame.setPos(enginePos)
@@ -192,6 +196,7 @@ class Intro:
     def destroy(self):
 
         self.scene_root.detach_node()
+        self.scene_root = None
         self.intervals.pause()
         self.intervals = None
         base.task_mgr.remove("play_intro")
