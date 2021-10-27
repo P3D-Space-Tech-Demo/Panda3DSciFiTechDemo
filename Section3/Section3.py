@@ -71,6 +71,7 @@ class Section3:
     def loadStationSegmentOne(self):
 
         self.intervals = []
+        self.hg_while = True
         base.static_pos = Vec3(-5.29407, -15.2641, 2.66)
 
         render.set_shader_off()
@@ -212,7 +213,7 @@ class Section3:
 #        self.model.reparent_to(base.render)
         self.model.flatten_strong()
 
-        fp_ctrl.make_collision('ramp', self.model, 0, 0, target_pos = Vec3(0, 0, 0), hpr_adj = Vec3(0, 0, 0), scale_adj = 1)
+        fp_ctrl.make_collision('ramp', self.model, 0, 0, target_pos = Vec3(), hpr_adj = Vec3(), scale_adj = 1)
 
         amb_light = AmbientLight('amblight')
         amb_light.set_priority(50)
@@ -225,33 +226,48 @@ class Section3:
         self.hg_1.set_light(amb_light_node)
 
         self.load_gunhand()
-        self.hg_1.set_pos(self.right_grip_hand, 0.011319, 0.152317, 0.054291)
+        # self.hg_1.set_pos(self.right_grip_hand, 0.011319, 0.152317, 0.054291)
+        
+        def check_hg_1_pos():
+            while self.hg_while:
+                time.sleep(0.1)
+                
+                try:
+                    self.hg_1.set_pos(self.right_grip_hand, 0.011319, 0.152317, 0.054291)
+                    self.hg_while = False
+                except:
+                    print('async gunhand not yet initialized, passing...')
+                    
+        threading2._start_new_thread(check_hg_1_pos, ())
 
     def load_gunhand(self):
+        async def grip_thread():
+            self.right_grip_hand = Actor(ASSET_PATH_1 + "models/player_right_arm_GRIP_FIRE_ANIM_2.gltf")
+            self.right_grip_hand.reparent_to(base.cam)
+            self.right_grip_hand.set_pos(0.125, 0.145, -0.05)
+            self.right_grip_hand.set_h(15)
+            self.right_grip_hand.node().set_final(True)
+            print(self.right_grip_hand.get_pos(base.render))
+                 
+            squeeze_anim = self.right_grip_hand.get_anim_control('ArmatureAction')
+            squeeze_anim.set_play_rate(15)
 
-        self.right_grip_hand = Actor(ASSET_PATH_1 + "models/player_right_arm_GRIP_FIRE_ANIM_2.gltf")
-        self.right_grip_hand.reparent_to(base.cam)
-        self.right_grip_hand.set_pos(0.125, 0.145, -0.05)
-        self.right_grip_hand.set_h(15)
-        self.right_grip_hand.node().set_final(True)
+            print(self.right_grip_hand.get_anim_names())
+            print(self.right_grip_hand.get_num_frames('ArmatureAction'))
+            print(squeeze_anim)
 
-        squeeze_anim = self.right_grip_hand.get_anim_control('ArmatureAction')
-        squeeze_anim.set_play_rate(15)
+            def squeeze_fire():
+                squeeze_anim.play()
 
-        print(self.right_grip_hand.get_anim_names())
-        print(self.right_grip_hand.get_num_frames('ArmatureAction'))
-        print(squeeze_anim)
+            base.accept('mouse1', squeeze_fire)
 
-        def squeeze_fire():
-            squeeze_anim.play()
+            def armature_init(wait_period):
+                time.sleep(wait_period)
+                squeeze_anim.play()
 
-        base.accept('mouse1', squeeze_fire)
-
-        def armature_init(wait_period):
-            time.sleep(wait_period)
-            squeeze_anim.play()
-
-        threading2._start_new_thread(armature_init, (0.1,))
+            threading2._start_new_thread(armature_init, (0.1,))
+        
+        base.taskMgr.add(grip_thread())
 
     def pauseGame(self):
 
