@@ -18,10 +18,10 @@ class Level():
         self.levelFile = levelFile
 
         self.geometry = NodePath(PandaNode("level root"))
-        models = common.models["Section2"]["levels"]
         for index in range(5):
-            loadedNP = models["{0}_{1}.egg.pz".format(levelFile, index)]
-            loadedNP.copyTo(self.geometry)
+            loadedNP = common.models["{0}_{1}.egg.pz".format(levelFile, index)]
+            del common.models["{0}_{1}.egg.pz".format(levelFile, index)]
+            loadedNP.reparentTo(self.geometry)
 
         '''foundPartwiseFile = False
         index = 0
@@ -202,7 +202,7 @@ class Level():
         blast.model.setPos(pos)
         self.blasts.append(blast)
         blast.update(0)
-    
+
     def update(self, player, keyMap, dt):
         if player is not None:
             # Player update

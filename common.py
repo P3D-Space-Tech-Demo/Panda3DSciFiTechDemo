@@ -78,7 +78,7 @@ def setOption(sectionID, optionID, newVal):
     if section is None:
         return
     section[optionID] = newVal
-    
+
 def make_glowing_np(np, shader_program = vertex_glow_shader):
     np.set_shader(shader_program)
     np.setLightOff(10)
@@ -149,7 +149,6 @@ def load_particle_config(filename, in_model, start_pos=Vec3(), inter_duration=1,
         threading2._start_new_thread(sec_particle, (inter_duration,))
 
 def create_skybox(cube_map_name):
-
     coords = (
         (-1., 1., -1.), (1., 1., -1.), (1., 1., 1.), (-1., 1., 1.),
         (1., -1., -1.), (-1., -1., -1.), (-1., -1., 1.), (1., -1., 1.)
@@ -308,7 +307,6 @@ class Event:
 # Key-bindings can be divided into groups for convenience. If no group ID is
 # specified in the calls to the class methods, a default ID ("") is used.
 class KeyBindings:
-
     listener = base
     events = {}
     keyboard_map = base.win.get_keyboard_map()
@@ -528,7 +526,6 @@ class ResumableTask(PythonTask):
 
 
 class TextManager:
-
     text_nodes = {}
     text_pages = []  # list of strings
     help_text = ""
@@ -735,14 +732,14 @@ def dismiss_info_text(text_node):
                     t_node.set_alpha_scale(base.text_alpha)
             else:
                 time.sleep(1)
-            
+
                 while base.text_alpha > 0:
                     base.text_alpha -= 0.01
                     time.sleep(0.01)
                     t_node.set_alpha_scale(base.text_alpha)
-                    
+
         threading2._start_new_thread(text_alpha, ())
-                    
+
     except:
         print('No info text to dismiss, passing...')
 
@@ -762,11 +759,15 @@ mirrorShipParts = mirror_ship_parts
 
 models = {}
 
-def preload_models(model_paths):
+def preload_models(model_paths, callback=None):
     async def load_models():
         async for model in base.loader.load_model(model_paths, blocking=False):
             path = model_paths.pop(0)
-            _, section_id, model_group_id, filename = path.split("/")
-            models.setdefault(section_id, {}).setdefault(model_group_id, {})[filename] = model
+            filename = path.split("/")[-1]
+            models[filename] = model
             print("Loaded", path)
+
+        if callback:
+            callback()
+
     base.task_mgr.add(load_models())

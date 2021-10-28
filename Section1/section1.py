@@ -4,6 +4,7 @@ import fp_ctrl
 import holo
 from panda3d.bullet import BulletBoxShape, BulletRigidBodyNode
 from Ships import shipSpecs
+from Section1.intro import Intro
 from collections import deque
 
 ASSET_PATH = "Assets/Section1/"
@@ -16,7 +17,6 @@ section_tasks = []
 section_intervals = []
 
 def add_section_task(task_func, task_id, *args, **kwargs):
-
     cleanup = lambda task_obj: section_tasks.remove(task_obj)
     task_obj = ResumableTask(task_func, task_id, uponDeath=cleanup, *args, **kwargs)
     base.task_mgr.add(task_obj)
@@ -25,14 +25,12 @@ def add_section_task(task_func, task_id, *args, **kwargs):
     return task_obj
 
 def remove_section_tasks():
-
     for task_obj in section_tasks[:]:
         base.task_mgr.remove(task_obj)
 
     section_tasks.clear()
 
 def pause_section_tasks():
-
     tmp_tasks = section_tasks[:]
 
     for task_obj in tmp_tasks:
@@ -41,22 +39,18 @@ def pause_section_tasks():
     section_tasks[:] = tmp_tasks[:]
 
 def resume_section_tasks():
-
     for task_obj in section_tasks:
         task_obj.resume()
 
 def pause_section_intervals():
-
     for interval in section_intervals:
         interval.pause()
 
 def resume_section_intervals():
-
     for interval in section_intervals:
         interval.resume()
 
 def remove_section_intervals():
-
     for interval in section_intervals:
         interval.pause()
 
@@ -105,7 +99,6 @@ color_blend_attrib = CBA.make(CBA.M_none, CBA.O_incoming_color, CBA.O_incoming_c
 
 
 def create_beam():
-
     from math import pi, sin, cos
 
     pos_data = array.array("f", [])
@@ -158,7 +151,6 @@ def create_beam():
 
 
 def create_beam_connector():
-
     col_data = array.array("f", [
         .5, .5, 1., 1.,
         .5, .5, 1., 0.,
@@ -203,7 +195,6 @@ def create_beam_connector():
 # in focus, although the `idle` class variable can also be used (it is checked
 # when the `focus` object is `None`).
 class FocusCamera:
-
     target = None
     cam = None
     display_region = None
@@ -304,9 +295,7 @@ class HoloDisplay:
         # display_filters.set_gamma_adjust(1.3)
 
         # load in a display object model in normal render space
-        models = common.models["Section1"]["models"]
-        model = models["wide_screen_video_display.egg"]
-#        model = base.loader.load_model(ASSET_PATH + 'models/wide_screen_video_display.egg')
+        model = common.models["wide_screen_video_display.egg"]
         model.set_pos(119.466, 4.90663, 3.46)
         model.look_at(79.4992, 3.56733, 4.35998)
         model.set_shader_off()
@@ -323,20 +312,13 @@ class HoloDisplay:
         model.set_light(amb_light_node)
         section_lights.append(amb_light_node)
 
-        '''model_file_paths = (
-            ASSET_PATH + "models/light_spec_screen_select.gltf",
-            ASSET_PATH + "models/starship_a_screen_select.gltf",
-            ASSET_PATH + "models/heavy_spec_screen_select.gltf"
-        )
-        # holo-display scene model load-in
-        holo_models = [base.loader.load_model(p) for p in model_file_paths]'''
         model_filenames = (
             "light_spec_screen_select.gltf",
             "starship_a_screen_select.gltf",
             "heavy_spec_screen_select.gltf"
         )
         # holo-display scene model load-in
-        holo_models = [models[f] for f in model_filenames]
+        holo_models = [common.models[f] for f in model_filenames]
         model_pivots = [cls.scene_root.attach_new_node("pivot") for _ in holo_models]
 
         for i, (holo_model, model_pivot) in enumerate(zip(holo_models, model_pivots)):
@@ -413,14 +395,12 @@ class HoloDisplay:
 
 
 class IdleWorkers:
-
     workers = {"bot": [], "drone": []}
     beam = None
     beam_connector = None
 
     @classmethod
     def pop(cls, worker_type):
-
         workers = cls.workers[worker_type]
 
         if workers:
@@ -438,13 +418,11 @@ class IdleWorkers:
 
     @classmethod
     def add(cls, worker):
-
         cls.workers[worker.type].insert(0, worker)
         worker.job.worker_done = True
 
     @classmethod
     def clear(cls):
-
         for workers in cls.workers.values():
 
             for worker in workers:
@@ -455,11 +433,9 @@ class IdleWorkers:
 
 
 class Worker:
-
     instances = []
 
     def __init__(self, worker_type, model, beam, beam_connector, generator_ext_z, pivot_offset=0.):
-
         self.instances.append(self)
         self.type = worker_type
         self.model = model
@@ -481,7 +457,6 @@ class Worker:
         self.intervals = None
 
     def destroy(self):
-
         self.model.detach_node()
         self.model = None
         self._do_job = lambda: None
@@ -494,11 +469,9 @@ class Worker:
 
     @property
     def idle(self):
-
         return self in IdleWorkers.workers[self.type]
 
     def reset_energy_beams(self):
-
         for beam in self.beams:
             beam.set_sy(.01)
 
@@ -511,7 +484,6 @@ class Worker:
             pos_view[:] = pos_data
 
     def shoot_energy_beams(self, task):
-
         from random import random, randint
 
         if not self.part:
@@ -570,7 +542,6 @@ class Worker:
         return task.again
 
     def move_to_elevator(self, task, elevator):
-
         if elevator.ready and elevator.waiting_bots[0] is self:
             pos = elevator.model.get_pos()
             model_pos = self.model.get_pos()
@@ -584,7 +555,6 @@ class Worker:
         return task.cont
 
     def continue_job(self):
-
         if self.job:
             self.do_job(self.job)
         elif self.type == "bot":
@@ -595,7 +565,6 @@ class Worker:
             self.fly_up()
 
     def do_job(self, job, start=False):
-
         self.job = job
         part = job.get_next_part()
         tmp_node = self.generator.attach_new_node("tmp_node")
@@ -603,7 +572,6 @@ class Worker:
         ext_z = self.generator_ext_z
 
         def deactivation_task(task):
-
             self.beam_root.hide()
             add_section_task(deactivate_generator, "deactivate_generator")
 
@@ -613,7 +581,6 @@ class Worker:
                     l.set_pos(1000, 1000, 1000)
 
         def generate_part():
-
             part.model.reparent_to(base.render)
             part.model.wrt_reparent_to(tmp_node)
             tmp_node.set_scale(.1)
@@ -627,7 +594,6 @@ class Worker:
             add_section_task(deactivation_task, "deactivate_beams", delay=duration)
 
         def activate_generator(task):
-
             dt = globalClock.get_dt()
             z = self.generator.get_z() + ext_z * 2. * dt
             end_z = self.generator_start_z + ext_z
@@ -642,7 +608,6 @@ class Worker:
             return task.cont
 
         def deactivate_generator(task):
-
             dt = globalClock.get_dt()
             z = self.generator.get_z() - ext_z * 2. * dt
             end_z = self.generator_start_z
@@ -662,7 +627,6 @@ class Worker:
             return task.cont
 
         def activation_job():
-
             add_section_task(activate_generator, "activate_generator")
 
             if FocusCamera.is_idle():
@@ -687,7 +651,6 @@ class Worker:
             self.set_part(part)
 
     def get_nearest_elevator(self, y):
-
         shortest_dist = 1000000.
 
         for elevator in Elevator.instances:
@@ -701,7 +664,6 @@ class Worker:
         return nearest_elevator
 
     def set_part(self, part):
-
         self.part = part
         self.target_point = Point3(*part.worker_pos)
         self.move()
@@ -710,16 +672,12 @@ class Worker:
 class WorkerBot(Worker):
 
     def __init__(self, beam, beam_connector):
-
-        models = common.models["Section1"]["models"]
-        model = models["worker_bot.gltf"].copy_to(base.render)
+        model = common.models["worker_bot.gltf"].copy_to(base.render)
         model.detach_node()
-#        model = base.loader.load_model(ASSET_PATH + "models/worker_bot.gltf")
 
         Worker.__init__(self, "bot", model, beam, beam_connector, .25, -.8875)
 
     def move(self):
-
         model_pos = self.model.get_pos()
         quat = Quat()
         vec = self.target_point - model_pos
@@ -745,7 +703,6 @@ class WorkerBot(Worker):
         par.append(rot)
 
         def job_func():
-
             if self.intervals in section_intervals:
                 section_intervals.remove(self.intervals)
 
@@ -762,10 +719,7 @@ class WorkerBot(Worker):
 class WorkerDrone(Worker):
 
     def __init__(self, beam, beam_connector):
-
-        models = common.models["Section1"]["models"]
-        model = models["worker_drone.gltf"].copy_to(base.render)
-#        model = base.loader.load_model(ASSET_PATH + "models/worker_drone.gltf")
+        model = common.models["worker_drone.gltf"].copy_to(base.render)
 
         Worker.__init__(self, "drone", model, beam, beam_connector, -.1)
 
@@ -774,7 +728,6 @@ class WorkerDrone(Worker):
         self.rotor_intervals = []
 
         def rotor_thread():
-
             for p in self.model.find_all_matches("**/propeller_*"):
                 interval = LerpHprInterval(p, 0.1, (360, 0, 0), (0, 0, 0))
                 interval.loop()
@@ -787,7 +740,6 @@ class WorkerDrone(Worker):
         self.model.reparent_to(self.pivot)
 
     def destroy(self):
-
         for interval in self.rotor_intervals:
             if interval in section_intervals:
                 section_intervals.remove(interval)
@@ -805,7 +757,6 @@ class WorkerDrone(Worker):
         self.pivot.detach_node()
 
     def wobble(self):
-
         if self.wobble_intervals:
             self.wobble_intervals.pause()
             if self.wobble_intervals in section_intervals:
@@ -832,7 +783,6 @@ class WorkerDrone(Worker):
         seq.start()
 
     def stop_wobble(self):
-
         if self.wobble_intervals:
             pos = self.model.get_pos(base.render)
             hpr = self.pivot.get_hpr()
@@ -846,7 +796,6 @@ class WorkerDrone(Worker):
             self.pivot.set_hpr(hpr)
 
     def move(self):
-
         self.stop_wobble()
         pivot_pos = self.pivot.get_pos()
         x1, y1, _ = self.target_point
@@ -881,7 +830,6 @@ class WorkerDrone(Worker):
         pos_seq.append(ease_out)
 
         def job_func():
-
             if self.intervals in section_intervals:
                 section_intervals.remove(self.intervals)
 
@@ -911,11 +859,9 @@ class WorkerDrone(Worker):
         section_intervals.append(self.intervals)
 
     def exit_compartment(self):
-
         delayed_job = self._do_job
 
         def set_first_part():
-
             self.released = True
             self._do_job = delayed_job
             self.start_job()
@@ -924,9 +870,7 @@ class WorkerDrone(Worker):
         self.move()
 
     def fly_up(self):
-
         def set_idle():
-
             IdleWorkers.add(self)
 
             if FocusCamera.is_idle():
@@ -945,7 +889,6 @@ class Job:
 
     def __init__(self, primitives, component, finalizer, component_id,
                  worker_type, worker_pos, next_jobs):
-
         self.primitives = primitives
         self.component = component
         self._finalizer_func = finalizer
@@ -965,11 +908,9 @@ class Job:
         self.parts_done = 0
 
     def __bool__(self):
-
         return True if self.primitives else False
 
     def __len__(self):
-
         return len(self.primitives)
 
     def create_mirror(self, primitives, component, component_id):
@@ -990,7 +931,6 @@ class Job:
 
     @property
     def done(self):
-
         return self.parts_done == self.length
 
     @property
@@ -1006,7 +946,6 @@ class Job:
         return self.next_jobs.get(self.parts_done, -1)
 
     def notify_part_done(self):
-
         self.parts_done += 1
 
     def get_next_part(self):
@@ -1022,7 +961,6 @@ class Job:
 class Part:
 
     def __init__(self, job, primitive, worker_pos):
-
         self.job = job
         vertex_data = job.component.node().modify_geom(0).get_vertex_data()
         geom = Geom(vertex_data)
@@ -1039,13 +977,11 @@ class Part:
         self.model.set_transform(job.component.get_net_transform())
 
     def destroy(self):
-
         self.model.detach_node()
         self.model = None
         self.job = None
 
     def solidify(self, task, duration):
-
         t = task.cont_time
         self.model.set_alpha_scale(t / duration)
 
@@ -1057,7 +993,6 @@ class Part:
         self.destroy()
 
     def reset_size(self, task, node, duration):
-
         t = task.cont_time
         scale = .1 + (t / duration) * .9
 
@@ -1069,21 +1004,15 @@ class Part:
         node.detach_node()
 
     def move_to_ship(self, node, duration):
-
         add_section_task(lambda task: self.reset_size(task, node, duration), "reset_part_size")
 
 
 class Elevator:
-
     instances = []
 
     def __init__(self, elevator_root, y):
-
         self.instances.append(self)
-        models = common.models["Section1"]["models"]
-        self.model = models["worker_bot_elevator.gltf"].copy_to(elevator_root)
-#        self.model = base.loader.load_model(ASSET_PATH + "models/worker_bot_elevator.gltf")
-#        self.model.reparent_to(elevator_root)
+        self.model = common.models["worker_bot_elevator.gltf"].copy_to(elevator_root)
         self.model.set_y(y)
         self.model.set_shader_off()
         self.y = y
@@ -1108,7 +1037,6 @@ class Elevator:
             self.blades.append(blade)
 
     def raise_platform(self, task):
-
         dt = globalClock.get_dt()
         z = self.platform.get_z()
         z += self.platform_speed * dt
@@ -1120,7 +1048,6 @@ class Elevator:
             r = task.done
 
             def set_ready(task=None):
-
                 self.ready = True
                 self.idle = True
 
@@ -1141,7 +1068,6 @@ class Elevator:
         return r
 
     def lower_platform(self, task):
-
         self.ready = False
         self.idle = False
         dt = globalClock.get_dt()
@@ -1159,7 +1085,6 @@ class Elevator:
         return r
 
     def open_iris(self, task):
-
         self.idle = False
         self.closed = False
         dt = globalClock.get_dt()
@@ -1177,7 +1102,6 @@ class Elevator:
         return r
 
     def close_iris(self, task):
-
         dt = globalClock.get_dt()
         self.blade_angle += self.blade_speed * dt
         r = task.cont
@@ -1206,15 +1130,12 @@ class Elevator:
         return r
 
     def await_bot(self, bot):
-
         self.waiting_bots.append(bot)
         request = lambda: add_section_task(self.open_iris, "open_iris")
         self.add_request(request)
 
     def raise_bot(self, bot, start_pos):
-
         def open_iris():
-
             self.bot = bot
             bot.model.set_pos_hpr(0., bot.pivot_offset, 0., 0., 0., 0.)
             bot.model.reparent_to(self.platform_connector)
@@ -1226,7 +1147,6 @@ class Elevator:
             add_section_task(self.open_iris, "open_iris")
 
         def raise_if_none_waiting(task):
-
             if self.waiting_bots:
                 return task.cont
 
@@ -1246,26 +1166,22 @@ class Elevator:
         add_section_task(raise_if_none_waiting, "raise_if_none_waiting")
 
     def lower_bot(self, bot):
-
         self.bot = bot
         bot.model.wrt_reparent_to(self.platform_connector)
         add_section_task(self.lower_platform, "lower_platform")
 
     def add_request(self, request, index=None):
-
         if index is None:
             self.requests.append(request)
         else:
             self.requests.insert(index, request)
 
     def handle_next_request(self):
-
         if self.idle and self.requests:
             self.requests.pop(0)()
 
     @classmethod
     def handle_requests(cls, task):
-
         for inst in cls.instances:
             inst.handle_next_request()
 
@@ -1273,16 +1189,13 @@ class Elevator:
 
 
 class DroneCompartment:
-
     instance = None
 
     def __init__(self):
-
         DroneCompartment.instance = self
-        models = common.models["Section1"]["models"]
-        self.model = models["worker_drone_compartment.gltf"].copy_to(base.render)
-#        self.model = base.loader.load_model(ASSET_PATH + "models/worker_drone_compartment.gltf")
-#        self.model.reparent_to(base.render)
+        self.model = common.models["worker_drone_compartment.gltf"]
+        del common.models["worker_drone_compartment.gltf"]
+        self.model.reparent_to(base.render)
         self.model.set_shader_off()
         self.idle = True
         self.closed = True
@@ -1297,14 +1210,12 @@ class DroneCompartment:
             self.blades.append(blade)
 
     def destroy(self):
-
         DroneCompartment.instance = None
         self.model.detach_node()
         self.model = None
         self.requests.clear()
 
     def open_iris(self, task):
-
         self.idle = False
         dt = globalClock.get_dt()
         self.blade_angle -= self.blade_speed * dt
@@ -1322,7 +1233,6 @@ class DroneCompartment:
         return r
 
     def close_iris(self, task):
-
         # the delay needs to be set to zero explicitly, or resumption of the
         # task will use the initial delay of 2.0, despite the return value of
         # `task.cont` instead of `task.again`
@@ -1346,9 +1256,7 @@ class DroneCompartment:
         return r
 
     def release_drone(self, drone):
-
         def request():
-
             self.drone = drone
             x, y, z = self.model.get_pos()
             drone.pivot.reparent_to(base.render)
@@ -1365,14 +1273,12 @@ class DroneCompartment:
         self.add_request(request)
 
     def add_request(self, request, index=None):
-
         if index is None:
             self.requests.append(request)
         else:
             self.requests.insert(index, request)
 
     def handle_next_request(self, task):
-
         if self.idle and self.requests:
             self.requests.pop(0)()
 
@@ -1382,11 +1288,9 @@ class DroneCompartment:
 class Hangar:
 
     def __init__(self, job_starter):
-
-        models = common.models["Section1"]["models"]
-        self.model = models["hangar.gltf"].copy_to(base.render)
-#        self.model = base.loader.load_model(ASSET_PATH + "models/hangar.gltf")
-#        self.model.reparent_to(base.render)
+        self.model = common.models["hangar.gltf"]
+        del common.models["hangar.gltf"]
+        self.model.reparent_to(base.render)
         ceiling = self.model.find('**/ceiling')
         ceiling.set_light_off()
 
@@ -1626,7 +1530,6 @@ class Hangar:
         FocusCamera.target.set_hpr(180., -5., 0.)
 
     def create_support_structure(self):
-
         corner_beam = self.model.find("**/support_corner")
         vertical_beam = self.model.find("**/support_vertical")
         horizontal_beam = self.model.find("**/support_horizontal")
@@ -1664,10 +1567,9 @@ class Hangar:
             root.flatten_strong()
 
     def create_corridor(self):
-
-        models = common.models["Section1"]["models"]
-        model = models["hangar_corridor.gltf"].copy_to(self.model)
-#        model = base.loader.load_model(ASSET_PATH + "models/hangar_corridor.gltf")
+        model = common.models["hangar_corridor.gltf"]
+        del common.models["hangar_corridor.gltf"]
+        model.reparent_to(self.model)
 
         # apply metalness effect shader
         model.set_shader_off()
@@ -1709,7 +1611,6 @@ class Hangar:
         self.corridor_model = model
 
     def add_containers(self):
-
         container = self.model.find("**/container_type_b")
         container.set_shader_off()
         container.set_shader(metal_shader)
@@ -1752,7 +1653,6 @@ class Hangar:
         container.detach_node()
 
     def destroy(self):
-
         if self.door_open_intervals:
             if self.door_open_intervals.is_playing():
                 self.door_open_intervals.finish()
@@ -1774,7 +1674,6 @@ class Hangar:
         Elevator.instances.clear()
 
     def pulsate_emitters(self, task):
-
         from math import pi, sin
 
         dt = globalClock.get_dt()
@@ -1797,7 +1696,6 @@ class Hangar:
         return task.cont
 
     def lower_panel(self, task):
-
         dt = globalClock.get_dt()
         start_z = self.sliding_panel_start_pos.z
         z = self.sliding_panel.get_z() - 5. * dt
@@ -1815,7 +1713,6 @@ class Hangar:
         add_section_task(lambda task: self.slide_panel(task, -1.), "slide_panel")
 
     def slide_panel(self, task, direction):
-
         dt = globalClock.get_dt()
         dest_x = self.sliding_panel_start_pos.x if direction < 0. else 0.
         x = self.sliding_panel.get_x() + 5. * direction * dt
@@ -1836,7 +1733,6 @@ class Hangar:
             add_section_task(self.raise_panel, "raise_panel")
 
     def raise_elevator_platform(self, task):
-
         dt = globalClock.get_dt()
         z = self.elevator_platform.get_z() + 5. * dt
         cont = True
@@ -1853,7 +1749,6 @@ class Hangar:
         self.job_starter()
 
     def deactivate_forcefield(self):
-
         add_section_task(self.lower_elevator_platform, "lower_elevator_platform")
         FocusCamera.target.set_pos(Elevator.instances[-3].model.get_pos(base.render))
         FocusCamera.target.set_hpr(-180, -5., 0.)
@@ -1862,7 +1757,6 @@ class Hangar:
         self.replace_procedural_ship()
 
     def lower_elevator_platform(self, task):
-
         dt = globalClock.get_dt()
         start_z = self.elevator_platform_start_z
         z = self.elevator_platform.get_z() - 5. * dt
@@ -1880,7 +1774,6 @@ class Hangar:
         add_section_task(lambda task: self.slide_panel(task, 1.), "slide_panel")
 
     def raise_panel(self, task):
-
         dt = globalClock.get_dt()
         z = self.sliding_panel.get_z() + 5. * dt
         cont = True
@@ -1912,7 +1805,6 @@ class Hangar:
         self.raise_stairs()
 
     def raise_stairs(self):
-
         p_topper_force_brbn = base.render.find('**/brbn_force')
         base.world.remove(p_topper_force_brbn.node())
         p_topper_force_brbn.detach_node()
@@ -1921,7 +1813,6 @@ class Hangar:
         stair_par = Parallel()
 
         def remove_intervals():
-
             if stair_seq in section_intervals:
                 section_intervals.remove(stair_seq)
 
@@ -1968,9 +1859,8 @@ class Hangar:
         for x in base.render.find_all_matches('**/back_wing*'):
             x.detach_node()
 
-        models = common.models["Shared"]["models"]
-        finished_ship = models["test_completed_ship_a.gltf"].copy_to(base.render)
-#        finished_ship.reparent_to(base.render)
+        finished_ship = common.models["test_completed_ship_a.gltf"]
+        finished_ship.reparent_to(base.render)
         finished_ship.set_shader_off()
         finished_ship.set_shader(scene_shader)
         self.finished_ship = finished_ship
@@ -2058,9 +1948,9 @@ class Hangar:
 
         threading2._start_new_thread(ship_ready, ())
 
-#        cockpit = base.loader.load_model('Assets/Shared/models/test_cockpit.gltf')
-        cockpit = models["test_cockpit.gltf"].copy_to(base.render)
-#        cockpit.reparent_to(base.render)
+        cockpit = common.models["test_cockpit.gltf"]
+        del common.models["test_cockpit.gltf"]
+        cockpit.reparent_to(base.render)
         cockpit.set_pos(0, -32, 9)
         cockpit.set_scale(1)
         cockpit.set_h(90)
@@ -2072,9 +1962,9 @@ class Hangar:
         for t in cockpit.find_all_matches('**/*track*'):
             t.set_shader_off()
 
-#        joystick = base.loader.load_model('Assets/Shared/models/joystick.gltf')
-        joystick = models["joystick.gltf"].copy_to(base.render)
-#        joystick.reparent_to(base.render)
+        joystick = common.models["joystick.gltf"]
+        del common.models["joystick.gltf"]
+        joystick.reparent_to(base.render)
         joystick.set_h(90)
         joystick.set_pos(0, 0, 10)
         joy_pos = joystick.get_pos()
@@ -2082,7 +1972,6 @@ class Hangar:
         joystick.hide()
 
         def animate_cockpit():
-
             c_1 = cockpit.find('**/chair')
             c_2 = cockpit.find('**/accent_rot')
             c_3 = cockpit.find('**/chair_bottom_accent')
@@ -2167,7 +2056,7 @@ class Hangar:
 
                 def exit_triggered():
                     self.skybox.detach_node()
-                    common.gameController.startSectionIntro(1, shipSpecs[1])
+                    common.gameController.startSectionIntro(1, shipSpecs[1], show_loading_screen=False)
 
                 load_sec_2 = Func(exit_triggered)
 
@@ -2250,500 +2139,10 @@ class Hangar:
 
         threading2._start_new_thread(cockpit_check, ())
 
-        '''self.finished_ship = ''
-        self.finished_ship_ready = False
-
-        # load in the playable ship
-        async def load_ship():
-            finished_ship = await base.loader.load_model('Assets/Shared/models/test_completed_ship_a.gltf', blocking=False)
-            finished_ship.reparent_to(base.render)
-            finished_ship.set_shader_off()
-            finished_ship.set_shader(scene_shader)
-
-            print('load_ship task is executing...')
-            print(finished_ship)
-
-            self.finished_ship = finished_ship
-
-            # mirror the ship parts
-            mirror_ship_parts(finished_ship)
-
-            for x in finished_ship.find_all_matches('*rocket*'):
-                x.set_shader(metal_shader)
-
-            for x in finished_ship.find_all_matches('*wing*'):
-                x.set_shader(metal_shader)
-
-            for x in finished_ship.find_all_matches('*d_*'):
-                x.set_shader(metal_shader)
-
-            for x in finished_ship.find_all_matches('*thruster*'):
-                x.set_shader(metal_shader)
-
-            for x in finished_ship.find_all_matches('*blaster*'):
-                x.set_shader(metal_shader)
-
-            interior_coll = finished_ship.find('interior')
-            interior_coll.set_shader(metal_shader)
-            interior_coll.flatten_strong()
-            fp_ctrl.make_collision('interior_coll_brbn', interior_coll, 0, 0, interior_coll.get_pos(base.render))
-
-            self.slide = finished_ship.find('ramp_actual')
-            self.slide.flatten_strong()
-            fp_ctrl.make_collision('slide_brbn', self.slide, 0, 0, self.slide.get_pos(base.render))
-
-            slide_coll = base.render.find('slide_brbn')
-
-            def ramp_seq():
-                self.up_door = finished_ship.find('d_upper')
-                self.down_door = finished_ship.find('d_lower')
-
-                self.up_door_pos = self.up_door.get_pos(base.render)
-                self.up_door_hpr = self.up_door.get_hpr()
-                up_door_pos_adj = Vec3(self.up_door_pos[0], self.up_door_pos[1], self.up_door_pos[2] + 5)
-                up_door_hpr_adj = Vec3(self.up_door_hpr[0], self.up_door_hpr[1], self.up_door_hpr[2] - 50)
-
-                self.down_door_pos = self.down_door.get_pos(base.render)
-                self.down_door_hpr = self.down_door.get_hpr()
-                down_door_pos_adj = Vec3(self.down_door_pos[0], self.down_door_pos[1], self.down_door_pos[2] - 8)
-                down_door_hpr_adj = Vec3(self.down_door_hpr[0], self.down_door_hpr[1], self.down_door_hpr[2] + 50)
-
-                up_door_lerp = LerpHprInterval(self.up_door, 1, up_door_hpr_adj)
-                down_door_lerp = LerpHprInterval(self.down_door, 1, down_door_hpr_adj)
-
-                door_par = Parallel()
-                door_par.append(up_door_lerp)
-                door_par.append(down_door_lerp)
-
-                ramp_1_pos = self.slide.get_pos(base.render)
-                ramp_1_pos = Vec3(ramp_1_pos[0] + 13, ramp_1_pos[1], ramp_1_pos[2] - 2.4)
-
-                slide_coll_pos = slide_coll.get_pos(base.render)
-                slide_coll_pos = Vec3(slide_coll_pos[0] + 13, slide_coll_pos[1], slide_coll_pos[2] - 2.4)
-
-                ramp_lerp = LerpPosHprInterval(self.slide, 2, ramp_1_pos, (0, 0, 22))
-                ramp_lerp_2 = LerpPosHprInterval(slide_coll, 2, slide_coll_pos, (0, 0, 22))
-
-                ramp_par = Parallel()
-                ramp_par.append(ramp_lerp)
-                ramp_par.append(ramp_lerp_2)
-
-                door_ramp_seq = Sequence()
-                door_ramp_seq.append(door_par)
-                door_ramp_seq.append(ramp_par)
-                door_ramp_seq.start()
-
-            self.finished_ship_ready = False
-
-            def ship_ready():
-                while not self.finished_ship_ready:
-                    time.sleep(0.1)
-                    target = Vec3(30.7101, -15.3108, 7.21)
-                    p_dist = (target - base.camera.get_pos(base.render)).length()
-
-                    if p_dist < 20:
-                        self.finished_ship_ready = True
-
-                        ramp_seq()
-
-            threading2._start_new_thread(ship_ready, ())
-
-            cockpit = base.loader.load_model('Assets/Shared/models/test_cockpit.gltf')
-            cockpit.reparent_to(base.render)
-            cockpit.set_pos(0, -32, 9)
-            cockpit.set_scale(1)
-            cockpit.set_h(90)
-            cockpit.set_light(base.render.find_all_matches('**/amblight*')[1])
-
-            for a in cockpit.find_all_matches('**/*accent*'):
-                a.set_shader_off()
-
-            for t in cockpit.find_all_matches('**/*track*'):
-                t.set_shader_off()
-
-            joystick = base.loader.load_model('Assets/Shared/models/joystick.gltf')
-            joystick.reparent_to(base.render)
-            joystick.set_h(90)
-            joystick.set_pos(0, 0, 10)
-            joy_pos = joystick.get_pos()
-            joystick.set_shader_off()
-            joystick.hide()
-
-            def animate_cockpit():
-
-                c_1 = cockpit.find('**/chair')
-                c_2 = cockpit.find('**/accent_rot')
-                c_3 = cockpit.find('**/chair_bottom_accent')
-                c_4 = cockpit.find('**/chair_cyl')
-
-                c_1_rot = LerpHprInterval(c_1, 3.5, Vec3(), blendType='easeInOut')
-                c_2_rot = LerpHprInterval(c_2, 3.5, Vec3(), blendType='easeInOut')
-
-                c_1_inter = LerpPosInterval(c_1, 1.5, (-2, -0.002, 0), blendType='easeInOut')
-                c_2_inter = LerpPosInterval(c_2, 1.5, (-2, -0.002, 0), blendType='easeInOut')
-                c_3_inter = LerpPosInterval(c_3, 1.5, (-2, -0.002, -0.464), blendType='easeInOut')
-                c_4_inter = LerpPosInterval(c_4, 1.5, (-2, 0, 0), blendType='easeInOut')
-
-                joystick_inter = LerpPosInterval(joystick, 1.5, (joy_pos[0], joy_pos[1], joy_pos[2] + 0.75), joy_pos, blendType='easeInOut')
-
-                def initiate_transition():
-                    fp_ctrl.fp_cleanup()
-
-                    base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
-                    base.camera.reparent_to(c_1)
-
-                    base.camLens.fov = 110
-                    base.camLens.set_near_far(0.01, 90000)
-                    base.camLens.focal_length = 7
-                    base.camera.set_h(90)
-                    base.camera.set_pos(1.2, 0, 2.9)
-
-                    right_arm = base.render.find_all_matches('**/Armature*')[0]
-                    right_arm.set_h(-15)
-                    r_pos = right_arm.get_pos()
-                    right_arm.set_pos(r_pos[0] + 2, r_pos[1], r_pos[2])
-                    right_arm.hide()
-
-                    left_arm = base.render.find_all_matches('**/Armature*')[1]
-                    left_arm.set_h(15)
-                    l_pos = left_arm.get_pos()
-                    left_arm.set_pos(l_pos[0] - 2, l_pos[1], l_pos[2] - 0.5)
-                    left_arm.hide()
-
-                    HoloDisplay.destroy()
-
-                    # make the blue laser lights white scene lights
-                    laser_plights = base.render.find_all_matches("**/plight*")
-                    for l in laser_plights:
-                        l.node().set_color(Vec4(1, 1, 1, 1))
-                        l.set_pos(0, 0, 30)
-
-                    # load in the outside space skybox
-                    cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
-                    self.skybox = common.create_skybox(cube_map_name)
-                    self.skybox.reparent_to(base.render)
-                    self.skybox.set_effect(CompassEffect.make(base.camera, CompassEffect.P_pos))
-
-                    self.skybox.node().set_bounds(OmniBoundingVolume())
-                    self.skybox.node().set_final(True)
-
-                    door_left = base.render.find('**/door_left')
-                    dl_pos = door_left.get_pos()
-                    dl_pos = Vec3(dl_pos[0] + 40, dl_pos[1], dl_pos[2])
-                    door_right = base.render.find('**/door_right')
-                    dr_pos = door_right.get_pos()
-                    dr_pos = Vec3(dr_pos[0] - 40, dr_pos[1], dr_pos[2])
-
-                    dl_inter = LerpPosInterval(door_left, 10, dl_pos, blendType='easeInOut')
-
-                    dr_inter = LerpPosInterval(door_right, 10, dr_pos, blendType='easeInOut')
-
-                    pit_pos = cockpit.get_pos()
-                    pit_pos = Vec3(pit_pos[0], pit_pos[1] - 400, pit_pos[2])
-                    joy_pos = joystick.get_pos()
-                    joy_pos = Vec3(joy_pos[0], joy_pos[1], joy_pos[2] - 1)
-
-                    ship_pos = self.finished_ship.get_pos()
-                    ship_pos = Vec3(ship_pos[0], ship_pos[1] - 400, ship_pos[2])
-
-
-                    pit_inter = LerpPosInterval(cockpit, 4, pit_pos, blendType='easeIn')
-                    joy_inter = LerpPosInterval(joystick, 0.3, joy_pos, blendType='easeInOut')
-
-                    ship_inter = LerpPosInterval(self.finished_ship, 4, ship_pos, blendType='easeIn')
-
-
-                    def exit_triggered():
-                        self.skybox.detach_node()
-                        common.gameController.startSectionIntro(1, shipSpecs[1])
-
-                    load_sec_2 = Func(exit_triggered)
-
-                    door_par = Parallel()
-                    door_par.append(dl_inter)
-                    door_par.append(dr_inter)
-
-                    pit_par = Parallel()
-                    pit_par.append(pit_inter)
-                    pit_par.append(joy_inter)
-                    pit_par.append(ship_inter)
-
-                    exit_seq = Sequence()
-                    exit_seq.append(door_par)
-                    exit_seq.append(pit_par)
-                    exit_seq.append(load_sec_2)
-                    exit_seq.start()
-
-                    section_intervals.append(exit_seq)
-
-                    def close_ship_doors():
-                        up_door_lerp = LerpHprInterval(self.up_door, 1, self.up_door_hpr)
-                        down_door_lerp = LerpHprInterval(self.down_door, 1, self.down_door_hpr)
-                        ramp_lerp = LerpPosHprInterval(self.slide, 0.5, Vec3(), Vec3())
-
-                        door_par = Parallel()
-                        door_par.append(up_door_lerp)
-                        door_par.append(down_door_lerp)
-                        door_par.append(ramp_lerp)
-
-
-                        door_ramp_seq = Sequence()
-                        door_ramp_seq.append(door_par)
-                        door_ramp_seq.start()
-
-                    close_ship_doors()
-
-                initiate = Func(initiate_transition)
-
-                def show_joy(t):
-                    t = t * 1
-
-                    joystick.show()
-
-                lf_end = LerpFunc(show_joy, fromData=2.5, toData=4, duration=0)
-
-
-                chair_par_1 = Parallel()
-                chair_par_1.append(c_1_rot)
-                chair_par_1.append(c_2_rot)
-
-                chair_par_2 = Parallel()
-                chair_par_2.append(c_1_inter)
-                chair_par_2.append(c_2_inter)
-                chair_par_2.append(c_3_inter)
-                chair_par_2.append(c_4_inter)
-
-                chair_seq = Sequence()
-                chair_seq.append(initiate)
-                chair_seq.append(chair_par_1)
-                chair_seq.append(chair_par_2)
-                chair_seq.append(lf_end)
-                chair_seq.append(joystick_inter)
-                chair_seq.start()
-
-                section_intervals.append(chair_seq)
-
-            self.cockpit_engaged = False
-
-            def cockpit_check():
-                while not self.cockpit_engaged:
-                    time.sleep(0.1)
-                    target = Vec3(0.204692, -26.4711, 14.0199)
-                    p_dist = (target - base.camera.get_pos(base.render)).length()
-
-                    if p_dist < 1:
-                        self.cockpit_engaged = True
-
-                        animate_cockpit()
-
-            threading2._start_new_thread(cockpit_check, ())
-
-        task = taskMgr.add(load_ship())'''
-
-        '''def deferred_load_1():
-            check = True
-            while check:
-                time.sleep(0.1)
-                print('check_load continuing...')
-                if len(str(self.finished_ship)) > 3:
-                    print('check condition met')
-                    check = False
-
-                    cockpit = base.loader.load_model('Assets/Shared/models/test_cockpit.gltf')
-                    cockpit.reparent_to(base.render)
-                    cockpit.set_pos(0, -32, 9)
-                    cockpit.set_scale(1)
-                    cockpit.set_h(90)
-                    cockpit.set_light(base.render.find_all_matches('**/amblight*')[1])
-
-                    for a in cockpit.find_all_matches('**/*accent*'):
-                        a.set_shader_off()
-
-                    for t in cockpit.find_all_matches('**/*track*'):
-                        t.set_shader_off()
-
-                    joystick = base.loader.load_model('Assets/Shared/models/joystick.gltf')
-                    joystick.reparent_to(base.render)
-                    joystick.set_h(90)
-                    joystick.set_pos(0, 0, 10)
-                    joy_pos = joystick.get_pos()
-                    joystick.set_shader_off()
-                    joystick.hide()
-
-                    def animate_cockpit():
-
-                        c_1 = cockpit.find('**/chair')
-                        c_2 = cockpit.find('**/accent_rot')
-                        c_3 = cockpit.find('**/chair_bottom_accent')
-                        c_4 = cockpit.find('**/chair_cyl')
-
-                        c_1_rot = LerpHprInterval(c_1, 3.5, Vec3(), blendType='easeInOut')
-                        c_2_rot = LerpHprInterval(c_2, 3.5, Vec3(), blendType='easeInOut')
-
-                        c_1_inter = LerpPosInterval(c_1, 1.5, (-2, -0.002, 0), blendType='easeInOut')
-                        c_2_inter = LerpPosInterval(c_2, 1.5, (-2, -0.002, 0), blendType='easeInOut')
-                        c_3_inter = LerpPosInterval(c_3, 1.5, (-2, -0.002, -0.464), blendType='easeInOut')
-                        c_4_inter = LerpPosInterval(c_4, 1.5, (-2, 0, 0), blendType='easeInOut')
-
-                        joystick_inter = LerpPosInterval(joystick, 1.5, (joy_pos[0], joy_pos[1], joy_pos[2] + 0.75), joy_pos, blendType='easeInOut')
-
-                        def initiate_transition():
-                            fp_ctrl.fp_cleanup()
-
-                            base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
-                            base.camera.reparent_to(c_1)
-
-                            base.camLens.fov = 110
-                            base.camLens.set_near_far(0.01, 90000)
-                            base.camLens.focal_length = 7
-                            base.camera.set_h(90)
-                            base.camera.set_pos(1.2, 0, 2.9)
-
-                            right_arm = base.render.find_all_matches('**/Armature*')[0]
-                            right_arm.set_h(-15)
-                            r_pos = right_arm.get_pos()
-                            right_arm.set_pos(r_pos[0] + 2, r_pos[1], r_pos[2])
-                            right_arm.hide()
-
-                            left_arm = base.render.find_all_matches('**/Armature*')[1]
-                            left_arm.set_h(15)
-                            l_pos = left_arm.get_pos()
-                            left_arm.set_pos(l_pos[0] - 2, l_pos[1], l_pos[2] - 0.5)
-                            left_arm.hide()
-
-                            # make the blue laser lights white scene lights
-                            laser_plights = base.render.find_all_matches("**/plight*")
-                            for l in laser_plights:
-                                l.node().set_color(Vec4(1, 1, 1, 1))
-                                l.set_pos(0, 0, 30)
-
-                            # load in the outside space skybox
-                            cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
-                            self.skybox = common.create_skybox(cube_map_name)
-                            self.skybox.reparent_to(base.render)
-                            self.skybox.set_effect(CompassEffect.make(base.camera, CompassEffect.P_pos))
-
-                            self.skybox.node().set_bounds(OmniBoundingVolume())
-                            self.skybox.node().set_final(True)
-
-                            door_left = base.render.find('**/door_left')
-                            dl_pos = door_left.get_pos()
-                            dl_pos = Vec3(dl_pos[0] + 40, dl_pos[1], dl_pos[2])
-                            door_right = base.render.find('**/door_right')
-                            dr_pos = door_right.get_pos()
-                            dr_pos = Vec3(dr_pos[0] - 40, dr_pos[1], dr_pos[2])
-
-                            dl_inter = LerpPosInterval(door_left, 10, dl_pos, blendType='easeInOut')
-
-                            dr_inter = LerpPosInterval(door_right, 10, dr_pos, blendType='easeInOut')
-
-                            pit_pos = cockpit.get_pos()
-                            pit_pos = Vec3(pit_pos[0], pit_pos[1] - 400, pit_pos[2])
-                            joy_pos = joystick.get_pos()
-                            joy_pos = Vec3(joy_pos[0], joy_pos[1], joy_pos[2] - 1)
-
-                            ship_pos = self.finished_ship.get_pos()
-                            ship_pos = Vec3(ship_pos[0], ship_pos[1] - 400, ship_pos[2])
-
-
-                            pit_inter = LerpPosInterval(cockpit, 4, pit_pos, blendType='easeIn')
-                            joy_inter = LerpPosInterval(joystick, 0.3, joy_pos, blendType='easeInOut')
-
-                            ship_inter = LerpPosInterval(self.finished_ship, 4, ship_pos, blendType='easeIn')
-
-
-                            def exit_triggered():
-                                self.skybox.detach_node()
-                                common.gameController.startSectionIntro(1, shipSpecs[1])
-
-                            load_sec_2 = Func(exit_triggered)
-
-                            door_par = Parallel()
-                            door_par.append(dl_inter)
-                            door_par.append(dr_inter)
-
-                            pit_par = Parallel()
-                            pit_par.append(pit_inter)
-                            pit_par.append(joy_inter)
-                            pit_par.append(ship_inter)
-
-                            exit_seq = Sequence()
-                            exit_seq.append(door_par)
-                            exit_seq.append(pit_par)
-                            exit_seq.append(load_sec_2)
-                            exit_seq.start()
-
-                            section_intervals.append(exit_seq)
-
-                            def close_ship_doors():
-                                up_door_lerp = LerpHprInterval(self.up_door, 1, self.up_door_hpr)
-                                down_door_lerp = LerpHprInterval(self.down_door, 1, self.down_door_hpr)
-                                ramp_lerp = LerpPosHprInterval(self.slide, 0.5, Vec3(), Vec3())
-
-                                door_par = Parallel()
-                                door_par.append(up_door_lerp)
-                                door_par.append(down_door_lerp)
-                                door_par.append(ramp_lerp)
-
-
-                                door_ramp_seq = Sequence()
-                                door_ramp_seq.append(door_par)
-                                door_ramp_seq.start()
-
-                            close_ship_doors()
-
-                        initiate = Func(initiate_transition)
-
-                        def show_joy(t):
-                            t = t * 1
-
-                            joystick.show()
-
-                        lf_end = LerpFunc(show_joy, fromData=2.5, toData=4, duration=0)
-
-
-                        chair_par_1 = Parallel()
-                        chair_par_1.append(c_1_rot)
-                        chair_par_1.append(c_2_rot)
-
-                        chair_par_2 = Parallel()
-                        chair_par_2.append(c_1_inter)
-                        chair_par_2.append(c_2_inter)
-                        chair_par_2.append(c_3_inter)
-                        chair_par_2.append(c_4_inter)
-
-                        chair_seq = Sequence()
-                        chair_seq.append(initiate)
-                        chair_seq.append(chair_par_1)
-                        chair_seq.append(chair_par_2)
-                        chair_seq.append(lf_end)
-                        chair_seq.append(joystick_inter)
-                        chair_seq.start()
-
-                        section_intervals.append(chair_seq)
-
-                    self.cockpit_engaged = False
-
-                    def cockpit_check():
-                        while not self.cockpit_engaged:
-                            time.sleep(0.1)
-                            target = Vec3(0.204692, -26.4711, 14.0199)
-                            p_dist = (target - base.camera.get_pos(base.render)).length()
-
-                            if p_dist < 1:
-                                self.cockpit_engaged = True
-
-                                animate_cockpit()
-
-                    threading2._start_new_thread(cockpit_check, ())
-
-        threading2._start_new_thread(deferred_load_1, ())'''
-
 
 class Section1:
 
     def __init__(self):
-
         events = KeyBindings.events["section1"]
         cam_toggle_key = events["cam_switch"].key_str
         music_toggle_key = events["toggle_music"].key_str
@@ -2781,20 +2180,18 @@ class Section1:
 
         KeyBindings.set_handler("toggle_music", self.toggle_music, "section1")
 
-        models = common.models["Section1"]["models"]
-
         # initial collision
-#        p_topper = base.loader.load_model(ASSET_PATH + "models/p_topper.gltf")
-        p_topper = models["p_topper.gltf"]
+        p_topper = common.models["p_topper.gltf"]
+        del common.models["p_topper.gltf"]
         fp_ctrl.make_collision('brbn', p_topper, 0, 0)
 
-#        p_topper_out = base.loader.load_model(ASSET_PATH + "models/p_topper_out.gltf")
-        p_topper_out = models["p_topper_out.gltf"]
+        p_topper_out = common.models["p_topper_out.gltf"]
+        del common.models["p_topper_out.gltf"]
         pto_p = p_topper_out.get_pos()
         fp_ctrl.make_collision('brbn', p_topper_out, 0, 0, target_pos=(pto_p[0], pto_p[1], pto_p[2] -0.5))
 
-#        p_topper_force = base.loader.load_model(ASSET_PATH + "models/p_topper_force.gltf")
-        p_topper_force = models["p_topper_force.gltf"]
+        p_topper_force = common.models["p_topper_force.gltf"]
+        del common.models["p_topper_force.gltf"]
         fp_ctrl.make_collision('brbn_force', p_topper_force, 0, 0)
 
         add_section_task(Elevator.handle_requests, "handle_elevator_requests")
@@ -2821,8 +2218,9 @@ class Section1:
                     starship_id = "starship_a"
                     self.starship_components = {}
 
-#                    self.model_root = model_root = base.loader.load_model(f"{ASSET_PATH}models/{starship_id}.bam")
-                    model_root = models[f"{starship_id}.bam"].copy_to(base.render)
+                    model_root = common.models[f"{starship_id}.bam"]
+                    del common.models[f"{starship_id}.bam"]
+                    model_root.reparent_to(base.render)
                     self.model_root = model_root
                     # model_root.set_two_sided(True)
                     model_root.set_color(1., 1., 1., 1.)
@@ -2895,8 +2293,9 @@ class Section1:
 
         KeyBindings.set_handler("build_starship", build_starship, "section1")
 
-#        self.holo_ship = base.loader.load_model(ASSET_PATH + 'models/holo_starship_a.gltf')
-        self.holo_ship = models["holo_starship_a.gltf"].copy_to(base.render)
+        self.holo_ship = common.models["holo_starship_a.gltf"]
+        del common.models["holo_starship_a.gltf"]
+        self.holo_ship.reparent_to(base.render)
         threading2._start_new_thread(holo.apply_hologram, (self.holo_ship, (0, 0, 0.4), (0.98, 1, 0.95)))
         self.holo_ship.hide()
 
@@ -2949,17 +2348,18 @@ class Section1:
 
                 if not self.arms_instantiated:
                     self.arms_instantiated = True
-                    models = common.models["Shared"]["models"]
                     # instantiate arms the normal way
                     # space suit arms setup begins
-#                    self.right_arm = base.loader.load_model("Assets/Shared/models/player_right_arm_restpose_2021_08_28.gltf")
-                    self.right_arm = models["player_right_arm_restpose_2021_08_28.gltf"].copy_to(base.camera)
+                    self.right_arm = common.models["player_right_arm_restpose_2021_08_28.gltf"]
+                    del common.models["player_right_arm_restpose_2021_08_28.gltf"]
+                    self.right_arm.reparent_to(base.camera)
                     self.right_arm.set_pos(0.5, 1, -0.5)
                     self.right_arm.set_h(10)
                     self.right_arm.set_scale(0.2)
 
-#                    self.left_arm = base.loader.load_model("Assets/Shared/models/player_left_arm_restpose_2021_08_29.gltf")
-                    self.left_arm = models["player_left_arm_restpose_2021_08_29.gltf"].copy_to(base.camera)
+                    self.left_arm = common.models["player_left_arm_restpose_2021_08_29.gltf"]
+                    del common.models["player_left_arm_restpose_2021_08_29.gltf"]
+                    self.left_arm.reparent_to(base.camera)
                     self.left_arm.set_pos(-0.5, 1, -0.5)
                     self.left_arm.set_h(-10)
                     self.left_arm.set_scale(0.2)
@@ -2978,6 +2378,12 @@ class Section1:
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
 
+        # Preload the models for Section 2.
+
+        with open("Section2/models.txt") as model_path_file:
+            model_paths = [path.replace("\r", "").replace("\n", "") for path in model_path_file]
+        common.preload_models(model_paths)
+
     def toggle_music(self):
         if self.music.status() == 2:
             self.music_time = self.music.get_time()
@@ -2988,7 +2394,6 @@ class Section1:
             self.music.play()
 
     def start_jobs(self):
-
         if self.jobs_started:
             job = self.jobs[0]
             worker = IdleWorkers.pop(job.worker_type)
@@ -3015,7 +2420,6 @@ class Section1:
             add_section_task(self.await_build_command, "await_build_command")
 
     def await_build_command(self, task):
-
         if self.jobs_started and not self.await_build_init:
             self.await_build_init = True
             self.start_jobs()
@@ -3023,7 +2427,6 @@ class Section1:
         return task.cont
 
     def parse_job_schedule(self, starship_id):
-
         job_schedule = []
         read_coords = False
         read_next_jobs = False
@@ -3078,7 +2481,6 @@ class Section1:
         return job_schedule
 
     def move_camera(self, task):
-
         dt = globalClock.get_dt()
         self.cam_heading -= 1.75 * dt
         self.cam_target.set_h(self.cam_heading)
@@ -3089,7 +2491,6 @@ class Section1:
         return task.cont
 
     def add_primitive(self, component, prim):
-
         prim_array = prim.get_vertices()
         prim_view = memoryview(prim_array).cast("B").cast("I")
         geom = component.node().modify_geom(0)
@@ -3101,14 +2502,12 @@ class Section1:
         new_prim_view[old_size:] = prim_view[:]
 
     def add_mirror_job(self, job):
-
         if job.component_id not in self.mirror_jobs:
             return
 
         mirror_job = self.mirror_jobs[job.component_id]
 
         def start_mirror_job(task):
-
             worker = IdleWorkers.pop(mirror_job.worker_type)
             check_job = lambda task: self.check_job(task, mirror_job, worker)
             add_section_task(check_job, "check_job")
@@ -3118,7 +2517,6 @@ class Section1:
         add_section_task(start_mirror_job, "start_mirror_job", delay=1.5)
 
     def check_job(self, task, job, worker):
-
         next_job_index = job.next_job_index
 
         if next_job_index > 0:
@@ -3138,7 +2536,6 @@ class Section1:
             return task.cont
 
     def check_workers_done(self, task):
-
         for job in self.jobs + list(self.mirror_jobs.values()):
             if not job.worker_done:
                 return task.cont
@@ -3147,7 +2544,6 @@ class Section1:
         self.destroy_holo_ship()
 
     def pauseGame(self):
-
         if self.cam_is_fps:
             fp_ctrl.pause_fp_camera()
 
@@ -3164,7 +2560,6 @@ class Section1:
         KeyBindings.deactivate_all("text")
 
     def resumeGame(self):
-
         resume_section_tasks()
         resume_section_intervals()
 
@@ -3187,7 +2582,6 @@ class Section1:
             holo.holo_cleanup()
 
     def destroy(self):
-
         # clean up the stand-in finished ship
         base.render.find('**/d_*').get_parent().detach_node()
 
@@ -3261,8 +2655,11 @@ class Section1:
         common.currentSection = None
 
 
-def initialise(data=None):
+def startIntro(data, show_loading_screen):
+    Intro(data, show_loading_screen)
 
+
+def initialise(data=None):
     base.render.set_antialias(AntialiasAttrib.M_multisample)
 
     base.bullet_max_step = 1
@@ -3278,11 +2675,6 @@ def initialise(data=None):
         print(base.camera.get_pos(base.render))
 
     base.accept('f4', print_player_pos)
-
-    def start_intro():
-        common.gameController.startSectionIntro(1, shipSpecs[1])
-
-    base.accept('f2', start_intro)
 
     for x in range(5):
         plight_1 = PointLight('plight_1')

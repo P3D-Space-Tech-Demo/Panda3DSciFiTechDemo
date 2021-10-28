@@ -96,57 +96,6 @@ class Game():
 
     def __init__(self):
 
-        model_paths = [
-            "Assets/Shared/models/test_completed_ship_a.gltf",
-            "Assets/Shared/models/test_cockpit.gltf",
-            "Assets/Shared/models/joystick.gltf",
-            "Assets/Shared/models/player_right_arm_restpose_2021_08_28.gltf",
-            "Assets/Shared/models/player_left_arm_restpose_2021_08_29.gltf",
-            "Assets/Shared/models/player_mothership.gltf",
-            "Assets/Shared/models/portal_generator.gltf",
-            "Assets/Shared/models/shipEngineFlame.egg",
-            "Assets/Shared/models/wrecked_tunnel.gltf",
-            "Assets/Section1/models/wide_screen_video_display.egg",
-            "Assets/Section1/models/light_spec_screen_select.gltf",
-            "Assets/Section1/models/starship_a_screen_select.gltf",
-            "Assets/Section1/models/heavy_spec_screen_select.gltf",
-            "Assets/Section1/models/worker_bot.gltf",
-            "Assets/Section1/models/worker_drone.gltf",
-            "Assets/Section1/models/worker_bot_elevator.gltf",
-            "Assets/Section1/models/worker_drone_compartment.gltf",
-            "Assets/Section1/models/hangar.gltf",
-            "Assets/Section1/models/hangar_corridor.gltf",
-            "Assets/Section1/models/p_topper.gltf",
-            "Assets/Section1/models/p_topper_out.gltf",
-            "Assets/Section1/models/p_topper_force.gltf",
-            "Assets/Section1/models/starship_a.bam",
-            "Assets/Section1/models/holo_starship_a.gltf",
-            "Assets/Section2/models/wrecked_tunnel_collision.gltf",
-            "Assets/Section2/models/bigShield.egg",
-            "Assets/Section2/models/blast.egg",
-            "Assets/Section2/models/blasterShot_large.egg",
-            "Assets/Section2/models/blasterShot_med.egg",
-            "Assets/Section2/models/blasterShot_small.egg",
-            "Assets/Section2/models/blasterShotEnemy.egg",
-            "Assets/Section2/models/enemyFighter.egg",
-            "Assets/Section2/models/healthBar.egg",
-            "Assets/Section2/models/rocket.egg",
-            "Assets/Section2/models/shield.egg",
-            "Assets/Section2/models/spaceDustTunnel.egg",
-            "Assets/Section2/models/uiLockBar.egg",
-            "Assets/Section2/models/uiRadar.egg",
-            "Assets/Section2/levels/spaceLevel_0.egg.pz",
-            "Assets/Section2/levels/spaceLevel_1.egg.pz",
-            "Assets/Section2/levels/spaceLevel_2.egg.pz",
-            "Assets/Section2/levels/spaceLevel_3.egg.pz",
-            "Assets/Section2/levels/spaceLevel_4.egg.pz",
-            "Assets/Section3/models/player_right_arm_GRIP_FIRE_ANIM_2.gltf",
-            "Assets/Section3/models/ramp_test.gltf",
-            "Assets/Section3/models/sec3_handgun_1.gltf",
-            "Assets/Section3/levels/tunnel_drop_1.gltf",
-        ]
-        common.preload_models(model_paths)
-
         properties = WindowProperties()
         properties.setCursorFilename("Assets/Shared/tex/cursor.cur")
         common.base.win.requestProperties(properties)
@@ -968,19 +917,13 @@ class Game():
             specificMenu.show()
             self.currentMenu = specificMenu
         else:
-            self.startSectionInternal(index, data)
+            self.startSectionIntro(index, data)
 
     def sectionSpecificMenuDone(self, menu, sectionIndex, data):
         menu.hide()
-        self.startSectionInternal(sectionIndex, data)
+        self.startSectionIntro(sectionIndex, data)
 
-    def startSectionIntro(self, index, data):
-        self.cleanupCurrentSection()
-
-        sectionModule = self.sections[index][0]
-        sectionModule.startIntro(data)
-
-    def startSectionInternal(self, index, data):
+    def startSectionIntro(self, index, data, show_loading_screen=True):
         self.cleanupCurrentSection()
 
         self.mainMenuPanel.hide()
@@ -991,6 +934,10 @@ class Game():
             self.menuBackdropAnim.destroy()
             self.menuBackdropAnim = None
 
+        sectionModule = self.sections[index][0]
+        sectionModule.startIntro(data, show_loading_screen)
+
+    def startSectionInternal(self, index, data):
         self.currentSectionIndex = index
         self.currentSectionData = data
 
@@ -1010,7 +957,7 @@ class Game():
     def restartCurrentSection(self):
         self.gameOverScreen.hide()
         self.pauseMenu.hide()
-        self.startSectionInternal(self.currentSectionIndex, self.currentSectionData)
+        self.startSectionIntro(self.currentSectionIndex, self.currentSectionData)
 
     def gameOver(self):
         properties = WindowProperties()

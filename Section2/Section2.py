@@ -31,7 +31,7 @@ class Section2():
 
     def __init__(self, actionMusic, peaceMusic):
         common.currentSection = self
-        
+
         common.dismiss_info_text('loading')
 
         cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
@@ -168,6 +168,12 @@ class Section2():
 
         self.activated()
 
+        # Preload the models for Section 3.
+
+        with open("Section3/models.txt") as model_path_file:
+            model_paths = [path.replace("\r", "").replace("\n", "") for path in model_path_file]
+        common.preload_models(model_paths)
+
     def resumeGame(self):
         self.activated()
         self.paused = False
@@ -291,7 +297,7 @@ class Section2():
             self.currentLevel.triggerActivated(trigger)
 
     def exitTriggered(self):
-        common.gameController.startSectionInternal(2, self.shipSpec)
+        common.gameController.startSectionIntro(2, self.shipSpec, show_loading_screen=False)
 
     def cleanupLevel(self):
         if self.player is not None:
@@ -331,8 +337,8 @@ class Section2():
 
         common.currentSection = None
 
-def startIntro(data):
-    Intro(data)
+def startIntro(data, show_loading_screen):
+    Intro(data, show_loading_screen)
 
 def initialise(shipSpec):
 

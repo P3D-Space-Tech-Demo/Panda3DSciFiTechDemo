@@ -4,17 +4,16 @@ import common
 
 class SphericalPortalSystem:
 
-    def __init__(self, lights, portal_pos):
-
+    def __init__(self, parent, lights, portal_pos):
         loader = base.loader
 
-        self.portal_node_0 = base.render.attach_new_node("portal_node_0")
+        self.portal_node_0 = parent.attach_new_node("portal_node_0")
         self.portal_node_1 = NodePath("portal_node_1")
 
         for light in lights:
             self.portal_node_1.set_light(light)
 
-        portal_generator = loader.load_model("Assets/Shared/models/portal_generator.gltf")
+        portal_generator = common.models["portal_generator.gltf"]
         portal_generator.set_scale(135.)
         portal_generator.set_shader(scene_shader)
         portal_generator.reparent_to(self.portal_node_0)
@@ -48,7 +47,7 @@ class SphericalPortalSystem:
         portal_texture.minfilter = Texture.FT_linear_mipmap_linear
         self.portal_sphere.set_texture(TextureStage("portal"), portal_texture)
 
-        self.tunnel_model_0 = loader.load_model("Assets/Shared/models/wrecked_tunnel.gltf")
+        self.tunnel_model_0 = common.models["wrecked_tunnel.gltf"]
         self.tunnel_model_0.reparent_to(self.portal_node_0)
         self.tunnel_model_0.set_hpr(90., 40., 0.)
         self.tunnel_model_0.set_pos(portal_pos)
@@ -73,14 +72,12 @@ class SphericalPortalSystem:
         base.task_mgr.add(self.update_portal_cam, "update_portal_cam", sort=45)
 
     def update_portal_cam(self, task):
-
         mat = base.camera.get_mat()
         self.portal_cam.set_mat(mat)
 
         return task.cont
 
     def destroy(self):
-
         base.task_mgr.remove("update_portal_cam")
         base.graphics_engine.remove_window(self.portal_buffer)
         self.portal_buffer = None

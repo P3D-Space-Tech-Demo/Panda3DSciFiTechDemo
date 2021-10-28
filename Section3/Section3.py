@@ -68,6 +68,12 @@ class Section3:
         # self.loadCutsceneOne()
         self.loadStationSegmentOne()
 
+        '''# Preload the models for Section 4.
+
+        with open("Section4/models.txt") as model_path_file:
+            model_paths = [path.replace("\r", "").replace("\n", "") for path in model_path_file]
+        common.preload_models(model_paths)'''
+
     def loadStationSegmentOne(self):
 
         self.intervals = []
@@ -128,8 +134,9 @@ class Section3:
 
         base.accept('f4', print_player_pos)
 
-        models = common.models["Section3"]["models"]
-        self.hg_1 = models["sec3_handgun_1.gltf"].copy_to(base.cam)
+        self.hg_1 = common.models["sec3_handgun_1.gltf"]
+        del common.models["sec3_handgun_1.gltf"]
+        self.hg_1.reparent_to(base.cam)
 
         base.drop_clip_toggle = False
 
@@ -204,8 +211,9 @@ class Section3:
 
         KeyBindings.set_handler("reload_gun", drop_clip, "section3")
 
-        models = common.models["Section3"]["levels"]
-        self.model = models["tunnel_drop_1.gltf"].copy_to(base.render)
+        self.model = common.models["tunnel_drop_1.gltf"]
+        del common.models["tunnel_drop_1.gltf"]
+        self.model.reparent_to(base.render)
         self.model.flatten_strong()
 
         fp_ctrl.make_collision('ramp', self.model, 0, 0, target_pos = Vec3(), hpr_adj = Vec3(), scale_adj = 1)
@@ -225,8 +233,8 @@ class Section3:
 
     def load_gunhand(self):
 
-        models = common.models["Section3"]["models"]
-        self.right_grip_hand = Actor(models["player_right_arm_GRIP_FIRE_ANIM_2.gltf"])
+        self.right_grip_hand = Actor(common.models["player_right_arm_GRIP_FIRE_ANIM_2.gltf"])
+        del common.models["player_right_arm_GRIP_FIRE_ANIM_2.gltf"]
         self.right_grip_hand.reparent_to(base.cam)
         self.right_grip_hand.set_pos(0.125, 0.145, -0.05)
         self.right_grip_hand.set_h(15)
@@ -301,6 +309,11 @@ class Section3:
             self.intervals.clear_intervals()
             if self.intervals in section_intervals:
                 section_intervals.remove()
+
+
+def startIntro(data, show_loading_screen):
+    Intro(data, show_loading_screen)
+
 
 def initialise(data=None):
 

@@ -7,7 +7,6 @@ from panda3d.core import CollisionPolygon, GeomVertexFormat, CollisionNode
 class SphericalPortalSystem:
 
     def __init__(self, level_model, lights, portal_pos):
-
         loader = base.loader
 
         self.portal_node_0 = level_model.attach_new_node("portal_node_0")
@@ -16,7 +15,7 @@ class SphericalPortalSystem:
         for light in lights:
             self.portal_node_1.set_light(light)
 
-        portal_generator = loader.load_model("Assets/Shared/models/portal_generator.gltf")
+        portal_generator = common.models["portal_generator.gltf"]
         portal_generator.set_scale(135.)
         portal_generator.set_shader(scene_shader)
         portal_generator.reparent_to(self.portal_node_0)
@@ -50,7 +49,7 @@ class SphericalPortalSystem:
         portal_texture.minfilter = Texture.FT_linear_mipmap_linear
         self.portal_sphere.set_texture(TextureStage("portal"), portal_texture)
 
-        self.tunnel_model_0 = loader.load_model("Assets/Shared/models/wrecked_tunnel.gltf")
+        self.tunnel_model_0 = common.models["wrecked_tunnel.gltf"]
         self.tunnel_model_0.reparent_to(self.portal_node_0)
         self.tunnel_model_0.set_hpr(-90., -40., 0.)
         self.tunnel_model_0.set_pos(portal_pos)
@@ -70,7 +69,7 @@ class SphericalPortalSystem:
         # Create the collision-geometry for the tunnel
         # With thanks to Epihaius for the relevant snippet!
         # Ref: https://discourse.panda3d.org/t/collision-mesh-from-loaded-model-for-built-in-collision-system/27102
-        tunnel_collision = loader.load_model("Assets/Section2/models/wrecked_tunnel_collision.gltf")
+        tunnel_collision = common.models["wrecked_tunnel_collision.gltf"]
         tunnel_collision.set_scale(50)
         collision_copy = tunnel_collision.copy_to(common.base.render)
         tunnel_collision.remove_node()
@@ -114,14 +113,12 @@ class SphericalPortalSystem:
         base.task_mgr.add(self.update_portal_cam, "update_portal_cam", sort=45)
 
     def update_portal_cam(self, task):
-
         mat = base.camera.get_mat(common.currentSection.currentLevel.geometry)
         self.portal_cam.set_mat(mat)
 
         return task.cont
 
     def destroy(self):
-
         base.task_mgr.remove("update_portal_cam")
         base.graphics_engine.remove_window(self.portal_buffer)
         self.portal_buffer = None
