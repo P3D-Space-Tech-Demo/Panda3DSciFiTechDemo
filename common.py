@@ -758,13 +758,18 @@ def mirror_ship_parts(model):
 mirrorShipParts = mirror_ship_parts
 
 models = {}
+shared_models = {}
 
 def preload_models(model_paths, callback=None):
     async def load_models():
         async for model in base.loader.load_model(model_paths, blocking=False):
             path = model_paths.pop(0)
-            filename = path.split("/")[-1]
-            models[filename] = model
+            _, section_id, _, filename = path.split("/")
+
+            if section_id == "Shared":
+                shared_models[filename] = model
+            else:
+                models[filename] = model
             print("Loaded", path)
 
         if callback:

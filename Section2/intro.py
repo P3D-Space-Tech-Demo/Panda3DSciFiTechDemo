@@ -1,6 +1,6 @@
 from common import *
 import common
-from direct.stdpy import *
+from direct.stdpy.file import *
 
 
 class Intro:
@@ -71,8 +71,8 @@ class Intro:
         base.camLens.near = .01
         base.camLens.far = 90000
 
-        mothership = common.models["player_mothership.gltf"]
-        del common.models["player_mothership.gltf"]
+        mothership = common.shared_models["player_mothership.gltf"]
+        del common.shared_models["player_mothership.gltf"]
         mothership.reparent_to(self.scene_root)
         self.mothership = mothership
 
@@ -98,8 +98,8 @@ class Intro:
             self.wheels.append(wheel_copy)
 
         shipSpec = self.data
-        ship = common.models[shipSpec.shipModelFileLowPoly]
-        del common.models[shipSpec.shipModelFileLowPoly]
+        ship = common.shared_models[shipSpec.shipModelFileLowPoly]
+#        del common.shared_models[shipSpec.shipModelFileLowPoly]
         common.mirror_ship_parts(ship)
         ship.reparent_to(hangar_exit)
         ship.set_pos(100., -50., 0.)
@@ -159,14 +159,14 @@ class Intro:
         flameColourGradients = Vec3(0.329, 0.502, 1)
         glowColour = Vec4(0, 0.1, 0.95, 1)
         for enginePos, engineScale in shipSpec.enginePositions:
-            flame = common.models["shipEngineFlame.egg"].copy_to(self.ship)
+            flame = common.shared_models["shipEngineFlame.egg"].copy_to(self.ship)
             flame.setH(shipSpec.shipModelRotation)
             flame.setScale(1*engineScale/shipSpec.shipModelScalar)
             flame.setPos(enginePos)
             common.make_engine_flame(flame, flameColourGradients, glowColour, flameScalar = 15)
             self.engineFlames.append(flame)
 
-        del common.models["shipEngineFlame.egg"]
+        del common.shared_models["shipEngineFlame.egg"]
         self.engineFlameTargetScale = 0
         self.engineFlameCurrentScale = 0
         self.engineFlameSpeed = 0

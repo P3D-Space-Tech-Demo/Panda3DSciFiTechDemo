@@ -1,6 +1,6 @@
 from common import *
 import common
-from direct.stdpy import *
+from direct.stdpy.file import *
 
 
 class Intro:
@@ -24,7 +24,6 @@ class Intro:
 
         with open("Section1/models.txt") as model_path_file:
             model_paths = [path.replace("\r", "").replace("\n", "") for path in model_path_file]
-            print("model_paths:", model_paths)
         common.models.clear()
         common.preload_models(model_paths, start_intro)
 
@@ -71,7 +70,7 @@ class Intro:
 
         base.camera.reparent_to(self.scene_root)
 
-        mothership = common.models["player_mothership.gltf"]
+        mothership = common.shared_models["player_mothership.gltf"]
         mothership.reparent_to(self.scene_root)
         self.mothership = mothership
 

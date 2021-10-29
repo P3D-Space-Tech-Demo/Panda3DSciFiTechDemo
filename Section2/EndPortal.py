@@ -15,7 +15,7 @@ class SphericalPortalSystem:
         for light in lights:
             self.portal_node_1.set_light(light)
 
-        portal_generator = common.models["portal_generator.gltf"]
+        portal_generator = common.shared_models["portal_generator.gltf"]
         portal_generator.set_scale(135.)
         portal_generator.set_shader(scene_shader)
         portal_generator.reparent_to(self.portal_node_0)
@@ -49,7 +49,7 @@ class SphericalPortalSystem:
         portal_texture.minfilter = Texture.FT_linear_mipmap_linear
         self.portal_sphere.set_texture(TextureStage("portal"), portal_texture)
 
-        self.tunnel_model_0 = common.models["wrecked_tunnel.gltf"]
+        self.tunnel_model_0 = common.shared_models["wrecked_tunnel.gltf"]
         self.tunnel_model_0.reparent_to(self.portal_node_0)
         self.tunnel_model_0.set_hpr(-90., -40., 0.)
         self.tunnel_model_0.set_pos(portal_pos)

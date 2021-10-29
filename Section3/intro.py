@@ -1,7 +1,7 @@
 import common
 from common import *
 from .intro_portal import SphericalPortalSystem
-from direct.stdpy import *
+from direct.stdpy.file import *
 
 
 class Intro:

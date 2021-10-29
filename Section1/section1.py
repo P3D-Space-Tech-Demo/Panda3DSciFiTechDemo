@@ -1859,7 +1859,7 @@ class Hangar:
         for x in base.render.find_all_matches('**/back_wing*'):
             x.detach_node()
 
-        finished_ship = common.models["test_completed_ship_a.gltf"]
+        finished_ship = common.shared_models["test_completed_ship_a.gltf"]
         finished_ship.reparent_to(base.render)
         finished_ship.set_shader_off()
         finished_ship.set_shader(scene_shader)
@@ -1948,8 +1948,8 @@ class Hangar:
 
         threading2._start_new_thread(ship_ready, ())
 
-        cockpit = common.models["test_cockpit.gltf"]
-        del common.models["test_cockpit.gltf"]
+        cockpit = common.shared_models["test_cockpit.gltf"]
+#        del common.shared_models["test_cockpit.gltf"]
         cockpit.reparent_to(base.render)
         cockpit.set_pos(0, -32, 9)
         cockpit.set_scale(1)
@@ -1962,8 +1962,8 @@ class Hangar:
         for t in cockpit.find_all_matches('**/*track*'):
             t.set_shader_off()
 
-        joystick = common.models["joystick.gltf"]
-        del common.models["joystick.gltf"]
+        joystick = common.shared_models["joystick.gltf"]
+#        del common.shared_models["joystick.gltf"]
         joystick.reparent_to(base.render)
         joystick.set_h(90)
         joystick.set_pos(0, 0, 10)
@@ -2350,15 +2350,15 @@ class Section1:
                     self.arms_instantiated = True
                     # instantiate arms the normal way
                     # space suit arms setup begins
-                    self.right_arm = common.models["player_right_arm_restpose_2021_08_28.gltf"]
-                    del common.models["player_right_arm_restpose_2021_08_28.gltf"]
+                    self.right_arm = common.shared_models["player_right_arm_restpose_2021_08_28.gltf"]
+                    del common.shared_models["player_right_arm_restpose_2021_08_28.gltf"]
                     self.right_arm.reparent_to(base.camera)
                     self.right_arm.set_pos(0.5, 1, -0.5)
                     self.right_arm.set_h(10)
                     self.right_arm.set_scale(0.2)
 
-                    self.left_arm = common.models["player_left_arm_restpose_2021_08_29.gltf"]
-                    del common.models["player_left_arm_restpose_2021_08_29.gltf"]
+                    self.left_arm = common.shared_models["player_left_arm_restpose_2021_08_29.gltf"]
+                    del common.shared_models["player_left_arm_restpose_2021_08_29.gltf"]
                     self.left_arm.reparent_to(base.camera)
                     self.left_arm.set_pos(-0.5, 1, -0.5)
                     self.left_arm.set_h(-10)
@@ -2675,6 +2675,11 @@ def initialise(data=None):
         print(base.camera.get_pos(base.render))
 
     base.accept('f4', print_player_pos)
+
+    def start_intro():
+        common.gameController.startSectionIntro(1, shipSpecs[1])
+
+    base.accept('f2', start_intro)
 
     for x in range(5):
         plight_1 = PointLight('plight_1')

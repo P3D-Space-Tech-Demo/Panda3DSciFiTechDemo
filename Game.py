@@ -1,7 +1,15 @@
-
-from direct.showbase.ShowBase import ShowBase
-
-from panda3d.core import WindowProperties, TextNode, Vec4, Vec3, Vec2, VirtualFileSystem, Filename, Texture, PandaNode
+from panda3d.core import (
+    WindowProperties,
+    TextNode,
+    Vec4,
+    Vec3,
+    Vec2,
+    VirtualFileSystem,
+    Filename,
+    Texture,
+    PandaNode,
+    CardMaker
+)
 from direct.stdpy.file import *
 from direct.gui.DirectGui import *
 
@@ -14,12 +22,14 @@ import common
 
 from Ships import shipSpecs
 
+from title_screen import TitleScreen
 from menu_anim import MenuBackdropAnimation
 
 TAG_PREVIOUS_MENU = "predecessor"
 
 OPTION_FILE_DIR = "."
 OPTION_FILE_NAME = "options.dat"
+
 
 def buildOptionsMenu(gameRef):
     gameRef.addOptionHeading("General")
@@ -31,6 +41,7 @@ def buildOptionsMenu(gameRef):
     Section2.addOptions()
     gameRef.addOptionHeading("Section 3")
     gameRef.addOptionHeading("Section 4")
+
 
 class Game():
     BUTTON_SIZE_LARGE = 0
@@ -95,7 +106,6 @@ class Game():
         return btn
 
     def __init__(self):
-
         properties = WindowProperties()
         properties.setCursorFilename("Assets/Shared/tex/cursor.cur")
         common.base.win.requestProperties(properties)
@@ -1010,5 +1020,5 @@ class Game():
 
         common.base.userExit()
 
-game = Game()
+TitleScreen(Game, Game.windowUpdated, OPTION_FILE_DIR, OPTION_FILE_NAME)
 common.base.run()

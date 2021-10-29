@@ -24,7 +24,6 @@ class MenuBackdropAnimation:
     def __init__(self, menu_backdrop, anim_type=1):
 
         # add a render to texture 3D space for the backdrop/background
-        ASSET_PATH = "Assets/Section1/"
         
         self.continue_while = True
 
@@ -51,14 +50,14 @@ class MenuBackdropAnimation:
         # mirror scene model load-in
         # reparent to mirror render node
         filenames = (
-            'Assets/Shared/models/test_completed_ship_a.gltf',
-            'Assets/Shared/models/starship_b_for_wire.gltf',
-            'Assets/Shared/models/starship_c_for_wire.gltf'
+            "test_completed_ship_a.gltf",
+            "starship_b_for_wire.gltf",
+            "starship_c_for_wire.gltf"
         )
         self.ships = deque()
 
         for filename in filenames:
-            screen_ship = base.loader.load_model(filename)
+            screen_ship = common.shared_models[filename].copy_to(self.mirror_render)
             common.mirror_ship_parts(screen_ship)
             holo.make_wire(
                 screen_ship,

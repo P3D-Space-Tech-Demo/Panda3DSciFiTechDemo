@@ -1,0 +1,3 @@
+Assets/Shared/models/test_completed_ship_a.gltf
+Assets/Shared/models/starship_b_for_wire.gltf
+Assets/Shared/models/starship_c_for_wire.gltf
