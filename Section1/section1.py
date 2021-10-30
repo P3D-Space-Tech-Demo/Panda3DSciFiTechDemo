@@ -398,6 +398,7 @@ class IdleWorkers:
     workers = {"bot": [], "drone": []}
     beam = None
     beam_connector = None
+    on_strike = False
 
     @classmethod
     def pop(cls, worker_type):
@@ -1042,6 +1043,11 @@ class Elevator:
         z += self.platform_speed * dt
         r = task.cont
 
+        if IdleWorkers.on_strike and self.bot:
+            self.bot.job.worker_done = True
+            self.bot.model.detach_node()
+            self.bot = None
+
         if z >= 0.:
 
             z = 0.
@@ -1090,6 +1096,11 @@ class Elevator:
         dt = globalClock.get_dt()
         self.blade_angle -= self.blade_speed * dt
         r = task.cont
+
+        if IdleWorkers.on_strike and self.bot:
+            self.bot.job.worker_done = True
+            self.bot.model.detach_node()
+            self.bot = None
 
         if self.blade_angle <= 0.:
             self.blade_angle = 0.
@@ -1163,7 +1174,8 @@ class Elevator:
                 FocusCamera.target.set_hpr(h, -20., 0.)
                 FocusCamera.focus = self
 
-        add_section_task(raise_if_none_waiting, "raise_if_none_waiting")
+        if not IdleWorkers.on_strike:
+            add_section_task(raise_if_none_waiting, "raise_if_none_waiting")
 
     def lower_bot(self, bot):
         self.bot = bot
@@ -1221,11 +1233,19 @@ class DroneCompartment:
         self.blade_angle -= self.blade_speed * dt
         r = task.cont
 
+        if IdleWorkers.on_strike and self.drone:
+            self.drone.job.worker_done = True
+            self.drone.pivot.detach_node()
+            self.drone = None
+
         if self.blade_angle <= 0.:
+
             self.blade_angle = 0.
             r = task.done
-            self.drone.exit_compartment()
             add_section_task(self.close_iris, "close_iris", delay=2.)
+
+            if self.drone:
+                self.drone.exit_compartment()
 
         for blade in self.blades:
             blade.set_h(self.blade_angle)
@@ -1270,7 +1290,8 @@ class DroneCompartment:
                 h = random.uniform(0., 360.)
                 FocusCamera.target.set_hpr(h, 30., 0.)
 
-        self.add_request(request)
+        if not IdleWorkers.on_strike:
+            self.add_request(request)
 
     def add_request(self, request, index=None):
         if index is None:
@@ -2167,6 +2188,7 @@ class Section1:
         ))
         TextManager.add_text("context_help", controller_text)
 
+        self.jobs = None
         self.jobs_started = False
         self.await_build_init = False
         self.arms_instantiated = False
@@ -2292,6 +2314,7 @@ class Section1:
                     self.jobs = [j for j in self.jobs if j]
 
         KeyBindings.set_handler("build_starship", build_starship, "section1")
+        KeyBindings.set_handler("skip_construction", self.skip_construction, "section1")
 
         self.holo_ship = common.models["holo_starship_a.gltf"]
         del common.models["holo_starship_a.gltf"]
@@ -2408,12 +2431,14 @@ class Section1:
         else:
             events = KeyBindings.events["section1"]
             build_start_key = events["build_starship"].key_str.title()
+            skip_key = events["skip_construction"].key_str.title()
             key_prev = events["ship_select_prev"].key_str.title()
             key_next = events["ship_select_next"].key_str.title()
             bay_ready_text = '\n\n'.join((
                 'Construction bay is ready and awaiting job input.',
                 f'Tap \1key\1{key_prev}\2 / \1key\1{key_next}\2 in First-Person Mode to hover-select your spacecraft.',
-                f'Press \1key\1{build_start_key}\2 to begin building your selected spacecraft.'
+                f'Press \1key\1{build_start_key}\2 to begin building your selected spacecraft.',
+                f'Press \1key\1{skip_key}\2 to auto-complete its construction.'
             ))
             fade_in_text('bay_ready_text', bay_ready_text, Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
 
@@ -2581,6 +2606,25 @@ class Section1:
             self.holo_ship = None
             holo.holo_cleanup()
 
+    def skip_construction(self):
+        if IdleWorkers.on_strike or not self.jobs:
+            return
+
+        IdleWorkers.on_strike = True
+
+        for job in self.jobs + list(self.mirror_jobs.values()):
+            job.primitives = []
+            job.parts_done = 0
+            job.next_jobs = {}
+
+        for job in self.jobs[:]:
+            if not job.is_assigned:
+                self.jobs.remove(job)
+
+        for component_id, job in self.mirror_jobs.copy().items():
+            if not job.is_assigned:
+                del self.mirror_jobs[component_id]
+
     def destroy(self):
         # clean up the stand-in finished ship
         base.render.find('**/d_*').get_parent().detach_node()
@@ -2617,6 +2661,7 @@ class Section1:
             tmp_node.detach_node()
 
         IdleWorkers.clear()
+        IdleWorkers.on_strike = False
 
         while Worker.instances:
             Worker.instances.pop().destroy()
@@ -2732,5 +2777,6 @@ KeyBindings.add("open_pause_menu", "escape", "section1")
 KeyBindings.add("cam_switch", "\\", "section1")
 KeyBindings.add("toggle_music", "p", "section1")
 KeyBindings.add("build_starship", "enter", "section1")
+KeyBindings.add("skip_construction", "*", "section1")
 KeyBindings.add("ship_select_prev", "arrow_left", "section1")
 KeyBindings.add("ship_select_next", "arrow_right", "section1")
