@@ -60,25 +60,6 @@ def remove_section_intervals():
 # when this section gets cleaned up
 section_lights = []
 
-def make_simple_spotlight(input_pos, look_at, shadows = False, shadow_res = 2048, priority = 0):
-    spotlight = Spotlight('random_light')
-    spotlight.set_priority(priority)
-
-    if shadows:
-        spotlight.set_shadow_caster(True, shadow_res, shadow_res)
-        spotlight.camera_mask = SHADOW_MASK
-
-    lens = PerspectiveLens()
-    lens.set_near_far(0.5, 5000)
-    spotlight.set_lens(lens)
-    # spotlight.set_attenuation((0.5, 0, 0.005))
-    spotlight = base.render.attach_new_node(spotlight)
-    spotlight.set_pos(input_pos)
-    spotlight.look_at(look_at)
-    spotlight.node().get_lens().set_fov(178)
-    base.render.set_light(spotlight)
-    section_lights.append(spotlight)
-
 
 # define custom, multi-array vertex format with separate float color column
 enums = GeomEnums
@@ -975,6 +956,7 @@ class Part:
         self.model.set_light_off()
         self.model.set_color(0.5, 0.5, 1., 1.)
         self.model.set_alpha_scale(0.)
+        self.model.hide(SHADOW_MASK)
         self.model.set_transform(job.component.get_net_transform())
 
     def destroy(self):
@@ -1312,13 +1294,17 @@ class Hangar:
         self.model = common.models["hangar.gltf"]
         del common.models["hangar.gltf"]
         self.model.reparent_to(base.render)
-        ceiling = self.model.find('**/ceiling')
-        ceiling.set_light_off()
+        
+        ceiling = self.model.find_all_matches('**/ceiling*')
+        for x in ceiling:
+            x.hide(SHADOW_MASK)
 
         # apply metalness effect shader
         alcove = self.model.find('**/alcove')
         alcove.set_shader_off()
         alcove.set_shader(metal_shader)
+        shadow_light = base.render.find('shadow_spot')
+        alcove.set_light_off(shadow_light)
         fp_ctrl.make_collision('alcove_brbn', alcove, 0, 0, alcove.get_pos())
 
         # make a light for the corridor interior
@@ -1891,27 +1877,48 @@ class Hangar:
 
         for x in finished_ship.find_all_matches('*rocket*'):
             x.set_shader(metal_shader)
+            x.hide(SHADOW_MASK)
 
         for x in finished_ship.find_all_matches('*wing*'):
             x.set_shader(metal_shader)
+            x.hide(SHADOW_MASK)
 
         for x in finished_ship.find_all_matches('*d_*'):
             x.set_shader(metal_shader)
+            x.hide(SHADOW_MASK)
 
         for x in finished_ship.find_all_matches('*thruster*'):
             x.set_shader(metal_shader)
+            x.hide(SHADOW_MASK)
 
         for x in finished_ship.find_all_matches('*blaster*'):
             x.set_shader(metal_shader)
+            x.hide(SHADOW_MASK)
 
         interior_coll = finished_ship.find('interior')
         interior_coll.set_shader(metal_shader)
         interior_coll.flatten_strong()
+        interior_coll.hide(SHADOW_MASK)
         fp_ctrl.make_collision('interior_coll_brbn', interior_coll, 0, 0, interior_coll.get_pos(base.render))
 
         self.slide = finished_ship.find('ramp_actual')
         self.slide.flatten_strong()
         fp_ctrl.make_collision('slide_brbn', self.slide, 0, 0, self.slide.get_pos(base.render))
+        
+        doorway = finished_ship.find('solid_doorway')
+        doorway.flatten_strong()
+        fp_ctrl.make_collision('doorway_brbn', doorway, 0, 0, doorway.get_pos(base.render))
+        
+        f_ship_body = finished_ship.find('body')
+        fp_ctrl.make_collision('body_brbn', f_ship_body, 0, 0, f_ship_body.get_pos(base.render))
+        
+        windscreen = finished_ship.find('**/windshield_glass')
+        fp_ctrl.make_collision('windscreen_brbn', windscreen, 0, 0, windscreen.get_pos(base.render))
+        
+        weapons = finished_ship.find_all_matches('weapon*')
+        for x in weapons:
+            x.flatten_strong()
+            fp_ctrl.make_collision('weapon_brbn', x, 0, 0, x.get_pos(base.render))
 
         slide_coll = base.render.find('slide_brbn')
 
@@ -1976,6 +1983,8 @@ class Hangar:
         cockpit.set_scale(1)
         cockpit.set_h(90)
         cockpit.set_light(base.render.find_all_matches('**/amblight*')[1])
+        dash = cockpit.find('dashboard')
+        dash.hide(SHADOW_MASK)
 
         for a in cockpit.find_all_matches('**/*accent*'):
             a.set_shader_off()
@@ -2361,13 +2370,12 @@ class Section1:
 
                 self.right_arm.hide()
                 self.left_arm.hide()
-                fp_ctrl.disable_fp_camera()
+                # fp_ctrl.disable_fp_camera()
+                fp_ctrl.fp_cleanup()
                 enable_orbital_cam()
             else:
-                if not self.arms_instantiated:
-                    fp_ctrl.fp_init(Vec3(192.383, -0.182223, -0.5), z_limit=-4)
-
-                fp_ctrl.enable_fp_camera(fp_height = 4.75)
+                fp_ctrl.fp_init(base.static_pos, z_limit=-4, cap_size_x=3.5, cap_size_y=1) 
+                fp_ctrl.enable_fp_camera(fp_height = 2.5)
 
                 if not self.arms_instantiated:
                     self.arms_instantiated = True
@@ -2379,6 +2387,8 @@ class Section1:
                     self.right_arm.set_pos(0.5, 1, -0.5)
                     self.right_arm.set_h(10)
                     self.right_arm.set_scale(0.2)
+                    shadow_light = base.render.find('shadow_spot')
+                    self.right_arm.set_light_off(shadow_light)
 
                     self.left_arm = common.shared_models["player_left_arm_restpose_2021_08_29.gltf"]
                     del common.shared_models["player_left_arm_restpose_2021_08_29.gltf"]
@@ -2386,6 +2396,7 @@ class Section1:
                     self.left_arm.set_pos(-0.5, 1, -0.5)
                     self.left_arm.set_h(-10)
                     self.left_arm.set_scale(0.2)
+                    self.left_arm.set_light_off(shadow_light)
 
                     HoloDisplay.setup(self.left_arm)
 
@@ -2742,29 +2753,32 @@ def initialise(data=None):
     # add plight props here
     plight_1.set_priority(10)
     plight_1_node = base.render.attach_new_node(plight_1)
-    plight_1_node.set_pos(0, 0, 30)
-    plight_1_node.node().set_color((1, 1, 1, 1))
+    plight_1_node.set_pos(15, 0, 30)
+    plight_1_node.node().set_color((3, 3, 4, 1))
     # plight_1_node.node().set_attenuation((0.5, 0, 0.05))
     base.render.set_light(plight_1_node)
     section_lights.append(plight_1_node)
 
-    plight_2 = PointLight('scene_light_2')
-    plight_2.set_priority(10)
-    # add plight props here
-    plight_2_node = base.render.attach_new_node(plight_2)
-    plight_2_node.set_pos(0, 0, 5)
-    plight_2_node.node().set_color((1, 1, 1, 1))
-    # plight_2_node.node().set_attenuation((0.5, 0, 0.05))
-    base.render.set_light(plight_2_node)
-    section_lights.append(plight_2_node)
-
-    make_simple_spotlight((200, 100, 900), (0, 5, 10), False, 15)
-    make_simple_spotlight((-200, 0, 2000), (146.4, -3.3, 5.7), False, 15)
-    make_simple_spotlight((0, 0, 2000), (-90, 108, 10), False, 15)
-    # make_simple_spotlight((0, 0, 1300), (-90, -120, 10), False)
-    # make_simple_spotlight((0, 0, 1300), (102, -145, 10), False)
-    # make_simple_spotlight((0, 0, 1300), (94, 120, 10), False)
-
+    def shadow_spot():
+        slight = Spotlight('shadow_spot')
+        slight.set_shadow_caster(True, 4096, 4096)
+        # slight.show_frustum()
+        slight.set_color((2, 2, 2, 1))
+        lens = PerspectiveLens()
+        lens.set_near_far(0.5, 5000)
+        lens.set_fov(140)
+        slight.set_lens(lens)
+        slight.set_priority(15)
+        slight.camera_mask = SHADOW_MASK
+        # slight.set_attenuation((0.5, 0, 0.0000005))
+        slight = base.render.attach_new_node(slight)
+        slight.set_pos(-140, -80, 25)
+        slight.look_at(0, 0, 10)
+        base.render.set_light(slight)
+        section_lights.append(slight)
+        
+    shadow_spot()
+    
     section = Section1()
     common.currentSection = section
     KeyBindings.activate_all("section1")

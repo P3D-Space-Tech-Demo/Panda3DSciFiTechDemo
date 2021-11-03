@@ -18,7 +18,8 @@ running_tasks = []
 
 def add_running_task(task_func, task_id, *args, **kwargs):
     cleanup = lambda task: running_tasks.remove(task)
-    task_obj = base.task_mgr.add(task_func, task_id, uponDeath=cleanup, *args, **kwargs)
+    task_obj = ResumableTask(task_func, task_id, uponDeath=cleanup, *args, **kwargs)
+    base.task_mgr.add(task_obj)
     running_tasks.append(task_obj)
 
     return task_obj
@@ -30,8 +31,8 @@ base.bullet_max_step = 5
 
 paused_cursor_pos = [0,0]
 
-movementSpeedForward = 18
-movementSpeedBackward = 18
+movementSpeedForward = 20
+movementSpeedBackward = 20
 striveSpeed = 13
 
 base.world = BulletWorld()
@@ -65,9 +66,9 @@ def reset_key_map():
     for key in keyMap:
         keyMap[key] = 0
 
-def fp_init(target_pos, z_limit = 0):
+def fp_init(target_pos, z_limit = 0, cap_size_x = 2, cap_size_y = 1):
     # initialize player character physics the Bullet way
-    shape_1 = BulletCapsuleShape(2, 1, ZUp)
+    shape_1 = BulletCapsuleShape(cap_size_x, cap_size_y, ZUp)
     player_node = BulletCharacterControllerNode(shape_1, 1.5, 'Player')  # (shape, mass, player name)
     player = base.render.attach_new_node(player_node)
     player.set_pos(target_pos)
@@ -182,10 +183,14 @@ def resume_fp_camera():
     KeyBindings.activate_all("fps_controller")
 
 def update_cam(task):
+    running_tasks[1].resume()
+
     # the player movement speed
 
     player = base.render.find('Player')
     cam_pivot = player.find('cam_pivot')
+    
+    base.static_pos = player.get_pos()
 
     # get mouse data
     pointer = base.win.get_pointer(0)
@@ -244,32 +249,56 @@ def update_cam(task):
         player.set_y(player, -movementSpeedBackward * globalClock.get_dt())
 
     if not (keyMap["left"] or keyMap["right"] or keyMap["forward"] or keyMap["backward"]):
-        if player.node().is_on_ground():
-            p_pos = player.get_pos()
-            g_pos = p_pos[0], p_pos[1], p_pos[2] - 5
+        player = base.render.find('Player')
+        cam_pivot = player.find('cam_pivot')
 
-            frac = collider_data(p_pos, g_pos)[2]
+        # get mouse data
+        pointer = base.win.get_pointer(0)
+        mouseX = pointer.get_x()
+        mouseY = pointer.get_y()
 
-            base.frac_history.append(frac)
+        # screen sizes
+        window_Xcoord_halved = base.win.get_x_size() // 2
+        window_Ycoord_halved = base.win.get_y_size() // 2
+        # mouse speed
+        mouseSpeedX = 0.2
+        mouseSpeedY = 0.2
+        # maximum and minimum pitch
+        maxPitch = 90
+        minPitch = -50
+        # cam view target initialization
+        camViewTarget = LVecBase3f()
+        
+        if base.win.movePointer(0, window_Xcoord_halved, window_Ycoord_halved):
+            if player.node().is_on_ground():
+                # pause the physics_update if the player isn't in midair
+                # and no movement keys are pressed
+                temp_tasks = running_tasks[:]
+                physics_task = temp_tasks[1]
+                physics_task.pause()
 
-            if len(base.frac_history) > 60:
-                del base.frac_history[:58]
+                running_tasks[:] = temp_tasks[:]
 
-            slope_strangeness = max(base.frac_history) - min(base.frac_history)
+                p = 0
 
-            if slope_strangeness >= 0.1:
-                # the slope variation is too great, ignore the weld
-                base.static_pos = player.get_pos()
+                # calculate the pitch of the camera pivot
+                p = cam_pivot.get_p() - (mouseY - window_Ycoord_halved) * mouseSpeedY
 
-            if slope_strangeness < 0.1:
-                base.static_frames += 1
+                # sanity checking
+                p = max(minPitch, min(maxPitch, p))
 
-                if base.static_frames == 1:
-                    base.static_pos = player.get_pos()
+                # directly set the camera pivot pitch
+                cam_pivot.set_p(p)
+                camViewTarget.set_y(p)
 
-                if frac <= player.node().get_max_slope():
-                    # set the weld
-                    player.set_pos(base.static_pos)
+                # rotate the player's heading according to the mouse x-axis movement
+                h = player.get_h() - (mouseX - window_Xcoord_halved) * mouseSpeedX
+
+                # sanity checking
+                h %= 360.
+
+                player.set_h(h)
+                camViewTarget.set_x(h)
 
     return task.cont
 
@@ -307,6 +336,7 @@ def collider_data(pos_1 = Vec3(), pos_2 = Vec3()):
     out_data = [coll.get_hit_pos(), coll.get_hit_normal(), coll.get_hit_fraction(), coll.get_node()]
 
     return out_data
+
 
 # define button map
 KeyBindings.add("move_left", "a", "fps_controller", lambda: setKey("left", 1))
