@@ -79,6 +79,8 @@ class Intro:
         return task.cont
 
     def destroy(self):
+        self.scene_root.detach_node()
+        self.scene_root = None
 #        self.portal_sys.destroy()
         base.task_mgr.remove("play_intro")
 

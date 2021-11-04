@@ -178,6 +178,7 @@ def create_beam_connector():
 class FocusCamera:
     target = None
     cam = None
+    cam_pivot = None
     display_region = None
     idle = True
     focus = None
@@ -187,11 +188,12 @@ class FocusCamera:
     def setup(cls):
         from direct.showbase.DirectObject import DirectObject
 
-        cls.target = target = base.render.attach_new_node("worker_cam_target")
-        cam_node = Camera("worker_focus_cam")
+        cls.target = target = base.render.attach_new_node("focus_cam_target")
+        cam_node = Camera("focus_cam")
         cam_node.get_lens().fov = (30., 25.)
-        cls.cam = cam = target.attach_new_node(cam_node)
-        cam.set_y(-20.)
+        cls.cam_pivot = target.attach_new_node("cam_pivot")
+        cls.cam_pivot.set_y(-20.)
+        cls.cam = cam = cls.cam_pivot.attach_new_node(cam_node)
         cls.display_region = dr = base.win.make_display_region(.05, .25, .05, .35)
         dr.sort = 1
         dr.set_clear_color_active(True)
@@ -213,10 +215,14 @@ class FocusCamera:
 
     @classmethod
     def destroy(cls):
+        if not cls.display_region:
+            return
+
         base.win.remove_display_region(cls.display_region)
         cls.display_region = None
         cls.target.detach_node()
         cls.target = None
+        cls.cam_pivot = None
         cls.cam = None
         cls.focus = None
         cls.listener.ignore_all()
@@ -1290,7 +1296,7 @@ class DroneCompartment:
 
 class Hangar:
 
-    def __init__(self, job_starter):
+    def __init__(self, job_starter, platform_access_callback):
         self.model = common.models["hangar.gltf"]
         del common.models["hangar.gltf"]
         self.model.reparent_to(base.render)
@@ -1531,10 +1537,7 @@ class Hangar:
             Elevator(elevator_root, -65. + i * 10.)
 
         self.job_starter = job_starter
-        add_section_task(self.lower_panel, "lower_panel")
-        FocusCamera.target.set_pos(Elevator.instances[-3].model.get_pos(base.render))
-        FocusCamera.target.set_z(0.)
-        FocusCamera.target.set_hpr(180., -5., 0.)
+        self.platform_access_callback = platform_access_callback
 
     def create_support_structure(self):
         corner_beam = self.model.find("**/support_corner")
@@ -1836,6 +1839,7 @@ class Hangar:
 
         stair_seq.append(stair_par)
         stair_seq.append(Func(remove_intervals))
+        stair_seq.append(Func(self.platform_access_callback))
         stair_seq.start()
         section_intervals.append(stair_seq)
 
@@ -2173,29 +2177,18 @@ class Hangar:
 class Section1:
 
     def __init__(self):
+        self.show_info("1st-person mode")
+
         events = KeyBindings.events["section1"]
-        cam_toggle_key = events["cam_switch"].key_str
-        music_toggle_key = events["toggle_music"].key_str
-        events = KeyBindings.events["fps_controller"]
-        jump_key = events["do_jump"].key_str
-        forward_key = events["move_forward"].key_str
-        backward_key = events["move_backward"].key_str
-        left_key = events["move_left"].key_str
-        right_key = events["move_right"].key_str
-        events = KeyBindings.events["text"]
-        help_toggle_key = events["toggle_help"].key_str
-        # controller info text
-        controller_text = '\n'.join((
-            f'Toggle First-Person Mode: \1key\1{cam_toggle_key.title()}\2',
-            f'\nJump: \1key\1{jump_key.title()}\2',
-            f'\nForward: \1key\1{forward_key.title()}\2',
-            f'Left: \1key\1{left_key.title()}\2',
-            f'Right: \1key\1{right_key.title()}\2',
-            f'Backward: \1key\1{backward_key.title()}\2',
-            f'\nPlay/Pause Music: \1key\1{music_toggle_key.title()}\2',
-            f'\nToggle This Help: \1key\1{help_toggle_key.title()}\2'
+        build_start_key = events["build_starship"].key_str.title()
+        key_prev = events["ship_select_prev"].key_str.title()
+        key_next = events["ship_select_next"].key_str.title()
+        bay_ready_text = '\n\n'.join((
+            'Construction bay is ready and awaiting job input.',
+            f'Tap \1key\1{key_prev}\2 / \1key\1{key_next}\2 to hover-select your spacecraft.',
+            f'Press \1key\1{build_start_key}\2 to begin building your selected spacecraft.',
         ))
-        TextManager.add_text("context_help", controller_text)
+        fade_in_text('bay_ready_text', bay_ready_text, Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
 
         self.jobs = None
         self.jobs_started = False
@@ -2231,115 +2224,28 @@ class Section1:
         compartment.model.set_pos(0., 0., 50.)
         add_section_task(compartment.handle_next_request, "handle_compartment_requests")
 
-        def build_starship():
-            if self.arms_instantiated:
-                if not self.jobs_started:
-                    if self.music.status() == 1:
-                        self.music.set_time(self.music_time)
-                        self.music.play()
-
-                    print('Starship instantiation triggered.')
-                    # starship instantiation begins
-                    self.jobs_started = True
-                    add_section_task(self.check_workers_done, "check_workers_done")
-
-                    self.holo_ship.show()
-
-#                    starship_id = HoloDisplay.get_selected_ship_id()
-                    starship_id = "starship_a"
-                    self.starship_components = {}
-
-                    model_root = common.models[f"{starship_id}.bam"]
-                    del common.models[f"{starship_id}.bam"]
-                    model_root.reparent_to(base.render)
-                    self.model_root = model_root
-                    # model_root.set_two_sided(True)
-                    model_root.set_color(1., 1., 1., 1.)
-
-                    for model in model_root.find_all_matches("**/+GeomNode"):
-                        component_id = model.parent.name
-                        self.starship_components[component_id] = model
-
-                    for mirror_node in model_root.find_all_matches("**/mirror_*"):
-
-                        component_id = mirror_node.name
-                        model = self.starship_components[component_id.replace("mirror_", "")]
-                        mirror_parent = model.parent.copy_to(model.parent.parent)
-                        x, y, z = mirror_parent.get_pos()
-                        mirror_parent.set_pos(0., 0., 0.)
-                        mirror_parent.flatten_light()  # bake orientation and scale into vertices
-                        mirror_parent.set_sx(-1.)
-                        mirror_parent.flatten_light()  # bake negative scale into vertices
-                        mirror_parent.set_pos(-x, y, z)
-                        mirror_model = mirror_parent.children[0]
-                        geom = mirror_model.node().modify_geom(0)
-                        geom.reverse_in_place()
-
-                        for i in range(geom.get_num_primitives()):
-                            prim = geom.modify_primitive(i)
-                            prim.set_index_type(GeomEnums.NT_uint32)
-
-                        self.starship_components[component_id] = mirror_model
-                        mirror_node.detach_node()
-
-                    self.jobs = []
-                    self.mirror_jobs = {}
-                    primitives = {}
-                    finalizer = self.add_primitive
-
-                    for component_id, component in self.starship_components.items():
-                        node = component.node()
-                        bounds = node.get_bounds()
-                        geom = node.modify_geom(0)
-                        vertex_data = geom.get_vertex_data()
-                        new_prim = GeomTriangles(GeomEnums.UH_static)
-                        new_prim.set_index_type(GeomEnums.NT_uint32)
-                        primitives[component_id] = [prim for prim in geom.primitives]
-                        geom.clear_primitives()
-                        geom.add_primitive(new_prim)
-                        node.set_bounds(bounds)
-                        node.set_final(True)
-
-                    for job_data in self.parse_job_schedule(starship_id):
-
-                        part_count = job_data["part_count"]
-                        del job_data["part_count"]
-                        component_id = job_data["component_id"]
-                        component = self.starship_components[component_id]
-                        prims = primitives[component_id][:part_count]
-                        job = Job(prims, component, finalizer, **job_data)
-                        self.jobs.append(job)
-                        del primitives[component_id][:part_count]
-                        mirror_component_id = "mirror_" + component_id
-
-                        if mirror_component_id in self.starship_components:
-                            component = self.starship_components[mirror_component_id]
-                            prims = primitives[mirror_component_id][:part_count]
-                            mirror_job = job.create_mirror(prims, component, component_id)
-                            self.mirror_jobs[component_id] = mirror_job
-                            del primitives[mirror_component_id][:part_count]
-
-                    # prune any invalid jobs
-                    self.jobs = [j for j in self.jobs if j]
-
-        KeyBindings.set_handler("build_starship", build_starship, "section1")
+        KeyBindings.set_handler("build_starship", self.build_starship, "section1")
         KeyBindings.set_handler("skip_construction", self.skip_construction, "section1")
+        KeyBindings.set_handler("toggle_display_inset", self.toggle_display_inset, "section1")
 
+        self.model_root = None
         self.holo_ship = common.models["holo_starship_a.gltf"]
         del common.models["holo_starship_a.gltf"]
         self.holo_ship.reparent_to(base.render)
         threading2._start_new_thread(holo.apply_hologram, (self.holo_ship, (0, 0, 0.4), (0.98, 1, 0.95)))
         self.holo_ship.hide()
 
-        FocusCamera.setup()
+        def platform_access_callback():
+            # call this when the stairs to the construction platform are raised
+            self.show_info("1st-person mode")
+            self.toggle_view_mode()  # switch back to first-person view
+            FocusCamera.destroy()
 
-        self.hangar = Hangar(self.start_jobs)
+        self.hangar = Hangar(self.start_jobs, platform_access_callback)
 
-        # set up camera control
-        entrance_pos = Point3(self.hangar.entrance_pos)
-        entrance_pos.x += 33
         base.static_pos = Vec3(192.383, -0.182223, -0.5)
 
+        # set up camera control
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
         self.cam_target.set_z(4.)
@@ -2347,68 +2253,7 @@ class Section1:
         self.cam_pivot = self.cam_target.attach_new_node("cam_pivot")
         self.cam_pivot.set_y(-115.)
         self.cam_is_fps = False
-
-        def enable_orbital_cam():
-            base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
-            base.camera.reparent_to(self.cam_pivot)
-            base.camLens.fov = 80
-            base.camLens.set_near_far(0.01, 90000)
-            base.camLens.focal_length = 7
-
-        def cam_switch():
-            events = KeyBindings.events["fps_controller"]
-            forward_key = events["move_forward"].key_str
-            backward_key = events["move_backward"].key_str
-            left_key = events["move_left"].key_str
-            right_key = events["move_right"].key_str
-            is_down = base.mouseWatcherNode.is_button_down
-            moving = is_down(forward_key) or is_down(backward_key) or is_down(left_key) or is_down(right_key)
-
-            if self.cam_is_fps:
-                if moving:
-                    return
-
-                self.right_arm.hide()
-                self.left_arm.hide()
-                # fp_ctrl.disable_fp_camera()
-                fp_ctrl.fp_cleanup()
-                enable_orbital_cam()
-            else:
-                fp_ctrl.fp_init(base.static_pos, z_limit=-4, cap_size_x=3.5, cap_size_y=1) 
-                fp_ctrl.enable_fp_camera(fp_height = 2.5)
-
-                if not self.arms_instantiated:
-                    self.arms_instantiated = True
-                    # instantiate arms the normal way
-                    # space suit arms setup begins
-                    self.right_arm = common.shared_models["player_right_arm_restpose_2021_08_28.gltf"]
-                    del common.shared_models["player_right_arm_restpose_2021_08_28.gltf"]
-                    self.right_arm.reparent_to(base.camera)
-                    self.right_arm.set_pos(0.5, 1, -0.5)
-                    self.right_arm.set_h(10)
-                    self.right_arm.set_scale(0.2)
-                    shadow_light = base.render.find('shadow_spot')
-                    self.right_arm.set_light_off(shadow_light)
-
-                    self.left_arm = common.shared_models["player_left_arm_restpose_2021_08_29.gltf"]
-                    del common.shared_models["player_left_arm_restpose_2021_08_29.gltf"]
-                    self.left_arm.reparent_to(base.camera)
-                    self.left_arm.set_pos(-0.5, 1, -0.5)
-                    self.left_arm.set_h(-10)
-                    self.left_arm.set_scale(0.2)
-                    self.left_arm.set_light_off(shadow_light)
-
-                    HoloDisplay.setup(self.left_arm)
-
-                else:
-                    self.right_arm.show()
-                    self.left_arm.show()
-
-            self.cam_is_fps = not self.cam_is_fps
-
-        KeyBindings.set_handler("cam_switch", cam_switch, "section1")
-        enable_orbital_cam()
-        add_section_task(self.move_camera, "move_camera")
+        self.toggle_view_mode()  # start demo in first-person view
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
 
@@ -2417,6 +2262,121 @@ class Section1:
         with open("Section2/models.txt") as model_path_file:
             model_paths = [path.replace("\r", "").replace("\n", "") for path in model_path_file]
         common.preload_models(model_paths)
+
+    def show_info(self, info_type):
+        section_events = KeyBindings.events["section1"]
+        music_toggle_key = section_events["toggle_music"].key_str
+        txt_events = KeyBindings.events["text"]
+        help_toggle_key = txt_events["toggle_help"].key_str
+
+        if info_type == "1st-person mode":
+            fps_events = KeyBindings.events["fps_controller"]
+            jump_key = fps_events["do_jump"].key_str
+            forward_key = fps_events["move_forward"].key_str
+            backward_key = fps_events["move_backward"].key_str
+            left_key = fps_events["move_left"].key_str
+            right_key = fps_events["move_right"].key_str
+            # controller info text
+            controller_text = '\n'.join((
+                f'Jump: \1key\1{jump_key.title()}\2',
+                f'\nForward: \1key\1{forward_key.title()}\2',
+                f'Backward: \1key\1{backward_key.title()}\2',
+                f'Left: \1key\1{left_key.title()}\2',
+                f'Right: \1key\1{right_key.title()}\2',
+                f'\nPlay/Pause Music: \1key\1{music_toggle_key.title()}\2',
+                f'\nToggle This Help: \1key\1{help_toggle_key.title()}\2'
+            ))
+        elif info_type == "ship construction":
+            skip_key = section_events["skip_construction"].key_str.title()
+            toggle_inset_key = section_events["toggle_display_inset"].key_str.title()
+            controller_text = '\n'.join((
+                f'Auto-complete ship construction: \1key\1{skip_key}\2',
+                f'\nToggle display inset: \1key\1{toggle_inset_key}\2',
+                f'\nPlay/Pause Music: \1key\1{music_toggle_key.title()}\2',
+                f'\nToggle This Help: \1key\1{help_toggle_key.title()}\2'
+            ))
+
+        TextManager.remove_text()
+        TextManager.add_text("context_help", controller_text)
+
+    def orbit_camera(self, task):
+        dt = globalClock.get_dt()
+        self.cam_heading -= 1.75 * dt
+        self.cam_target.set_h(self.cam_heading)
+        if self.cam_target.get_z() < 40:
+            self.cam_target.set_z(self.cam_target.get_z() + 0.15 * dt)
+        self.cam_pivot.look_at(base.render, 0, 0, 15)
+
+        return task.cont
+
+    def enable_orbital_cam(self):
+        base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
+        base.camera.reparent_to(self.cam_pivot)
+        base.camLens.fov = 80
+        base.camLens.set_near_far(0.01, 90000)
+        base.camLens.focal_length = 7
+
+        add_section_task(self.orbit_camera, "orbit_camera")
+
+    def toggle_display_inset(self):
+        if not self.cam_is_fps:
+            if FocusCamera.display_region.active:
+                FocusCamera.display_region.active = False
+                base.camera.reparent_to(FocusCamera.cam_pivot)
+            else:
+                FocusCamera.display_region.active = True
+                base.camera.reparent_to(self.cam_pivot)
+
+    def toggle_view_mode(self):
+        if self.cam_is_fps:
+            events = KeyBindings.events["fps_controller"]
+            forward_key = events["move_forward"].key_str
+            backward_key = events["move_backward"].key_str
+            left_key = events["move_left"].key_str
+            right_key = events["move_right"].key_str
+            is_down = base.mouseWatcherNode.is_button_down
+            moving = is_down(forward_key) or is_down(backward_key) or is_down(left_key) or is_down(right_key)
+
+            if moving:
+                return
+
+            self.right_arm.hide()
+            self.left_arm.hide()
+            # fp_ctrl.disable_fp_camera()
+            fp_ctrl.fp_cleanup()
+            self.enable_orbital_cam()
+        else:
+            fp_ctrl.fp_init(base.static_pos, z_limit=-4, cap_size_x=3.5, cap_size_y=1) 
+            fp_ctrl.enable_fp_camera(fp_height = 2.5)
+
+            if not self.arms_instantiated:
+                self.arms_instantiated = True
+                # instantiate arms the normal way
+                # space suit arms setup begins
+                self.right_arm = common.shared_models["player_right_arm_restpose_2021_08_28.gltf"]
+                del common.shared_models["player_right_arm_restpose_2021_08_28.gltf"]
+                self.right_arm.reparent_to(base.camera)
+                self.right_arm.set_pos(0.5, 1, -0.5)
+                self.right_arm.set_h(10)
+                self.right_arm.set_scale(0.2)
+                shadow_light = base.render.find('shadow_spot')
+                self.right_arm.set_light_off(shadow_light)
+
+                self.left_arm = common.shared_models["player_left_arm_restpose_2021_08_29.gltf"]
+                del common.shared_models["player_left_arm_restpose_2021_08_29.gltf"]
+                self.left_arm.reparent_to(base.camera)
+                self.left_arm.set_pos(-0.5, 1, -0.5)
+                self.left_arm.set_h(-10)
+                self.left_arm.set_scale(0.2)
+                self.left_arm.set_light_off(shadow_light)
+
+                HoloDisplay.setup(self.left_arm)
+
+            else:
+                self.right_arm.show()
+                self.left_arm.show()
+
+        self.cam_is_fps = not self.cam_is_fps
 
     def toggle_music(self):
         if self.music.status() == 2:
@@ -2427,40 +2387,118 @@ class Section1:
             self.music.set_time(self.music_time)
             self.music.play()
 
+    def build_starship(self):
+        if self.music.status() == 1:
+            self.music.set_time(self.music_time)
+            self.music.play()
+
+        dismiss_info_text('bay_ready_text')
+        self.show_info("ship construction")
+
+        self.toggle_view_mode()  # switch to 3rd-person orbital cam
+        FocusCamera.setup()
+
+        add_section_task(self.hangar.lower_panel, "lower_panel")
+        FocusCamera.target.set_pos(Elevator.instances[-3].model.get_pos(base.render))
+        FocusCamera.target.set_z(0.)
+        FocusCamera.target.set_hpr(180., -5., 0.)
+
+        print('Starship instantiation triggered.')
+        # starship instantiation begins
+        add_section_task(self.check_workers_done, "check_workers_done")
+
+        self.holo_ship.show()
+
+#        starship_id = HoloDisplay.get_selected_ship_id()
+        starship_id = "starship_a"
+        self.starship_components = {}
+
+        model_root = common.models[f"{starship_id}.bam"]
+        del common.models[f"{starship_id}.bam"]
+        model_root.reparent_to(base.render)
+        self.model_root = model_root
+        # model_root.set_two_sided(True)
+        model_root.set_color(1., 1., 1., 1.)
+
+        for model in model_root.find_all_matches("**/+GeomNode"):
+            component_id = model.parent.name
+            self.starship_components[component_id] = model
+
+        for mirror_node in model_root.find_all_matches("**/mirror_*"):
+
+            component_id = mirror_node.name
+            model = self.starship_components[component_id.replace("mirror_", "")]
+            mirror_parent = model.parent.copy_to(model.parent.parent)
+            x, y, z = mirror_parent.get_pos()
+            mirror_parent.set_pos(0., 0., 0.)
+            mirror_parent.flatten_light()  # bake orientation and scale into vertices
+            mirror_parent.set_sx(-1.)
+            mirror_parent.flatten_light()  # bake negative scale into vertices
+            mirror_parent.set_pos(-x, y, z)
+            mirror_model = mirror_parent.children[0]
+            geom = mirror_model.node().modify_geom(0)
+            geom.reverse_in_place()
+
+            for i in range(geom.get_num_primitives()):
+                prim = geom.modify_primitive(i)
+                prim.set_index_type(GeomEnums.NT_uint32)
+
+            self.starship_components[component_id] = mirror_model
+            mirror_node.detach_node()
+
+        self.jobs = []
+        self.mirror_jobs = {}
+        primitives = {}
+        finalizer = self.add_primitive
+
+        for component_id, component in self.starship_components.items():
+            node = component.node()
+            bounds = node.get_bounds()
+            geom = node.modify_geom(0)
+            vertex_data = geom.get_vertex_data()
+            new_prim = GeomTriangles(GeomEnums.UH_static)
+            new_prim.set_index_type(GeomEnums.NT_uint32)
+            primitives[component_id] = [prim for prim in geom.primitives]
+            geom.clear_primitives()
+            geom.add_primitive(new_prim)
+            node.set_bounds(bounds)
+            node.set_final(True)
+
+        for job_data in self.parse_job_schedule(starship_id):
+
+            part_count = job_data["part_count"]
+            del job_data["part_count"]
+            component_id = job_data["component_id"]
+            component = self.starship_components[component_id]
+            prims = primitives[component_id][:part_count]
+            job = Job(prims, component, finalizer, **job_data)
+            self.jobs.append(job)
+            del primitives[component_id][:part_count]
+            mirror_component_id = "mirror_" + component_id
+
+            if mirror_component_id in self.starship_components:
+                component = self.starship_components[mirror_component_id]
+                prims = primitives[mirror_component_id][:part_count]
+                mirror_job = job.create_mirror(prims, component, component_id)
+                self.mirror_jobs[component_id] = mirror_job
+                del primitives[mirror_component_id][:part_count]
+
+        # prune any invalid jobs
+        self.jobs = [j for j in self.jobs if j]
+
     def start_jobs(self):
-        if self.jobs_started:
-            job = self.jobs[0]
-            worker = IdleWorkers.pop(job.worker_type)
-            check_job = lambda task: self.check_job(task, job, worker)
-            add_section_task(check_job, "check_job")
-            worker.do_job(job, start=True)
-            job.is_assigned = True
-            self.add_mirror_job(job)
+        job = self.jobs[0]
+        worker = IdleWorkers.pop(job.worker_type)
+        check_job = lambda task: self.check_job(task, job, worker)
+        add_section_task(check_job, "check_job")
+        worker.do_job(job, start=True)
+        job.is_assigned = True
+        self.add_mirror_job(job)
 
-            dismiss_info_text('bay_ready_text')
+        def set_jobs_started(task):
+            self.jobs_started = True
 
-        else:
-            events = KeyBindings.events["section1"]
-            build_start_key = events["build_starship"].key_str.title()
-            skip_key = events["skip_construction"].key_str.title()
-            key_prev = events["ship_select_prev"].key_str.title()
-            key_next = events["ship_select_next"].key_str.title()
-            bay_ready_text = '\n\n'.join((
-                'Construction bay is ready and awaiting job input.',
-                f'Tap \1key\1{key_prev}\2 / \1key\1{key_next}\2 in First-Person Mode to hover-select your spacecraft.',
-                f'Press \1key\1{build_start_key}\2 to begin building your selected spacecraft.',
-                f'Press \1key\1{skip_key}\2 to auto-complete its construction.'
-            ))
-            fade_in_text('bay_ready_text', bay_ready_text, Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
-
-            add_section_task(self.await_build_command, "await_build_command")
-
-    def await_build_command(self, task):
-        if self.jobs_started and not self.await_build_init:
-            self.await_build_init = True
-            self.start_jobs()
-
-        return task.cont
+        add_section_task(set_jobs_started, "set_jobs_started", delay=.5)
 
     def parse_job_schedule(self, starship_id):
         job_schedule = []
@@ -2515,16 +2553,6 @@ class Section1:
                     job_data[prop] = val
 
         return job_schedule
-
-    def move_camera(self, task):
-        dt = globalClock.get_dt()
-        self.cam_heading -= 1.75 * dt
-        self.cam_target.set_h(self.cam_heading)
-        if self.cam_target.get_z() < 40:
-            self.cam_target.set_z(self.cam_target.get_z() + 0.15 * dt)
-        self.cam_pivot.look_at(base.render, 0, 0, 15)
-
-        return task.cont
 
     def add_primitive(self, component, prim):
         prim_array = prim.get_vertices()
@@ -2611,14 +2639,8 @@ class Section1:
         KeyBindings.activate_all("section1")
         KeyBindings.activate_all("text")
 
-    def destroy_holo_ship(self):
-        if self.holo_ship:
-            self.holo_ship.detach_node()
-            self.holo_ship = None
-            holo.holo_cleanup()
-
     def skip_construction(self):
-        if IdleWorkers.on_strike or not self.jobs:
+        if IdleWorkers.on_strike or not self.jobs_started:
             return
 
         IdleWorkers.on_strike = True
@@ -2635,6 +2657,12 @@ class Section1:
         for component_id, job in self.mirror_jobs.copy().items():
             if not job.is_assigned:
                 del self.mirror_jobs[component_id]
+
+    def destroy_holo_ship(self):
+        if self.holo_ship:
+            self.holo_ship.detach_node()
+            self.holo_ship = None
+            holo.holo_cleanup()
 
     def destroy(self):
         # clean up the stand-in finished ship
@@ -2680,11 +2708,11 @@ class Section1:
         DroneCompartment.instance.destroy()
         self.hangar.destroy()
         self.hangar = None
+        self.destroy_holo_ship()
 
-        if self.jobs_started:
+        if self.model_root:
             self.model_root.detach_node()
             self.model_root = None
-            self.destroy_holo_ship()
 
         remove_section_tasks()
         remove_section_intervals()
@@ -2732,11 +2760,6 @@ def initialise(data=None):
 
     base.accept('f4', print_player_pos)
 
-    def start_intro():
-        common.gameController.startSectionIntro(1, shipSpecs[1])
-
-    base.accept('f2', start_intro)
-
     for x in range(5):
         plight_1 = PointLight('plight_1')
         plight_1.set_priority(5)
@@ -2782,15 +2805,16 @@ def initialise(data=None):
     section = Section1()
     common.currentSection = section
     KeyBindings.activate_all("section1")
+    KeyBindings.activate("build_starship", "section1", once=True)
     KeyBindings.activate_all("text")
 
     return section
 
 
 KeyBindings.add("open_pause_menu", "escape", "section1")
-KeyBindings.add("cam_switch", "\\", "section1")
 KeyBindings.add("toggle_music", "p", "section1")
 KeyBindings.add("build_starship", "enter", "section1")
+KeyBindings.add("toggle_display_inset", "tab", "section1")
 KeyBindings.add("skip_construction", "*", "section1")
 KeyBindings.add("ship_select_prev", "arrow_left", "section1")
 KeyBindings.add("ship_select_next", "arrow_right", "section1")

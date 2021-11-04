@@ -98,10 +98,10 @@ class Intro:
             self.wheels.append(wheel_copy)
 
         shipSpec = self.data
-        ship = common.shared_models[shipSpec.shipModelFileLowPoly]
+        ship = common.shared_models[shipSpec.shipModelFileLowPoly].copy_to(hangar_exit)
 #        del common.shared_models[shipSpec.shipModelFileLowPoly]
         common.mirror_ship_parts(ship)
-        ship.reparent_to(hangar_exit)
+#        ship.reparent_to(hangar_exit)
         ship.set_pos(100., -50., 0.)
         ship.set_h(80.)
         self.ship = ship
@@ -218,7 +218,6 @@ class Intro:
         return task.cont
 
     def destroy(self):
-
         self.scene_root.detach_node()
         self.scene_root = None
         self.intervals.pause()
