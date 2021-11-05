@@ -147,6 +147,8 @@ def disable_fp_camera():
     for task_obj in running_tasks[:]:
         base.task_mgr.remove(task_obj)
 
+    running_tasks.clear()
+
     KeyBindings.deactivate_all("fps_controller")
     reset_key_map()
 
@@ -161,7 +163,7 @@ def pause_fp_camera():
     tmp_tasks = running_tasks[:]
 
     for task_obj in tmp_tasks:
-        base.task_mgr.remove(task_obj)
+        task_obj.pause()
 
     running_tasks[:] = tmp_tasks[:]
     KeyBindings.deactivate_all("fps_controller")
@@ -178,7 +180,7 @@ def resume_fp_camera():
     base.win.move_pointer(0, *paused_cursor_pos)
 
     for task_obj in running_tasks:
-        base.task_mgr.add(task_obj)
+        task_obj.resume()
 
     KeyBindings.activate_all("fps_controller")
 
@@ -206,12 +208,8 @@ def update_cam(task):
     # maximum and minimum pitch
     maxPitch = 90
     minPitch = -50
-    # cam view target initialization
-    camViewTarget = LVecBase3f()
 
     if base.win.movePointer(0, window_Xcoord_halved, window_Ycoord_halved):
-
-        p = 0
 
         # calculate the pitch of the camera pivot
         p = cam_pivot.get_p() - (mouseY - window_Ycoord_halved) * mouseSpeedY
@@ -221,7 +219,6 @@ def update_cam(task):
 
         # directly set the camera pivot pitch
         cam_pivot.set_p(p)
-        camViewTarget.set_y(p)
 
         # rotate the player's heading according to the mouse x-axis movement
         h = player.get_h() - (mouseX - window_Xcoord_halved) * mouseSpeedX
@@ -230,7 +227,6 @@ def update_cam(task):
         h %= 360.
 
         player.set_h(h)
-        camViewTarget.set_x(h)
 
     if keyMap["left"]:
         base.static_frames = 0
@@ -249,56 +245,13 @@ def update_cam(task):
         player.set_y(player, -movementSpeedBackward * globalClock.get_dt())
 
     if not (keyMap["left"] or keyMap["right"] or keyMap["forward"] or keyMap["backward"]):
-        player = base.render.find('Player')
-        cam_pivot = player.find('cam_pivot')
-
-        # get mouse data
-        pointer = base.win.get_pointer(0)
-        mouseX = pointer.get_x()
-        mouseY = pointer.get_y()
-
-        # screen sizes
-        window_Xcoord_halved = base.win.get_x_size() // 2
-        window_Ycoord_halved = base.win.get_y_size() // 2
-        # mouse speed
-        mouseSpeedX = 0.2
-        mouseSpeedY = 0.2
-        # maximum and minimum pitch
-        maxPitch = 90
-        minPitch = -50
-        # cam view target initialization
-        camViewTarget = LVecBase3f()
-        
-        if base.win.movePointer(0, window_Xcoord_halved, window_Ycoord_halved):
-            if player.node().is_on_ground():
-                # pause the physics_update if the player isn't in midair
-                # and no movement keys are pressed
-                temp_tasks = running_tasks[:]
-                physics_task = temp_tasks[1]
-                physics_task.pause()
-
-                running_tasks[:] = temp_tasks[:]
-
-                p = 0
-
-                # calculate the pitch of the camera pivot
-                p = cam_pivot.get_p() - (mouseY - window_Ycoord_halved) * mouseSpeedY
-
-                # sanity checking
-                p = max(minPitch, min(maxPitch, p))
-
-                # directly set the camera pivot pitch
-                cam_pivot.set_p(p)
-                camViewTarget.set_y(p)
-
-                # rotate the player's heading according to the mouse x-axis movement
-                h = player.get_h() - (mouseX - window_Xcoord_halved) * mouseSpeedX
-
-                # sanity checking
-                h %= 360.
-
-                player.set_h(h)
-                camViewTarget.set_x(h)
+        if not running_tasks[1].is_paused and player.node().is_on_ground():
+            # pause the physics_update if the player isn't in midair
+            # and no movement keys are pressed
+            temp_tasks = running_tasks[:]
+            physics_task = temp_tasks[1]
+            physics_task.pause()
+            running_tasks[:] = temp_tasks[:]
 
     return task.cont
 

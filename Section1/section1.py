@@ -232,7 +232,7 @@ class FocusCamera:
     def update_display_region(cls, window):
         w = window.get_x_size()
         h = window.get_y_size()
-        t = .2
+        t = .275
         y1 = 20
         y2 = h * t
         x1 = 20
@@ -2166,7 +2166,7 @@ class Hangar:
                 target = Vec3(0.204692, -26.4711, 14.0199)
                 p_dist = (target - base.camera.get_pos(base.render)).length()
 
-                if p_dist < 1:
+                if p_dist < 10:
                     self.cockpit_engaged = True
 
                     animate_cockpit()
@@ -2224,10 +2224,6 @@ class Section1:
         compartment.model.set_pos(0., 0., 50.)
         add_section_task(compartment.handle_next_request, "handle_compartment_requests")
 
-        KeyBindings.set_handler("build_starship", self.build_starship, "section1")
-        KeyBindings.set_handler("skip_construction", self.skip_construction, "section1")
-        KeyBindings.set_handler("toggle_display_inset", self.toggle_display_inset, "section1")
-
         self.model_root = None
         self.holo_ship = common.models["holo_starship_a.gltf"]
         del common.models["holo_starship_a.gltf"]
@@ -2253,9 +2249,14 @@ class Section1:
         self.cam_pivot = self.cam_target.attach_new_node("cam_pivot")
         self.cam_pivot.set_y(-115.)
         self.cam_is_fps = False
+        fp_ctrl.fp_init(base.static_pos, z_limit=-4, cap_size_x=3.5, cap_size_y=1) 
         self.toggle_view_mode()  # start demo in first-person view
 
         base.set_background_color(0.1, 0.1, 0.1, 1)
+
+        KeyBindings.set_handler("build_starship", self.build_starship, "section1")
+        KeyBindings.set_handler("skip_construction", self.skip_construction, "section1")
+        KeyBindings.set_handler("toggle_display_inset", self.toggle_display_inset, "section1")
 
         # Preload the models for Section 2.
 
@@ -2288,10 +2289,10 @@ class Section1:
             ))
         elif info_type == "ship construction":
             skip_key = section_events["skip_construction"].key_str.title()
-            toggle_inset_key = section_events["toggle_display_inset"].key_str.title()
+            view_toggle_key = section_events["toggle_display_inset"].key_str.title()
             controller_text = '\n'.join((
                 f'Auto-complete ship construction: \1key\1{skip_key}\2',
-                f'\nToggle display inset: \1key\1{toggle_inset_key}\2',
+                f'\nToggle orbital view: \1key\1{view_toggle_key}\2',
                 f'\nPlay/Pause Music: \1key\1{music_toggle_key.title()}\2',
                 f'\nToggle This Help: \1key\1{help_toggle_key.title()}\2'
             ))
@@ -2342,11 +2343,9 @@ class Section1:
 
             self.right_arm.hide()
             self.left_arm.hide()
-            # fp_ctrl.disable_fp_camera()
-            fp_ctrl.fp_cleanup()
+            fp_ctrl.disable_fp_camera()
             self.enable_orbital_cam()
         else:
-            fp_ctrl.fp_init(base.static_pos, z_limit=-4, cap_size_x=3.5, cap_size_y=1) 
             fp_ctrl.enable_fp_camera(fp_height = 2.5)
 
             if not self.arms_instantiated:
@@ -2676,7 +2675,8 @@ class Section1:
         if self.arms_instantiated:
             self.left_arm.detach_node()
             self.right_arm.detach_node()
-            fp_ctrl.fp_cleanup()
+
+        fp_ctrl.fp_cleanup()
 
         if 'not' not in str(base.render.find('**/joystick')):
             joystick = base.render.find('**/joystick')
