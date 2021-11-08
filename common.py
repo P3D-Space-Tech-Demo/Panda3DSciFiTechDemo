@@ -1,5 +1,6 @@
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import *
+from direct.actor.Actor import Actor
 from direct.interval.IntervalGlobal import *
 from direct.stdpy import threading2
 from direct.filter.CommonFilters import CommonFilters

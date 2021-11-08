@@ -256,8 +256,10 @@ class HoloDisplay:
     tex_buffer = None
     scene_root = None
     cam_pivot = None
-    model = None
+    pivot = None
+    left_arm = None
     ship_indices = deque([0, 1, 2])
+    ready = False
 
     @classmethod
     def setup(cls, left_arm):
@@ -283,14 +285,18 @@ class HoloDisplay:
 
         # load in a display object model in normal render space
         model = common.models["wide_screen_video_display.egg"]
-        model.set_pos(119.466, 4.90663, 3.46)
-        model.look_at(79.4992, 3.56733, 4.35998)
         model.set_shader_off()
         model.set_transparency(TransparencyAttrib.M_dual)
-        model.reparent_to(left_arm)
+        emitter_joint = left_arm.expose_joint(None, "modelRoot", "emitter")
+        pivot = emitter_joint.attach_new_node("pivot")
+        pivot.set_h(90.)
+        pivot.set_scale(.01)
+        pivot.hide()
+        model.reparent_to(pivot)
         model.set_scale(0.5)
-        model.set_pos(-0.5, -0.3, 1)
-        cls.model = model
+        model.set_pos(0., 0., .5)
+        cls.pivot = pivot
+        cls.left_arm = left_arm
 
         amb_light = AmbientLight('amblight_2')
         amb_light.set_priority(50)
@@ -347,16 +353,45 @@ class HoloDisplay:
         cls.tex_buffer = None
         cls.scene_root.detach_node()
         cls.scene_root = None
-        cls.model.detach_node()
-        cls.model = None
+        cls.pivot.detach_node()
+        cls.pivot = None
+        cls.left_arm = None
+        cls.ready = False
 
     @classmethod
-    def switch_on(cls):
-        cls.model.show()
+    def switch_on(cls, delay=0.):
+        seq = Sequence()
+        seq.append(Wait(delay))
+        ival = ActorInterval(cls.left_arm, "ArmatureAction", playRate=2.)
+        seq.append(ival)
+        seq.append(Func(cls.pivot.show))
+        ival = LerpScaleInterval(cls.pivot, 1.5, 2.)
+        seq.append(ival)
+
+        def set_ready():
+            cls.ready = True
+
+        seq.append(Func(set_ready))
+        seq.append(Func(lambda: section_intervals.remove(seq)))
+        seq.start()
+        section_intervals.append(seq)
 
     @classmethod
-    def switch_off(cls):
-        cls.model.hide()
+    def switch_off(cls, callback):
+        if not cls.ready:
+            return
+
+        cls.ready = False
+        seq = Sequence()
+        ival = LerpScaleInterval(cls.pivot, .5, .01)
+        seq.append(ival)
+        seq.append(Func(cls.pivot.hide))
+        ival = ActorInterval(cls.left_arm, "ArmatureAction", playRate=-4.)
+        seq.append(ival)
+        seq.append(Func(callback))
+        seq.append(Func(lambda: section_intervals.remove(seq)))
+        seq.start()
+        section_intervals.append(seq)
 
     @classmethod
     def select_ship(cls, direction):
@@ -2180,7 +2215,7 @@ class Section1:
         self.show_info("1st-person mode")
 
         events = KeyBindings.events["section1"]
-        build_start_key = events["build_starship"].key_str.title()
+        build_start_key = events["init_construction"].key_str.title()
         key_prev = events["ship_select_prev"].key_str.title()
         key_next = events["ship_select_next"].key_str.title()
         bay_ready_text = '\n\n'.join((
@@ -2241,6 +2276,8 @@ class Section1:
 
         base.static_pos = Vec3(192.383, -0.182223, -0.5)
 
+        base.set_background_color(0.1, 0.1, 0.1, 1)
+
         # set up camera control
         self.cam_heading = 180.
         self.cam_target = base.render.attach_new_node("cam_target")
@@ -2252,9 +2289,13 @@ class Section1:
         fp_ctrl.fp_init(base.static_pos, z_limit=-4, cap_size_x=3.5, cap_size_y=1) 
         self.toggle_view_mode()  # start demo in first-person view
 
-        base.set_background_color(0.1, 0.1, 0.1, 1)
+        HoloDisplay.setup(self.left_arm)
+        HoloDisplay.switch_on(2.)
 
-        KeyBindings.set_handler("build_starship", self.build_starship, "section1")
+        def init_construction():
+            HoloDisplay.switch_off(self.build_starship)
+
+        KeyBindings.set_handler("init_construction", init_construction, "section1")
         KeyBindings.set_handler("skip_construction", self.skip_construction, "section1")
         KeyBindings.set_handler("toggle_display_inset", self.toggle_display_inset, "section1")
 
@@ -2354,22 +2395,21 @@ class Section1:
                 # space suit arms setup begins
                 self.right_arm = common.shared_models["player_right_arm_restpose_2021_08_28.gltf"]
                 del common.shared_models["player_right_arm_restpose_2021_08_28.gltf"]
-                self.right_arm.reparent_to(base.camera)
+                shadow_light = base.render.find('shadow_spot')
+                '''self.right_arm.reparent_to(base.camera)
                 self.right_arm.set_pos(0.5, 1, -0.5)
                 self.right_arm.set_h(10)
                 self.right_arm.set_scale(0.2)
-                shadow_light = base.render.find('shadow_spot')
-                self.right_arm.set_light_off(shadow_light)
+                self.right_arm.set_light_off(shadow_light)'''
 
-                self.left_arm = common.shared_models["player_left_arm_restpose_2021_08_29.gltf"]
-                del common.shared_models["player_left_arm_restpose_2021_08_29.gltf"]
+                self.left_arm = Actor(common.models["player_left_arm_holo_display_anim.gltf"])
+                del common.models["player_left_arm_holo_display_anim.gltf"]
                 self.left_arm.reparent_to(base.camera)
-                self.left_arm.set_pos(-0.5, 1, -0.5)
-                self.left_arm.set_h(-10)
+                self.left_arm.set_pos(-1.15, 0., -0.5)
+                self.left_arm.set_p(30.)
                 self.left_arm.set_scale(0.2)
                 self.left_arm.set_light_off(shadow_light)
-
-                HoloDisplay.setup(self.left_arm)
+                self.left_arm.node().set_final(True)
 
             else:
                 self.right_arm.show()
@@ -2805,7 +2845,6 @@ def initialise(data=None):
     section = Section1()
     common.currentSection = section
     KeyBindings.activate_all("section1")
-    KeyBindings.activate("build_starship", "section1", once=True)
     KeyBindings.activate_all("text")
 
     return section
@@ -2813,7 +2852,7 @@ def initialise(data=None):
 
 KeyBindings.add("open_pause_menu", "escape", "section1")
 KeyBindings.add("toggle_music", "p", "section1")
-KeyBindings.add("build_starship", "enter", "section1")
+KeyBindings.add("init_construction", "enter", "section1")
 KeyBindings.add("toggle_display_inset", "tab", "section1")
 KeyBindings.add("skip_construction", "*", "section1")
 KeyBindings.add("ship_select_prev", "arrow_left", "section1")

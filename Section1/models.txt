@@ -19,3 +19,4 @@ Assets/Section1/models/p_topper_out.gltf
 Assets/Section1/models/p_topper_force.gltf
 Assets/Section1/models/starship_a.bam
 Assets/Section1/models/holo_starship_a.gltf
+Assets/Section1/models/player_left_arm_holo_display_anim.gltf
