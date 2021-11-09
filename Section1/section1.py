@@ -258,11 +258,12 @@ class HoloDisplay:
     cam_pivot = None
     pivot = None
     left_arm = None
+    right_arm = None
     ship_indices = deque([0, 1, 2])
     ready = False
 
     @classmethod
-    def setup(cls, left_arm):
+    def setup(cls, left_arm, right_arm):
         # Create the spacesuit arm holo-display.
 
         # make a new texture buffer, render node, and attach a camera
@@ -297,6 +298,7 @@ class HoloDisplay:
         model.set_pos(0., 0., .5)
         cls.pivot = pivot
         cls.left_arm = left_arm
+        cls.right_arm = right_arm
 
         amb_light = AmbientLight('amblight_2')
         amb_light.set_priority(50)
@@ -356,17 +358,24 @@ class HoloDisplay:
         cls.pivot.detach_node()
         cls.pivot = None
         cls.left_arm = None
+        cls.right_arm = None
         cls.ready = False
 
     @classmethod
     def switch_on(cls, delay=0.):
         seq = Sequence()
         seq.append(Wait(delay))
-        ival = ActorInterval(cls.left_arm, "ArmatureAction", playRate=2.)
+        ival = ActorInterval(cls.left_arm, "ArmatureAction", playRate=3.)
         seq.append(ival)
-        seq.append(Func(cls.pivot.show))
+        par = Parallel()
+        seq.append(par)
+        ival = ActorInterval(cls.right_arm, "main_action", startFrame=0, endFrame=105, playRate=3.)
+        par.append(ival)
+        seq2 = Sequence()
+        par.append(seq2)
+        seq2.append(Func(cls.pivot.show))
         ival = LerpScaleInterval(cls.pivot, 1.5, 2.)
-        seq.append(ival)
+        seq2.append(ival)
 
         def set_ready():
             cls.ready = True
@@ -383,10 +392,16 @@ class HoloDisplay:
 
         cls.ready = False
         seq = Sequence()
+        par = Parallel()
+        seq.append(par)
+        ival = ActorInterval(cls.right_arm, "main_action", startFrame=0, endFrame=105, playRate=-5.)
+        par.append(ival)
+        seq2 = Sequence()
+        par.append(seq2)
         ival = LerpScaleInterval(cls.pivot, .5, .01)
-        seq.append(ival)
-        seq.append(Func(cls.pivot.hide))
-        ival = ActorInterval(cls.left_arm, "ArmatureAction", playRate=-4.)
+        seq2.append(ival)
+        seq2.append(Func(cls.pivot.hide))
+        ival = ActorInterval(cls.left_arm, "ArmatureAction", playRate=-5.)
         seq.append(ival)
         seq.append(Func(callback))
         seq.append(Func(lambda: section_intervals.remove(seq)))
@@ -395,6 +410,9 @@ class HoloDisplay:
 
     @classmethod
     def select_ship(cls, direction):
+        if not cls.ready:
+            return
+
         cls.ship_indices.rotate(direction)
         KeyBindings.deactivate("ship_select_prev", "section1")
         KeyBindings.deactivate("ship_select_next", "section1")
@@ -407,9 +425,17 @@ class HoloDisplay:
 
         ival = LerpHprInterval(cls.cam_pivot, .5, hpr, blendType="easeInOut")
         seq = Sequence()
-        seq.append(ival)
+        par = Parallel()
+        seq.append(par)
+        par.append(ival)
+        start = 105 if direction > 0 else 145
+        end = 145 if direction > 0 else 185
+        ival = ActorInterval(cls.right_arm, "main_action", startFrame=start, endFrame=end, playRate=4.)
+        par.append(ival)
         seq.append(Func(enable_controls))
+        seq.append(Func(lambda: section_intervals.remove(seq)))
         seq.start()
+        section_intervals.append(seq)
 
     @classmethod
     def get_selected_ship_id(cls):
@@ -2289,7 +2315,7 @@ class Section1:
         fp_ctrl.fp_init(base.static_pos, z_limit=-4, cap_size_x=3.5, cap_size_y=1) 
         self.toggle_view_mode()  # start demo in first-person view
 
-        HoloDisplay.setup(self.left_arm)
+        HoloDisplay.setup(self.left_arm, self.right_arm)
         HoloDisplay.switch_on(2.)
 
         def init_construction():
@@ -2393,14 +2419,16 @@ class Section1:
                 self.arms_instantiated = True
                 # instantiate arms the normal way
                 # space suit arms setup begins
-                self.right_arm = common.shared_models["player_right_arm_restpose_2021_08_28.gltf"]
-                del common.shared_models["player_right_arm_restpose_2021_08_28.gltf"]
                 shadow_light = base.render.find('shadow_spot')
-                '''self.right_arm.reparent_to(base.camera)
-                self.right_arm.set_pos(0.5, 1, -0.5)
-                self.right_arm.set_h(10)
+                self.right_arm = Actor(common.models["player_right_arm_holo_display_anim.gltf"])
+                del common.models["player_right_arm_holo_display_anim.gltf"]
+                self.right_arm.reparent_to(base.camera)
+                self.right_arm.set_pos(-1.15, 0., -0.5)
+                self.right_arm.set_p(30.)
                 self.right_arm.set_scale(0.2)
-                self.right_arm.set_light_off(shadow_light)'''
+                self.right_arm.set_light_off(shadow_light)
+                self.right_arm.node().set_bounds(OmniBoundingVolume())
+                self.right_arm.node().set_final(True)
 
                 self.left_arm = Actor(common.models["player_left_arm_holo_display_anim.gltf"])
                 del common.models["player_left_arm_holo_display_anim.gltf"]
@@ -2409,6 +2437,7 @@ class Section1:
                 self.left_arm.set_p(30.)
                 self.left_arm.set_scale(0.2)
                 self.left_arm.set_light_off(shadow_light)
+                self.left_arm.node().set_bounds(OmniBoundingVolume())
                 self.left_arm.node().set_final(True)
 
             else:
