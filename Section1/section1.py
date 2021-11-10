@@ -2097,7 +2097,7 @@ class Hangar:
                 base.camLens.focal_length = 7
                 base.camera.set_h(90)
                 base.camera.set_pos(1.2, 0, 2.9)
-
+                '''
                 right_arm = base.render.find_all_matches('**/Armature*')[0]
                 right_arm.set_h(-15)
                 r_pos = right_arm.get_pos()
@@ -2109,7 +2109,7 @@ class Hangar:
                 l_pos = left_arm.get_pos()
                 left_arm.set_pos(l_pos[0] - 2, l_pos[1], l_pos[2] - 0.5)
                 left_arm.hide()
-
+                '''
                 HoloDisplay.destroy()
 
                 # make the blue laser lights white scene lights
