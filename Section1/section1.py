@@ -365,7 +365,7 @@ class HoloDisplay:
     def switch_on(cls, delay=0.):
         seq = Sequence()
         seq.append(Wait(delay))
-        ival = ActorInterval(cls.left_arm, "ArmatureAction", playRate=3.)
+        ival = ActorInterval(cls.left_arm, "main_action", startFrame=0, endFrame=129, playRate=3.)
         seq.append(ival)
         par = Parallel()
         seq.append(par)
@@ -401,7 +401,7 @@ class HoloDisplay:
         ival = LerpScaleInterval(cls.pivot, .5, .01)
         seq2.append(ival)
         seq2.append(Func(cls.pivot.hide))
-        ival = ActorInterval(cls.left_arm, "ArmatureAction", playRate=-5.)
+        ival = ActorInterval(cls.left_arm, "main_action", startFrame=0, endFrame=129, playRate=-5.)
         seq.append(ival)
         seq.append(Func(callback))
         seq.append(Func(lambda: section_intervals.remove(seq)))
@@ -427,6 +427,10 @@ class HoloDisplay:
         seq = Sequence()
         par = Parallel()
         seq.append(par)
+        par.append(ival)
+        start = 129 if direction > 0 else 169
+        end = 169 if direction > 0 else 209
+        ival = ActorInterval(cls.left_arm, "main_action", startFrame=start, endFrame=end, playRate=4.)
         par.append(ival)
         start = 105 if direction > 0 else 145
         end = 145 if direction > 0 else 185
