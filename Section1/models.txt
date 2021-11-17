@@ -1,9 +1,8 @@
 Assets/Shared/models/test_completed_ship_a.gltf
 Assets/Shared/models/test_cockpit.gltf
 Assets/Shared/models/joystick.gltf
-Assets/Shared/models/player_right_arm_restpose_2021_08_28.gltf
-Assets/Shared/models/player_left_arm_restpose_2021_08_29.gltf
 Assets/Shared/models/player_mothership.gltf
+Assets/Shared/models/player_character.gltf
 Assets/Section1/models/wide_screen_video_display.egg
 Assets/Section1/models/light_spec_screen_select.gltf
 Assets/Section1/models/starship_a_screen_select.gltf
@@ -19,5 +18,3 @@ Assets/Section1/models/p_topper_out.gltf
 Assets/Section1/models/p_topper_force.gltf
 Assets/Section1/models/starship_a.bam
 Assets/Section1/models/holo_starship_a.gltf
-Assets/Section1/models/player_left_arm_holo_display_anim.gltf
-Assets/Section1/models/player_right_arm_holo_display_anim.gltf

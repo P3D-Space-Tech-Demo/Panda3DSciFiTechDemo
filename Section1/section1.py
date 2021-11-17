@@ -257,13 +257,12 @@ class HoloDisplay:
     scene_root = None
     cam_pivot = None
     pivot = None
-    left_arm = None
-    right_arm = None
+    player_char = None
     ship_indices = deque([0, 1, 2])
     ready = False
 
     @classmethod
-    def setup(cls, left_arm, right_arm):
+    def setup(cls, player_char):
         # Create the spacesuit arm holo-display.
 
         # make a new texture buffer, render node, and attach a camera
@@ -288,7 +287,7 @@ class HoloDisplay:
         model = common.models["wide_screen_video_display.egg"]
         model.set_shader_off()
         model.set_transparency(TransparencyAttrib.M_dual)
-        emitter_joint = left_arm.expose_joint(None, "modelRoot", "emitter")
+        emitter_joint = player_char.expose_joint(None, "modelRoot", "emitter")
         pivot = emitter_joint.attach_new_node("pivot")
         pivot.set_h(90.)
         pivot.set_scale(.01)
@@ -297,8 +296,7 @@ class HoloDisplay:
         model.set_scale(0.5)
         model.set_pos(0., 0., .5)
         cls.pivot = pivot
-        cls.left_arm = left_arm
-        cls.right_arm = right_arm
+        cls.player_char = player_char
 
         amb_light = AmbientLight('amblight_2')
         amb_light.set_priority(50)
@@ -357,22 +355,21 @@ class HoloDisplay:
         cls.scene_root = None
         cls.pivot.detach_node()
         cls.pivot = None
-        cls.left_arm = None
-        cls.right_arm = None
+        cls.player_char.detach_node()
+        cls.player_char = None
         cls.ready = False
 
     @classmethod
     def switch_on(cls, delay=0.):
         seq = Sequence()
         seq.append(Wait(delay))
-        ival = ActorInterval(cls.left_arm, "main_action", startFrame=0, endFrame=129, playRate=3.)
-        seq.append(ival)
         par = Parallel()
         seq.append(par)
-        ival = ActorInterval(cls.right_arm, "main_action", startFrame=0, endFrame=105, playRate=3.)
+        ival = ActorInterval(cls.player_char, "ready_emitter", playRate=3.)
         par.append(ival)
         seq2 = Sequence()
         par.append(seq2)
+        seq2.append(Wait(1.5))
         seq2.append(Func(cls.pivot.show))
         ival = LerpScaleInterval(cls.pivot, 1.5, 2.)
         seq2.append(ival)
@@ -394,14 +391,14 @@ class HoloDisplay:
         seq = Sequence()
         par = Parallel()
         seq.append(par)
-        ival = ActorInterval(cls.right_arm, "main_action", startFrame=0, endFrame=105, playRate=-5.)
+        ival = ActorInterval(cls.player_char, "ready_emitter", playRate=-5.)
         par.append(ival)
         seq2 = Sequence()
         par.append(seq2)
+        seq2.append(Wait(.8))
         ival = LerpScaleInterval(cls.pivot, .5, .01)
         seq2.append(ival)
         seq2.append(Func(cls.pivot.hide))
-        ival = ActorInterval(cls.left_arm, "main_action", startFrame=0, endFrame=129, playRate=-5.)
         seq.append(ival)
         seq.append(Func(callback))
         seq.append(Func(lambda: section_intervals.remove(seq)))
@@ -428,13 +425,8 @@ class HoloDisplay:
         par = Parallel()
         seq.append(par)
         par.append(ival)
-        start = 129 if direction > 0 else 169
-        end = 169 if direction > 0 else 209
-        ival = ActorInterval(cls.left_arm, "main_action", startFrame=start, endFrame=end, playRate=4.)
-        par.append(ival)
-        start = 105 if direction > 0 else 145
-        end = 145 if direction > 0 else 185
-        ival = ActorInterval(cls.right_arm, "main_action", startFrame=start, endFrame=end, playRate=4.)
+        anim_id = "turn_emitter_ccw" if direction > 0 else "turn_emitter_cw"
+        ival = ActorInterval(cls.player_char, anim_id, playRate=4.)
         par.append(ival)
         seq.append(Func(enable_controls))
         seq.append(Func(lambda: section_intervals.remove(seq)))
@@ -2097,19 +2089,7 @@ class Hangar:
                 base.camLens.focal_length = 7
                 base.camera.set_h(90)
                 base.camera.set_pos(1.2, 0, 2.9)
-                '''
-                right_arm = base.render.find_all_matches('**/Armature*')[0]
-                right_arm.set_h(-15)
-                r_pos = right_arm.get_pos()
-                right_arm.set_pos(r_pos[0] + 2, r_pos[1], r_pos[2])
-                right_arm.hide()
 
-                left_arm = base.render.find_all_matches('**/Armature*')[1]
-                left_arm.set_h(15)
-                l_pos = left_arm.get_pos()
-                left_arm.set_pos(l_pos[0] - 2, l_pos[1], l_pos[2] - 0.5)
-                left_arm.hide()
-                '''
                 HoloDisplay.destroy()
 
                 # make the blue laser lights white scene lights
@@ -2258,7 +2238,22 @@ class Section1:
         self.jobs = None
         self.jobs_started = False
         self.await_build_init = False
-        self.arms_instantiated = False
+
+        shadow_light = base.render.find('shadow_spot')
+        # player Actor setup begins
+        self.player_char = Actor(common.shared_models["player_character.gltf"])
+        self.player_char.load_anims({
+            "ready_emitter": ASSET_PATH + "models/player_character_ready_emitter.gltf",
+            "turn_emitter_cw": ASSET_PATH + "models/player_character_turn_emitter_cw.gltf",
+            "turn_emitter_ccw": ASSET_PATH + "models/player_character_turn_emitter_ccw.gltf"
+        })
+        self.player_char.reparent_to(base.camera)
+        self.player_char.set_pos(-1.15 + .6, 0., -0.5)
+        self.player_char.set_p(30.)
+        self.player_char.set_scale(0.2)
+        self.player_char.set_light_off(shadow_light)
+        self.player_char.node().set_bounds(OmniBoundingVolume())
+        self.player_char.node().set_final(True)
 
         music_path = ASSET_PATH + 'music/space_tech_next_short.mp3'
         self.music = common.base.loader.load_music(music_path)
@@ -2319,7 +2314,7 @@ class Section1:
         fp_ctrl.fp_init(base.static_pos, z_limit=-4, cap_size_x=3.5, cap_size_y=1) 
         self.toggle_view_mode()  # start demo in first-person view
 
-        HoloDisplay.setup(self.left_arm, self.right_arm)
+        HoloDisplay.setup(self.player_char)
         HoloDisplay.switch_on(2.)
 
         def init_construction():
@@ -2412,41 +2407,12 @@ class Section1:
             if moving:
                 return
 
-            self.right_arm.hide()
-            self.left_arm.hide()
+            self.player_char.hide()
             fp_ctrl.disable_fp_camera()
             self.enable_orbital_cam()
         else:
             fp_ctrl.enable_fp_camera(fp_height = 2.5)
-
-            if not self.arms_instantiated:
-                self.arms_instantiated = True
-                # instantiate arms the normal way
-                # space suit arms setup begins
-                shadow_light = base.render.find('shadow_spot')
-                self.right_arm = Actor(common.models["player_right_arm_holo_display_anim.gltf"])
-                del common.models["player_right_arm_holo_display_anim.gltf"]
-                self.right_arm.reparent_to(base.camera)
-                self.right_arm.set_pos(-1.15, 0., -0.5)
-                self.right_arm.set_p(30.)
-                self.right_arm.set_scale(0.2)
-                self.right_arm.set_light_off(shadow_light)
-                self.right_arm.node().set_bounds(OmniBoundingVolume())
-                self.right_arm.node().set_final(True)
-
-                self.left_arm = Actor(common.models["player_left_arm_holo_display_anim.gltf"])
-                del common.models["player_left_arm_holo_display_anim.gltf"]
-                self.left_arm.reparent_to(base.camera)
-                self.left_arm.set_pos(-1.15, 0., -0.5)
-                self.left_arm.set_p(30.)
-                self.left_arm.set_scale(0.2)
-                self.left_arm.set_light_off(shadow_light)
-                self.left_arm.node().set_bounds(OmniBoundingVolume())
-                self.left_arm.node().set_final(True)
-
-            else:
-                self.right_arm.show()
-                self.left_arm.show()
+            self.player_char.show()
 
         self.cam_is_fps = not self.cam_is_fps
 
@@ -2745,9 +2711,7 @@ class Section1:
         if not text_node.is_empty():
             text_node.detach_node()
 
-        if self.arms_instantiated:
-            self.left_arm.detach_node()
-            self.right_arm.detach_node()
+        self.player_char = None
 
         fp_ctrl.fp_cleanup()
 

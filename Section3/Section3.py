@@ -136,7 +136,7 @@ class Section3:
 
         self.hg_1 = common.models["sec3_handgun_1.gltf"]
         del common.models["sec3_handgun_1.gltf"]
-        self.hg_1.reparent_to(base.cam)
+        self.hg_1.reparent_to(base.camera)
 
         base.drop_clip_toggle = False
 
@@ -229,29 +229,26 @@ class Section3:
         self.hg_1.set_light(amb_light_node)
 
         self.load_gunhand()
-        self.hg_1.set_pos(self.right_grip_hand, 0.011319, 0.152317, 0.054291)
+        self.hg_1.set_pos(self.player_char, -0.011319 + .025 * 3., 0.152317 + 0.09266, 0.054291 - .025 * 6.)
 
     def load_gunhand(self):
 
-        self.right_grip_hand = Actor(common.models["player_right_arm_GRIP_FIRE_ANIM_2.gltf"])
-        del common.models["player_right_arm_GRIP_FIRE_ANIM_2.gltf"]
-        self.right_grip_hand.reparent_to(base.cam)
-        self.right_grip_hand.set_pos(0.125, 0.145, -0.05)
-        self.right_grip_hand.set_h(15)
-        self.right_grip_hand.node().set_final(True)
+        self.player_char = Actor(common.shared_models["player_character.gltf"])
+        self.player_char.load_anims({
+            "squeeze_trigger": ASSET_PATH_1 + "models/player_character_squeeze_trigger.gltf"
+        })
+        self.player_char.set_play_rate(15., "squeeze_trigger")
+        self.player_char.reparent_to(base.camera)
+        self.player_char.set_pos(0.125 - .025 * 3., 0.145 - 0.09266, -0.05 + .025 * 6.)
+        self.player_char.children[0].set_scale(.025)
+        self.player_char.node().set_bounds(OmniBoundingVolume())
+        self.player_char.node().set_final(True)
 
-        squeeze_anim = self.right_grip_hand.get_anim_control('ArmatureAction')
-        squeeze_anim.set_play_rate(15)
-
-        print(self.right_grip_hand.get_anim_names())
-        print(self.right_grip_hand.get_num_frames('ArmatureAction'))
-        print(squeeze_anim)
-
-        KeyBindings.set_handler("fire_gun", squeeze_anim.play, "section3")
+        KeyBindings.set_handler("fire_gun", lambda: self.player_char.play("squeeze_trigger"), "section3")
 
         def armature_init(wait_period):
             time.sleep(wait_period)
-            squeeze_anim.play()
+            self.player_char.play("squeeze_trigger")
 
         threading2._start_new_thread(armature_init, (0.1,))
 
@@ -283,12 +280,15 @@ class Section3:
             self.skybox = None
 
         self.hg_1.detach_node()
+        self.hg_1 = None
         self.model.detach_node()
+        self.model = None
         ramp = base.render.find('ramp')
         base.world.remove(ramp.node())
         ramp.detach_node()
 
-        self.right_grip_hand.detach_node()
+        self.player_char.detach_node()
+        self.player_char = None
 
         TextManager.remove_text()
 
