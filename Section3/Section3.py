@@ -136,7 +136,6 @@ class Section3:
 
         self.hg_1 = common.models["sec3_handgun_1.gltf"]
         del common.models["sec3_handgun_1.gltf"]
-        self.hg_1.reparent_to(base.camera)
 
         base.drop_clip_toggle = False
 
@@ -229,7 +228,9 @@ class Section3:
         self.hg_1.set_light(amb_light_node)
 
         self.load_gunhand()
-        self.hg_1.set_pos(self.player_char, -0.011319 + .025 * 3., 0.152317 + 0.09266, 0.054291 - .025 * 6.)
+        wrist_joint = self.player_char.expose_joint(None, "modelRoot", "wrist.R")
+        self.hg_1.reparent_to(wrist_joint)
+        self.hg_1.set_pos_hpr_scale(-1.33718, 0.452767, 5.61854, -90., 81.3, 0., 40., 40., 40.)
 
     def load_gunhand(self):
 

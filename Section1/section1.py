@@ -287,7 +287,7 @@ class HoloDisplay:
         model = common.models["wide_screen_video_display.egg"]
         model.set_shader_off()
         model.set_transparency(TransparencyAttrib.M_dual)
-        emitter_joint = player_char.expose_joint(None, "modelRoot", "emitter")
+        emitter_joint = player_char.expose_joint(None, "modelRoot", "emitter_attachment")
         pivot = emitter_joint.attach_new_node("pivot")
         pivot.set_h(90.)
         pivot.set_scale(.01)
