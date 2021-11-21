@@ -27,11 +27,12 @@ uniform mat4 p3d_ModelMatrix;
 
 in vec3 p3d_Normal;
 in vec4 p3d_Vertex;
-in vec4 transform_weight;
-in uvec4 transform_index;
 in vec4 p3d_Color;
 in vec4 p3d_Tangent;
 in vec2 p3d_MultiTexCoord0;
+
+in vec4 transform_weight;
+in uvec4 transform_index;
 
 out vec3 v_position;
 out vec4 v_color;
