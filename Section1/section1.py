@@ -2396,17 +2396,6 @@ class Section1:
 
     def toggle_view_mode(self):
         if self.cam_is_fps:
-            events = KeyBindings.events["fps_controller"]
-            forward_key = events["move_forward"].key_str
-            backward_key = events["move_backward"].key_str
-            left_key = events["move_left"].key_str
-            right_key = events["move_right"].key_str
-            is_down = base.mouseWatcherNode.is_button_down
-            moving = is_down(forward_key) or is_down(backward_key) or is_down(left_key) or is_down(right_key)
-
-            if moving:
-                return
-
             self.player_char.hide()
             fp_ctrl.disable_fp_camera()
             self.enable_orbital_cam()
