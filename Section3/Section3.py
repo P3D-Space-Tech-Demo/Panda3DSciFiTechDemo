@@ -14,7 +14,6 @@ section_tasks = []
 section_intervals = []
 
 def add_section_task(task_func, task_id, *args, **kwargs):
-
     cleanup = lambda task_obj: section_tasks.remove(task_obj)
     task_obj = ResumableTask(task_func, task_id, uponDeath=cleanup, *args, **kwargs)
     base.task_mgr.add(task_obj)
@@ -23,14 +22,12 @@ def add_section_task(task_func, task_id, *args, **kwargs):
     return task_obj
 
 def remove_section_tasks():
-
     for task_obj in section_tasks[:]:
         base.task_mgr.remove(task_obj)
 
     section_tasks.clear()
 
 def pause_section_tasks():
-
     tmp_tasks = section_tasks[:]
 
     for task_obj in tmp_tasks:
@@ -39,24 +36,20 @@ def pause_section_tasks():
     section_tasks[:] = tmp_tasks[:]
 
 def resume_section_tasks():
-
     for task_obj in section_tasks:
         task_obj.resume()
 
 def pause_section_intervals():
-
     for interval in section_intervals:
         interval.pause()
 
 def resume_section_intervals():
-
     for interval in section_intervals:
         interval.resume()
 
 
 class Section3:
     def __init__(self):
-
         cube_map_name = 'Assets/Section3/tex/main_skybox_#.png'
         self.skybox = common.create_skybox(cube_map_name)
         self.skybox.reparent_to(base.render)
@@ -75,7 +68,6 @@ class Section3:
         common.preload_models(model_paths)'''
 
     def loadStationSegmentOne(self):
-
         self.intervals = []
         base.static_pos = Vec3(-5.29407, -15.2641, 2.66)
 
@@ -109,14 +101,14 @@ class Section3:
         TextManager.add_text("context_help", controller_text)
         # narrative text
         narrative = [
-            "This is the first page of the narrative"
+            "This is the first part of the narrative"
             " related to the background story of Section 3.",
-            "This is the second page of the narrative"
+            "This is the second part of the narrative"
             " related to the background story of Section 3.",
-            "This is the third and last page of the narrative"
+            "This is the third and last part of the narrative"
             " related to the background story of Section 3."
         ]
-        TextManager.add_text("multi_page", narrative)
+        TextManager.add_text("multi_part", narrative)
 
         for x in range(2):
             plight_1 = PointLight('plight_' + str(len(section_lights)))
@@ -233,7 +225,6 @@ class Section3:
         self.hg_1.set_pos_hpr_scale(-1.33718, 0.452767, 5.61854, -90., 81.3, 0., 40., 40., 40.)
 
     def load_gunhand(self):
-
         self.player_char = Actor(common.shared_models["player_character.gltf"])
         self.player_char.load_anims({
             "squeeze_trigger": ASSET_PATH_1 + "models/player_character_squeeze_trigger.gltf"
@@ -245,16 +236,18 @@ class Section3:
         self.player_char.node().set_bounds(OmniBoundingVolume())
         self.player_char.node().set_final(True)
 
+        # initialize armature
+        self.player_char.pose("squeeze_trigger", 0)
+
         KeyBindings.set_handler("fire_gun", lambda: self.player_char.play("squeeze_trigger"), "section3")
 
-        def armature_init(wait_period):
+        '''def armature_init(wait_period):
             time.sleep(wait_period)
             self.player_char.play("squeeze_trigger")
 
-        threading2._start_new_thread(armature_init, (0.1,))
+        threading2._start_new_thread(armature_init, (0.1,))'''
 
     def pauseGame(self):
-
         fp_ctrl.pause_fp_camera()
 
         pause_section_tasks()
@@ -264,7 +257,6 @@ class Section3:
         KeyBindings.deactivate_all("text")
 
     def resumeGame(self):
-
         resume_section_tasks()
         resume_section_intervals()
 
@@ -317,7 +309,6 @@ def startIntro(data, show_loading_screen):
 
 
 def initialise(data=None):
-
     base.bullet_max_step = 15
 
     section = Section3()

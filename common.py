@@ -515,13 +515,7 @@ class ResumableTask(PythonTask):
 
         if self.delay_time is not None:
             self.delay_time = self.paused_delay_time
-            
-        try:
-            base.task_mgr.add(self)
-            
-        except:
-            print('ResumableTask self space not recognized, passing...')
-            
+
         self.tmp_time = self.clock.get_real_time()
 
         self.is_paused = False
@@ -533,24 +527,12 @@ class ResumableTask(PythonTask):
 
 class TextManager:
     text_nodes = {}
-    text_pages = []  # list of strings
+    text_parts = []  # list of strings
     help_text = ""
-    KeyBindings.add("toggle_help", "f1", "text", lambda: TextManager.toggle_text("context_help"))
+    KeyBindings.add("toggle_help", "f1", "text", lambda: TextManager.toggle_text())
     KeyBindings.add("advance_text", "f6", "text", lambda: TextManager.advance_text())
-    KeyBindings.activate_all("text")
-    text_alpha_start = {
-        "context_help": 0.01,
-        "multi_page": 0.01
-    }
-    text_alpha = {
-        "context_help": 0.01,
-        "multi_page": 0.01
-    }
-    # alpha increment values and scalar (-1. for decrement)
-    text_alpha_incr = {
-        "context_help": [0.01, 1.],
-        "multi_page": [0.01, 1.]
-    }
+    fade_type = "in"
+    fade_ivals = {}
     # define text color for highlighting key-bindings
     props_mgr = TextPropertiesManager.get_global_ptr()
     col_prop = TextProperties()
@@ -558,7 +540,7 @@ class TextManager:
     props_mgr.set_properties("key", col_prop)
 
     @classmethod
-    def add_text(cls, text_id, text):
+    def add_text(cls, text_id, text, fade_in=.5):
         if text_id in cls.text_nodes:
             text_np = cls.text_nodes[text_id]
             text_np.detach_node()
@@ -567,128 +549,125 @@ class TextManager:
         text_node = TextNode(text_id)
         text_node.set_shadow(0.1, 0.1)
 
-        if text_id == "multi_page":
+        if text_id == "multi_part":
             text_node.set_text(text.pop(0))
-            cls.text_pages = text
+            cls.text_parts = text
             key = KeyBindings.events["text"]["advance_text"].key_str
             cls.text_nodes["context_help"].node().set_text(f"\1key\1{key.title()}\2 to advance text")
             z = -.2
         else:
             text_node.set_text(text)
-            cls.help_text = text
             z = -.1
+
+        if text_id == "context_help":
+            cls.help_text = text
 
         text_np = base.a2dTopLeft.attach_new_node(text_node)
         text_np.set_scale(0.05)
         text_np.set_pos(.05, 0., z)
-        display_font = base.loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf")
+        display_font = base.loader.load_font("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf")
         # apply font
         text_node.set_font(display_font)
 
-        cls.text_alpha_incr[text_id][1] = 1.
-        cls.text_alpha[text_id] = cls.text_alpha_start[text_id]
-        text_np.set_alpha_scale(cls.text_alpha[text_id])
         cls.text_nodes[text_id] = text_np
-        cls.fade_in_text(text_id)
+
+        if text_id == "context_help":
+            cls.fade_type = "in"
+
+        if fade_in > 0.:
+            text_np.set_alpha_scale(0.)
+            cls.fade_text(text_id, "in", fade_in)
+        else:
+            text_np.set_alpha_scale(1.)
+
+        return text_np
 
     @classmethod
-    def remove_text(cls):
-        for text_id in ("context_help", "multi_page"):
+    def remove_text(cls, text_id=None):
+        if text_id is not None:
             if text_id in cls.text_nodes:
                 text_np = cls.text_nodes[text_id]
                 text_np.detach_node()
                 del cls.text_nodes[text_id]
-
-    @classmethod
-    def fade_in_text(cls, text_id):
-        if not text_id in cls.text_nodes:
+            if text_id in cls.fade_ivals:
+                ival = cls.fade_ivals[text_id]
+                ival.pause()
+                del cls.fade_ivals[text_id]
             return
 
-        text_np = cls.text_nodes[text_id]
+        for text_id, text_np in cls.text_nodes.items():
+            text_np.detach_node()
 
-        def text_alpha():
-            for x in range(100):
-                cls.text_alpha[text_id] += cls.text_alpha_incr[text_id][0]
-                time.sleep(0.01)
-                text_np.set_alpha_scale(cls.text_alpha[text_id])
+        for text_id, ival in cls.fade_ivals.items():
+            ival.pause()
 
-        threading2._start_new_thread(text_alpha, ())
-
-    @classmethod
-    def fade_out_text(cls, text_id):
-        if not text_id in cls.text_nodes:
-            return
-
-        text_np = cls.text_nodes[text_id]
-        text_np.set_alpha_scale(cls.text_alpha[text_id])
-
-        def text_alpha():
-            for x in range(100):
-                cls.text_alpha[text_id] -= cls.text_alpha_incr[text_id][0]
-                time.sleep(0.01)
-                text_np.set_alpha_scale(cls.text_alpha[text_id])
-
-        threading2._start_new_thread(text_alpha, ())
+        cls.text_nodes.clear()
+        cls.fade_ivals.clear()
 
     @classmethod
     def advance_text(cls):
-        if "multi_page" not in cls.text_nodes:
+        if "multi_part" not in cls.text_nodes:
             return
 
-        text_np = cls.text_nodes["multi_page"]
+        old_seq = cls.fade_ivals["multi_part"] if "multi_part" in cls.fade_ivals else None
 
-        def text_alpha():
-            for x in range(100):
-                cls.text_alpha["multi_page"] -= cls.text_alpha_incr["multi_page"][0]
-                time.sleep(0.01)
-                text_np.set_alpha_scale(cls.text_alpha["multi_page"])
+        if old_seq:
+            old_seq.finish()
 
-            if cls.text_pages:
-                text_np.node().set_text(cls.text_pages.pop(0))
-                for x in range(100):
-                    cls.text_alpha["multi_page"] += cls.text_alpha_incr["multi_page"][0]
-                    time.sleep(0.01)
-                    text_np.set_alpha_scale(cls.text_alpha["multi_page"])
-            else:
+        text_np = cls.text_nodes["multi_part"]
+        seq = Sequence()
+        ival = LerpColorScaleInterval(text_np, .5, (1., 1., 1., 0.))
+        seq.append(ival)
+
+        if cls.text_parts:
+            seq.append(Func(lambda: text_np.node().set_text(cls.text_parts.pop(0))))
+            ival = LerpColorScaleInterval(text_np, .5, (1., 1., 1., 1.))
+            seq.append(ival)
+        else:
+            def show_context_help():
                 text_np.detach_node()
-                del cls.text_nodes["multi_page"]
+                del cls.text_nodes["multi_part"]
                 cls.text_nodes["context_help"].node().set_text(cls.help_text)
+                cls.text_nodes["context_help"].set_alpha_scale(0.)
+                cls.fade_text("context_help", "in")
 
-        threading2._start_new_thread(text_alpha, ())
+            seq.append(Func(show_context_help))
+
+        seq.start()
+        cls.fade_ivals["multi_part"] = seq
 
     @classmethod
-    def fade_text(cls, text_id):
+    def fade_text(cls, text_id, fade_type, fade_dur=.5):
         if not text_id in cls.text_nodes:
             return
 
         text_np = cls.text_nodes[text_id]
+        alpha_scale = text_np.get_sa()
+        end_alpha_scale = 1. if fade_type == "in" else 0.
+        dur = abs(end_alpha_scale - alpha_scale) * fade_dur
+        old_ival = cls.fade_ivals[text_id] if text_id in cls.fade_ivals else None
 
-        def text_alpha():
-            incr = cls.text_alpha_incr[text_id][1]
+        if old_ival:
+            old_ival.pause()
 
-            while (cls.text_alpha[text_id] < 1.) if incr > 0. else (cls.text_alpha[text_id] > 0.):
-                if cls.text_alpha_incr[text_id][1] != incr:
-                    break
-                cls.text_alpha[text_id] += cls.text_alpha_incr[text_id][0] * incr
-                time.sleep(0.01)
-                text_np.set_alpha_scale(cls.text_alpha[text_id])
-
-        threading2._start_new_thread(text_alpha, ())
+        ival = LerpColorScaleInterval(text_np, dur, (1., 1., 1., end_alpha_scale))
+        ival.start()
+        cls.fade_ivals[text_id] = ival
 
     @classmethod
-    def toggle_text(cls, text_id):
-        if not text_id in cls.text_nodes:
+    def toggle_text(cls):
+        if not "context_help" in cls.text_nodes:
             return
 
-        cls.text_alpha_incr[text_id][1] *= -1.
-        cls.fade_text(text_id)
+        cls.fade_type = "out" if cls.fade_type == "in" else "in"
+        cls.fade_text("context_help", cls.fade_type)
 
         # allow keeping the help text on screen until the associated key is released
-        if text_id == "context_help" and cls.text_alpha_incr[text_id][1] > 0.:
+        if cls.fade_type == "in":
             key = KeyBindings.events["text"]["toggle_help"].key
 
             def fade_out_help(task):
-                base.accept_once(f"{key}-up", lambda: cls.toggle_text(text_id))
+                base.accept_once(f"{key}-up", lambda: cls.toggle_text())
 
             # activate the "held down" mode after keeping the key pressed for half
             # a second
@@ -698,8 +677,8 @@ class TextManager:
     addText = add_text
     removeText = remove_text
 
+
 # functional control of a global text alpha scale
-# base.text_alpha is declared in section initialise()
 def fade_in_text(label, text, screen_pos, color):
     # directly make a text node to display text
     text_1 = TextNode(label)
@@ -710,42 +689,17 @@ def fade_in_text(label, text, screen_pos, color):
     text_1_node.set_color(color)
     text_1.set_shadow(0.1, 0.1)
     # text_1.set_shadow_color(color)
-    display_font = base.loader.loadFont("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf")
+    display_font = base.loader.load_font("Assets/Shared/fonts/cinema-gothic-nbp-font/CinemaGothicNbpItalic-1ew2.ttf")
     # apply font
     text_1.set_font(display_font)
-
-    text_1_node.set_alpha_scale(base.text_alpha)
-
-    def text_alpha():
-        while base.text_alpha < 1:
-            base.text_alpha += 0.01
-            time.sleep(0.01)
-            text_1_node.set_alpha_scale(base.text_alpha)
-
-    threading2._start_new_thread(text_alpha, ())
+    ival = LerpColorScaleInterval(text_1_node, .5, (1., 1., 1., 1.), (1., 1., 1., 0.))
+    ival.start()
 
 def dismiss_info_text(text_node):
-
     try:
         t_node = base.a2dTopLeft.find(text_node)
-        t_node.set_alpha_scale(base.text_alpha)
-
-        def text_alpha():
-            if base.text_alpha > 0.98:
-                while base.text_alpha > 0:
-                    base.text_alpha -= 0.01
-                    time.sleep(0.01)
-                    t_node.set_alpha_scale(base.text_alpha)
-            else:
-                time.sleep(1)
-
-                while base.text_alpha > 0:
-                    base.text_alpha -= 0.01
-                    time.sleep(0.01)
-                    t_node.set_alpha_scale(base.text_alpha)
-
-        threading2._start_new_thread(text_alpha, ())
-
+        ival = LerpColorScaleInterval(t_node, .5, (1., 1., 1., 0.))
+        ival.start()
     except:
         print('No info text to dismiss, passing...')
 

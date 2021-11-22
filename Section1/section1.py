@@ -2231,9 +2231,10 @@ class Section1:
         bay_ready_text = '\n\n'.join((
             'Construction bay is ready and awaiting job input.',
             f'Tap \1key\1{key_prev}\2 / \1key\1{key_next}\2 to hover-select your spacecraft.',
-            f'Press \1key\1{build_start_key}\2 to begin building your selected spacecraft.',
+            f'Press \1key\1{build_start_key}\2 to begin building your selected spacecraft.'
         ))
-        fade_in_text('bay_ready_text', bay_ready_text, Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
+        text_np = TextManager.add_text("bay_ready", bay_ready_text, fade_in=2.)
+        text_np.set_pos(.75, 0, -.1)
 
         self.jobs = None
         self.jobs_started = False
@@ -2419,7 +2420,7 @@ class Section1:
             self.music.set_time(self.music_time)
             self.music.play()
 
-        dismiss_info_text('bay_ready_text')
+        TextManager.remove_text()
         self.show_info("ship construction")
 
         self.toggle_view_mode()  # switch to 3rd-person orbital cam
@@ -2695,11 +2696,6 @@ class Section1:
         # clean up the stand-in finished ship
         base.render.find('**/d_*').get_parent().detach_node()
 
-        text_node = base.a2dTopLeft.find('bay_ready_text')
-
-        if not text_node.is_empty():
-            text_node.detach_node()
-
         self.player_char = None
 
         fp_ctrl.fp_cleanup()
@@ -2773,8 +2769,6 @@ def initialise(data=None):
     base.render.set_antialias(AntialiasAttrib.M_multisample)
 
     base.bullet_max_step = 1
-
-    base.text_alpha = 0.01
 
     scene_filters.set_blur_sharpen(0.8)
     scene_filters.set_bloom()

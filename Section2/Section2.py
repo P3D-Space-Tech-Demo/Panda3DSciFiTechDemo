@@ -32,8 +32,6 @@ class Section2():
     def __init__(self, actionMusic, peaceMusic):
         common.currentSection = self
 
-        common.dismiss_info_text('loading')
-
         cube_map_name = 'Assets/Section2/tex/main_skybox_#.png'
         self.skybox = common.create_skybox(cube_map_name)
         self.skybox.reparentTo(common.base.render)
@@ -341,9 +339,6 @@ def startIntro(data, show_loading_screen):
     Intro(data, show_loading_screen)
 
 def initialise(shipSpec):
-
-    base.text_alpha = 0.01
-
     game = Section2("Assets/Section2/music/space_tech_break.mp3",
                     "Assets/Section2/music/space_tech_interlude_full.mp3")
     game.startGame(shipSpec)

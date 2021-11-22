@@ -45,6 +45,7 @@ class Intro:
 
         KeyBindings.set_handler("start_section3", self.destroy, "section3_intro")
         KeyBindings.activate_all("section3_intro")
+        KeyBindings.activate_all("text")
 
         self.scene_root = base.render.attach_new_node("scene_root")
 
@@ -101,14 +102,13 @@ class Intro:
         tex.load(img)
         loading_screen.set_texture(tex)
 
-        base.text_alpha = 1.
-        fade_in_text('loading', 'Loading...', Vec3(.75, 0, -.1), Vec4(1, 1, 1, 1))
+        text_np = TextManager.add_text("loading", "Loading...", fade_in=0.)
+        text_np.set_pos(.75, 0, -.1)
 
         base.graphics_engine.render_frame()
         base.graphics_engine.render_frame()
 
-        text_node = base.a2dTopLeft.find('loading')
-        text_node.detach_node()
+        TextManager.remove_text()
         loading_screen.detach_node()
 
         common.gameController.startSectionInternal(2, None)
