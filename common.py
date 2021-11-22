@@ -516,6 +516,7 @@ class ResumableTask(PythonTask):
         if self.delay_time is not None:
             self.delay_time = self.paused_delay_time
 
+        base.task_mgr.add(self)
         self.tmp_time = self.clock.get_real_time()
 
         self.is_paused = False
