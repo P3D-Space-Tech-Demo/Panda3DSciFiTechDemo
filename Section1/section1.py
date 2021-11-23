@@ -683,7 +683,7 @@ class Worker:
         self._do_job = activation_job
 
         if start:
-            self.start_job = lambda: self.set_part(part)
+            self.start_job = lambda: self.set_first_part(part)
             if self.type == "bot":
                 elevator = self.get_nearest_elevator(job.start_pos.y)
                 elevator.add_request(lambda: elevator.raise_bot(self, job.start_pos))
@@ -694,6 +694,10 @@ class Worker:
                 DroneCompartment.instance.release_drone(self)
         else:
             self.set_part(part)
+
+    def set_first_part(self, part):
+        self.set_part(part)
+        self.job.is_started = True
 
     def get_nearest_elevator(self, y):
         shortest_dist = 1000000.
@@ -945,6 +949,7 @@ class Job:
         self.start_pos = Point3(*worker_pos[0])
         self.next_jobs = {}
         self.is_assigned = False
+        self.is_started = False
         self.worker_done = False
 
         for next_job in next_jobs:
@@ -2135,6 +2140,7 @@ class Hangar:
 
                 def exit_triggered():
                     self.skybox.detach_node()
+                    section_intervals.remove(exit_seq)
                     common.gameController.startSectionIntro(1, shipSpecs[1], show_loading_screen=False)
 
                 load_sec_2 = Func(exit_triggered)
@@ -2237,8 +2243,6 @@ class Section1:
         text_np.set_pos(.75, 0, -.1)
 
         self.jobs = None
-        self.jobs_started = False
-        self.await_build_init = False
 
         shadow_light = base.render.find('shadow_spot')
         # player Actor setup begins
@@ -2433,7 +2437,6 @@ class Section1:
 
         print('Starship instantiation triggered.')
         # starship instantiation begins
-        add_section_task(self.check_workers_done, "check_workers_done")
 
         self.holo_ship.show()
 
@@ -2515,6 +2518,11 @@ class Section1:
         self.jobs = [j for j in self.jobs if j]
 
     def start_jobs(self):
+        add_section_task(self.check_workers_done, "check_workers_done")
+
+        if IdleWorkers.on_strike:
+            return
+
         job = self.jobs[0]
         worker = IdleWorkers.pop(job.worker_type)
         check_job = lambda task: self.check_job(task, job, worker)
@@ -2522,11 +2530,6 @@ class Section1:
         worker.do_job(job, start=True)
         job.is_assigned = True
         self.add_mirror_job(job)
-
-        def set_jobs_started(task):
-            self.jobs_started = True
-
-        add_section_task(set_jobs_started, "set_jobs_started", delay=.5)
 
     def parse_job_schedule(self, starship_id):
         job_schedule = []
@@ -2611,7 +2614,7 @@ class Section1:
     def check_job(self, task, job, worker):
         next_job_index = job.next_job_index
 
-        if next_job_index > 0:
+        if not IdleWorkers.on_strike and next_job_index > 0:
 
             index = self.jobs.index(job)
             next_job = self.jobs[index + next_job_index]
@@ -2634,6 +2637,25 @@ class Section1:
 
         self.hangar.deactivate_forcefield()
         self.destroy_holo_ship()
+
+    def skip_construction(self):
+        if IdleWorkers.on_strike:
+            return
+
+        IdleWorkers.on_strike = True
+
+        for job in self.jobs + list(self.mirror_jobs.values()):
+            job.primitives = []
+            job.parts_done = 0
+            job.next_jobs = {}
+
+        for job in self.jobs[:]:
+            if not job.is_started:
+                self.jobs.remove(job)
+
+        for component_id, job in self.mirror_jobs.copy().items():
+            if not job.is_started:
+                del self.mirror_jobs[component_id]
 
     def pauseGame(self):
         if self.cam_is_fps:
@@ -2666,25 +2688,6 @@ class Section1:
 
         KeyBindings.activate_all("section1")
         KeyBindings.activate_all("text")
-
-    def skip_construction(self):
-        if IdleWorkers.on_strike or not self.jobs_started:
-            return
-
-        IdleWorkers.on_strike = True
-
-        for job in self.jobs + list(self.mirror_jobs.values()):
-            job.primitives = []
-            job.parts_done = 0
-            job.next_jobs = {}
-
-        for job in self.jobs[:]:
-            if not job.is_assigned:
-                self.jobs.remove(job)
-
-        for component_id, job in self.mirror_jobs.copy().items():
-            if not job.is_assigned:
-                del self.mirror_jobs[component_id]
 
     def destroy_holo_ship(self):
         if self.holo_ship:
