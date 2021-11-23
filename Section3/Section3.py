@@ -231,6 +231,7 @@ class Section3:
         })
         self.player_char.set_play_rate(15., "squeeze_trigger")
         self.player_char.reparent_to(base.camera)
+        self.player_char.set_attrib(metal_shader_attrib)
         self.player_char.set_pos(0.125 - .025 * 3., 0.145 - 0.09266, -0.05 + .025 * 6.)
         self.player_char.children[0].set_scale(.025)
         self.player_char.node().set_bounds(OmniBoundingVolume())

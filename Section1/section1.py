@@ -2253,6 +2253,7 @@ class Section1:
             "turn_emitter_ccw": ASSET_PATH + "models/player_character_turn_emitter_ccw.gltf"
         })
         self.player_char.reparent_to(base.camera)
+        self.player_char.set_attrib(metal_shader_attrib)
         self.player_char.set_pos(-1.15 + .6, 0., -0.5)
         self.player_char.set_p(30.)
         self.player_char.set_scale(0.2)
