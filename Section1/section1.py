@@ -2316,7 +2316,7 @@ class Section1:
         self.cam_pivot = self.cam_target.attach_new_node("cam_pivot")
         self.cam_pivot.set_y(-115.)
         self.cam_is_fps = False
-        fp_ctrl.fp_init(base.static_pos, z_limit=-4, cap_size_x=3.5, cap_size_y=1) 
+        fp_ctrl.fp_init(base.static_pos, z_limit=-4, cap_size_x=3, cap_size_y=1) 
         self.toggle_view_mode()  # start demo in first-person view
 
         HoloDisplay.setup(self.player_char)
@@ -2405,7 +2405,7 @@ class Section1:
             fp_ctrl.disable_fp_camera()
             self.enable_orbital_cam()
         else:
-            fp_ctrl.enable_fp_camera(fp_height = 2.5)
+            fp_ctrl.enable_fp_camera(fp_height = 3)
             self.player_char.show()
 
         self.cam_is_fps = not self.cam_is_fps
