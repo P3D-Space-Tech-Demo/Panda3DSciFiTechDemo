@@ -3,6 +3,8 @@
 
 #version 330
 
+#define GLM_FORCE_SWIZZLE
+
 #ifndef MAX_LIGHTS
     #define MAX_LIGHTS 11
 #endif
@@ -22,17 +24,12 @@ uniform mat4 p3d_ProjectionMatrix;
 uniform mat4 p3d_ModelViewMatrix;
 uniform mat3 p3d_NormalMatrix;
 uniform mat4 p3d_TextureMatrix;
-uniform mat4 p3d_TransformTable[100];
-uniform mat4 p3d_ModelMatrix;
 
 in vec3 p3d_Normal;
 in vec4 p3d_Vertex;
 in vec4 p3d_Color;
 in vec4 p3d_Tangent;
 in vec2 p3d_MultiTexCoord0;
-
-in vec4 transform_weight;
-in uvec4 transform_index;
 
 out vec3 v_position;
 out vec4 v_color;
