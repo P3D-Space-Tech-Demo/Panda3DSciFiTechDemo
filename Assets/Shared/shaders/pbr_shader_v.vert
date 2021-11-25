@@ -39,7 +39,7 @@ out vec2 v_texcoord;
 out vec4 v_shadow_pos[MAX_LIGHTS];
 
 void main() {
-    vec4 vert_pos4 = p3d_ModelViewMatrix * skin_matrix * p3d_Vertex;
+    vec4 vert_pos4 = p3d_ModelViewMatrix * p3d_Vertex;
 
     v_position = vec3(vert_pos4);
     v_color = p3d_Color;

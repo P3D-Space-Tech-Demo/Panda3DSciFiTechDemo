@@ -69,6 +69,8 @@ in mat3 v_tbn;
 
 in vec4 v_shadow_pos[MAX_LIGHTS];
 
+out vec4 o_color;
+
 // Schlick's Fresnel approximation with Spherical Gaussian approximation to replace the power
 vec3 specular_reflection(FunctionParameters func_params) {
     vec3 f0 = func_params.reflection0;
@@ -164,5 +166,5 @@ void main() {
     float fog_factor = clamp(1.0 / exp(fog_distance * p3d_Fog.density), 0.0, 1.0);
     color = mix(p3d_Fog.color, color, fog_factor);
 
-    gl_FragColor = color;
+    o_color = color;
 }
