@@ -42,13 +42,6 @@ out vec2 v_texcoord;
 out vec4 v_shadow_pos[MAX_LIGHTS];
 
 void main() {
-    mat4 skin_matrix = (
-        p3d_TransformTable[transform_index.x] * transform_weight.x +
-        p3d_TransformTable[transform_index.y] * transform_weight.y +
-        p3d_TransformTable[transform_index.z] * transform_weight.z +
-        p3d_TransformTable[transform_index.w] * transform_weight.w);
-    mat4 model_matrix = p3d_ModelMatrix * skin_matrix;
-    
     vec4 vert_pos4 = p3d_ModelViewMatrix * skin_matrix * p3d_Vertex;
 
     v_position = vec3(vert_pos4);

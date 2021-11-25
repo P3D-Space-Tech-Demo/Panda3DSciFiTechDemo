@@ -26,14 +26,14 @@ vert_shader = "Assets/Shared/shaders/pbr_shader_v.vert"
 frag_shader = "Assets/Shared/shaders/pbr_shader_f.frag"
 invert_vert = "Assets/Shared/shaders/pbr_shader_v_invert.vert"
 invert_frag = "Assets/Shared/shaders/pbr_shader_f_invert.frag"
+arm_vert = "Assets/Shared/shaders/pbr_shader_v_arm.vert"
+arm_frag = "Assets/Shared/shaders/pbr_shader_f_arm.frag"
 metal_shader = Shader.load(Shader.SL_GLSL, invert_vert, invert_frag)
 scene_shader = Shader.load(Shader.SL_GLSL, vert_shader, frag_shader)
+arm_shader = Shader.load(Shader.SL_GLSL, arm_vert, arm_frag)
 
-scene_shader_attrib = ShaderAttrib.make(scene_shader)
-scene_shader_attrib = scene_shader_attrib.setFlag(ShaderAttrib.F_hardware_skinning, True)
-
-metal_shader_attrib = ShaderAttrib.make(metal_shader)
-metal_shader_attrib = metal_shader_attrib.setFlag(ShaderAttrib.F_hardware_skinning, True)
+arm_shader_attrib = ShaderAttrib.make(arm_shader)
+arm_shader_attrib = arm_shader_attrib.setFlag(ShaderAttrib.F_hardware_skinning, True)
 
 vert_shader = "Assets/Shared/shaders/pbr_clip_shader_v.vert"
 frag_shader = "Assets/Shared/shaders/pbr_clip_shader_f.frag"

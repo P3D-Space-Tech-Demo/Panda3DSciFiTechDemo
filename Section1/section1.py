@@ -1360,6 +1360,7 @@ class Hangar:
 
     def __init__(self, job_starter, platform_access_callback):
         self.model = common.models["hangar.gltf"]
+        self.model.set_shader(metal_shader)
         del common.models["hangar.gltf"]
         self.model.reparent_to(base.render)
         
@@ -1369,8 +1370,6 @@ class Hangar:
 
         # apply metalness effect shader
         alcove = self.model.find('**/alcove')
-        alcove.set_shader_off()
-        alcove.set_shader(metal_shader)
         shadow_light = base.render.find('shadow_spot')
         alcove.set_light_off(shadow_light)
         fp_ctrl.make_collision('alcove_brbn', alcove, 0, 0, alcove.get_pos())
@@ -1380,7 +1379,7 @@ class Hangar:
         # add plight props here
         plight_1.set_priority(10)
         plight_1_node = base.render.attach_new_node(plight_1)
-        plight_1_node.set_pos(180, 0, 7)
+        plight_1_node.set_pos(175, 0, 7)
         plight_1_node.node().set_color((0.9, 0.9, 1, 1))
         # plight_1_node.node().set_attenuation((0.5, 0, 0.05))
         base.render.set_light(plight_1_node)
@@ -1407,8 +1406,6 @@ class Hangar:
             base.world.attach_rigid_body(d_coll.node())
 
         for w in self.model.find_all_matches('**/wall*'):
-            w.set_shader_off()
-            w.set_shader(metal_shader)
             fp_ctrl.make_collision('wall_brbn', w, 0, 0, w.get_pos())
 
         entrance_doors = list(self.model.find_all_matches("**/entrance_door*"))
@@ -1417,22 +1414,10 @@ class Hangar:
         entrance_door_root.set_pos(self.entrance_pos)
 
         for d in entrance_doors:
-            d.set_shader_off()
-            d.set_shader(metal_shader)
             d.reparent_to(entrance_door_root)
 
         for d in self.model.find_all_matches("**/door_*"):
-            d.set_shader_off()
-            d.set_shader(metal_shader)
             fp_ctrl.make_collision('alcove_brbn', d, 0, 0, d.get_pos())
-
-        for s in self.model.find_all_matches("**/support_anchor*"):
-            s.set_shader_off()
-            s.set_shader(metal_shader)
-
-        for s in self.model.find_all_matches("**/platform_stair*"):
-            s.set_shader_off()
-            s.set_shader(metal_shader)
 
         amb_light = AmbientLight('amblight')
         amb_light.set_priority(50)
@@ -1684,8 +1669,6 @@ class Hangar:
 
     def add_containers(self):
         container = self.model.find("**/container_type_b")
-        container.set_shader_off()
-        container.set_shader(metal_shader)
 
         stack_dist = 18. + random.random() * 2.
 
@@ -1935,34 +1918,28 @@ class Hangar:
         finished_ship = common.shared_models["test_completed_ship_a.gltf"]
         finished_ship.reparent_to(base.render)
         finished_ship.set_shader_off()
-        finished_ship.set_shader(scene_shader)
+        finished_ship.set_shader(metal_shader)
         self.finished_ship = finished_ship
 
         # mirror the ship parts
         mirror_ship_parts(finished_ship)
 
         for x in finished_ship.find_all_matches('*rocket*'):
-            x.set_shader(metal_shader)
             x.hide(SHADOW_MASK)
 
         for x in finished_ship.find_all_matches('*wing*'):
-            x.set_shader(metal_shader)
             x.hide(SHADOW_MASK)
 
         for x in finished_ship.find_all_matches('*d_*'):
-            x.set_shader(metal_shader)
             x.hide(SHADOW_MASK)
 
         for x in finished_ship.find_all_matches('*thruster*'):
-            x.set_shader(metal_shader)
             x.hide(SHADOW_MASK)
 
         for x in finished_ship.find_all_matches('*blaster*'):
-            x.set_shader(metal_shader)
             x.hide(SHADOW_MASK)
 
         interior_coll = finished_ship.find('interior')
-        interior_coll.set_shader(metal_shader)
         interior_coll.flatten_strong()
         interior_coll.hide(SHADOW_MASK)
         fp_ctrl.make_collision('interior_coll_brbn', interior_coll, 0, 0, interior_coll.get_pos(base.render))
@@ -2253,13 +2230,20 @@ class Section1:
             "turn_emitter_ccw": ASSET_PATH + "models/player_character_turn_emitter_ccw.gltf"
         })
         self.player_char.reparent_to(base.camera)
-        self.player_char.set_attrib(metal_shader_attrib)
+        self.player_char.set_attrib(arm_shader_attrib)
         self.player_char.set_pos(-1.15 + .6, 0., -0.5)
         self.player_char.set_p(30.)
         self.player_char.set_scale(0.2)
-        self.player_char.set_light_off(shadow_light)
+        self.player_char.hide(SHADOW_MASK)
         self.player_char.node().set_bounds(OmniBoundingVolume())
         self.player_char.node().set_final(True)
+        
+        amb_light = AmbientLight('amblight_arm')
+        amb_light.set_priority(50)
+        amb_light.set_color((0.1, 0.1, 0.1, 1))
+        amb_light_node = self.player_char.attach_new_node(amb_light)
+        self.player_char.set_light(amb_light_node)
+        section_lights.append(amb_light_node)
 
         music_path = ASSET_PATH + 'music/space_tech_next_short.mp3'
         self.music = common.base.loader.load_music(music_path)
@@ -2449,6 +2433,7 @@ class Section1:
         del common.models[f"{starship_id}.bam"]
         model_root.reparent_to(base.render)
         self.model_root = model_root
+        self.model_root.set_shader(metal_shader)
         # model_root.set_two_sided(True)
         model_root.set_color(1., 1., 1., 1.)
 
