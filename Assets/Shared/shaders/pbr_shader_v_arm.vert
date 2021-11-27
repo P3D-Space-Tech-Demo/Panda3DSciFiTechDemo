@@ -51,16 +51,16 @@ void main() {
     
     vec4 vert_pos4 = p3d_ModelViewMatrix * skin_matrix * p3d_Vertex;
 
-    v_position = vec3(-vert_pos4);
+    v_position = vec3(vert_pos4);
     v_color = p3d_Color;
-    vec3 normal = normalize(p3d_NormalMatrix * v_position * p3d_Normal);
+    vec3 normal = normalize(p3d_NormalMatrix * (skin_matrix * vec4(p3d_Normal.xyz, 0.0)).xyz);
     v_texcoord = (p3d_TextureMatrix * vec4(p3d_MultiTexCoord0, 0, 1)).xy;
 
     for (int i = 0; i < p3d_LightSource.length(); ++i) {
         v_shadow_pos[i] = p3d_LightSource[i].shadowViewMatrix * vert_pos4;
     }
 
-    vec3 tangent = normalize(vec3(p3d_ModelViewMatrix * vec4(p3d_Tangent.xyz, 0.0)));
+    vec3 tangent = normalize(vec3(p3d_ModelViewMatrix * skin_matrix * vec4(p3d_Tangent.xyz, 0.0)));
     vec3 bitangent = cross(normal, tangent) * p3d_Tangent.w;
     v_tbn = mat3(
         tangent,
