@@ -31,11 +31,12 @@ class GameObject():
 
         if modelName is None:
             self.actor = NodePath(PandaNode("actor"))
+            self.actor.reparentTo(self.root)
         elif modelAnims is None:
-            self.actor = common.base.loader.loadModel(modelName)
+            self.actor = common.models[modelName].copy_to(self.root)
         else:
             self.actor = Actor(modelName, modelAnims)
-        self.actor.reparentTo(self.root)
+            self.actor.reparentTo(self.root)
 
         TagHandler.handleGeometryTags(self.actor)
 
@@ -275,11 +276,10 @@ class ShieldedObject():
 
     def alterHealth(self, dHealth, incomingImpulse, knockback, flinchValue, overcharge = False):
         if dHealth < 0 and incomingImpulse is not None and self.health > 0:
-            shield = common.base.loader.loadModel("Assets/Section2/models/shield")
+            shield = common.models["shield.egg"].copy_to(self.root)
             tex = shield.findTexture(TextureStage.getDefault())
             tex.setWrapV(Texture.WM_clamp)
             shield.setScale(self.size*self.shieldScalar)
-            shield.reparentTo(self.root)
             shield.setColorScale(self.colour)
             shield.setAttrib(ColorBlendAttrib.make(ColorBlendAttrib.MAdd, ColorBlendAttrib.OIncomingAlpha, ColorBlendAttrib.OOne))
             shield.lookAt(common.base.render,

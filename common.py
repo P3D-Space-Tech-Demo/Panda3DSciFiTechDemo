@@ -730,7 +730,9 @@ def preload_models(model_paths, callback=None):
     async def load_models():
         async for model in base.loader.load_model(model_paths, blocking=False):
             path = model_paths.pop(0)
-            _, section_id, _, filename = path.split("/")
+            pieces = path.split("/")
+            section_id = pieces[1]
+            filename = pieces[-1]
 
             if section_id == "Shared":
                 shared_models[filename] = model

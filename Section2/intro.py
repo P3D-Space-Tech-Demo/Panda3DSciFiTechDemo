@@ -156,7 +156,6 @@ class Intro:
             common.make_engine_flame(flame, flameColourGradients, glowColour, flameScalar = 15)
             self.engineFlames.append(flame)
 
-        del common.shared_models["shipEngineFlame.egg"]
         self.engineFlameTargetScale = 0
         self.engineFlameCurrentScale = 0
         self.engineFlameSpeed = 0

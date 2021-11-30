@@ -17,6 +17,9 @@ class Level():
     def __init__(self, levelFile):
         self.levelFile = levelFile
 
+        print (common.models)
+        print (common.shared_models)
+
         self.geometry = NodePath(PandaNode("level root"))
         for index in range(5):
             loadedNP = common.models["{0}_{1}.egg.pz".format(levelFile, index)]
@@ -169,7 +172,7 @@ class Level():
             #obj.actor.play("spawn")
         else:
             if obj.auraName is not None:
-                auraPath = "Assets/Section2/models/Items/{0}".format(obj.auraName)
+                auraPath = obj.auraName
             else:
                 auraPath = None
             item = Item(obj.root.getPos() + Vec3(0, 0, 1), auraPath, obj)

@@ -52,10 +52,10 @@ class BlasterWeapon(ProjectileWeapon):
     def __init__(self, powerLevel):
         modelName = BlasterWeapon.MODELS[powerLevel]
         damage = BlasterWeapon.DAMAGE_VALUES[powerLevel]
-        projectile = BlasterProjectile("Assets/Section2/models/{0}".format(modelName),
+        projectile = BlasterProjectile("{0}.egg".format(modelName),
                                         MASK_INTO_ENEMY,
                                         100, damage, 75, 0.5, 0, 10, 0,
-                                        "Assets/Section2/models/blast")
+                                        "blast.egg")
         ProjectileWeapon.__init__(self, projectile)
 
         self.firingPeriod = 0.2
@@ -123,7 +123,7 @@ class Rocket(SeekingProjectile):
 
 class RocketWeapon(ProjectileWeapon):
     def __init__(self):
-        projectile = Rocket("Assets/Section2/models/rocket",
+        projectile = Rocket("rocket.egg",
                             MASK_INTO_ENEMY,
                             None, 55, 45, 0.7, 20, 0)
         ProjectileWeapon.__init__(self, projectile)

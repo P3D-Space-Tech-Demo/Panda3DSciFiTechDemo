@@ -140,7 +140,7 @@ class Projectile(GameObject):
             self.blastModel = None
             self.blastModelFile = None
         else:
-            self.blastModel = common.base.loader.loadModel(blastModel)
+            self.blastModel = common.models[blastModel]
             self.blastModelFile = blastModel
 
     @staticmethod

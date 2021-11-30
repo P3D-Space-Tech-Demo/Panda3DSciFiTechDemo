@@ -12,10 +12,10 @@ import random
 
 class BasicEnemyBlaster(ProjectileWeapon):
     def __init__(self):
-        projectile = Projectile("Assets/Section2/models/blasterShotEnemy",
+        projectile = Projectile("blasterShotEnemy.egg",
                                 MASK_INTO_PLAYER,
                                 100, 7, 60, 0.5, 0, 0,
-                                0, "Assets/Section2/models/blast")
+                                0, "blast.egg")
         ProjectileWeapon.__init__(self, projectile)
 
         self.firingPeriod = 0.5
@@ -24,7 +24,7 @@ class BasicEnemyBlaster(ProjectileWeapon):
 class BasicEnemy(FighterEnemy):
     def __init__(self):
         FighterEnemy.__init__(self, Vec3(0, 0, 0),
-                       "Assets/Section2/models/enemyFighter",
+                       "enemyFighter.egg",
                               100,
                               20,
                               "enemy",
@@ -45,8 +45,7 @@ class BasicEnemy(FighterEnemy):
             pos = np.getPos()
             np.removeNode()
 
-            flame = common.base.loader.loadModel("Assets/Shared/models/shipEngineFlame")
-            flame.reparentTo(self.actor)
+            flame = common.shared_models["shipEngineFlame.egg"].copy_to(self.actor)
             flame.setPos(pos)
             glow = flame.find("**/glow")
             glow.setScale(scale, 1, scale)

@@ -148,7 +148,7 @@ class Section2():
         lights = [self.currentLevel.lightNP, self.player.lightNP]
         self.portalSys = SphericalPortalSystem(self.currentLevel.geometry, lights, pos)
 
-        shieldModel = common.base.loader.loadModel("Assets/Section2/models/bigShield")
+        shieldModel = common.models["bigShield.egg"]
         shieldModel.setTransparency(True)
         shieldModel.setBin("unsorted", 0)
         shieldModel.reparentTo(self.currentLevel.geometry)
