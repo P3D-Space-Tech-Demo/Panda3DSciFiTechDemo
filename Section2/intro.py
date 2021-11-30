@@ -110,29 +110,18 @@ class Intro:
         self.ship_rot_speed = 7.
         self.wheel_rot_speed = 1.5
 
-        positions = (
-            (6.84507, 11.2454, 0.191199),
-            (9.57945, 12.3756, 0.191199),
-            (8.85028, 15.7298, 0.191199),
-            (1.4063, 14.6871, 2.40655),
-            (-2.22233, 10.7603, 3.558),
-            (-2.5, 4.3, 5.5)
-        )
-        start_positions = positions[:-1]
-        end_positions = positions[1:]
-        durations = (3.5, 3.5, 3.5, 3.5, 7., 8.)
-
-        base.camera.set_pos(positions[0])
+        self.cam_rig = Actor("Assets/Section2/models/intro_cam_anim.gltf")
+        self.cam_rig.reparent_to(self.scene_root)
+        joint = self.cam_rig.expose_joint(None, "modelRoot", "cam_attach")
+        base.camera.reparent_to(joint)
+        base.camera.set_pos_hpr(0., 0., 0., 0., 0., 0.)
 
         self.intervals = par = Parallel()
         seq = Sequence()
         par.append(seq)
-
-        for start_pos, end_pos, duration in zip(start_positions, end_positions, durations):
-            ival = LerpPosInterval(base.camera, duration, end_pos, start_pos, blendType='noBlend')
-            seq.append(ival)
-
-        seq.append(Wait(durations[-1]))
+        ival = ActorInterval(self.cam_rig, "cam_motion")
+        seq.append(ival)
+        seq.append(Wait(8.))
         seq.append(Func(self.destroy))
 
         def zoom_out(fov):
@@ -147,8 +136,8 @@ class Intro:
         ival = LerpFunc(zoom_out, fromData=10., toData=50., duration=zoom_out_dur, blendType="easeInOut")
         seq.append(ival)
         zoom_in_dur = 4.
-        end_dur = durations[-1] - zoom_in_dur
-        seq.append(Wait(sum(durations) - zoom_out_dur - durations[-1]))
+        end_dur = 8. - zoom_in_dur
+        seq.append(Wait(29. - zoom_out_dur - 8.))
         ival = LerpFunc(zoom_in, fromData=5., toData=3., duration=zoom_in_dur, blendType="easeInOut")
         seq.append(ival)
         seq.append(Wait(end_dur))
