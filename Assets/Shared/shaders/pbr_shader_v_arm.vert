@@ -60,7 +60,7 @@ void main() {
         v_shadow_pos[i] = p3d_LightSource[i].shadowViewMatrix * vert_pos4;
     }
 
-    vec3 tangent = normalize(vec3(p3d_ModelViewMatrix * skin_matrix * vec4(p3d_Tangent.xyz, 0.0)));
+    vec3 tangent = normalize(vec3(p3d_ModelViewMatrix * vec4(p3d_Tangent.xyz, 0.0)));
     vec3 bitangent = cross(normal, tangent) * p3d_Tangent.w;
     v_tbn = mat3(
         tangent,

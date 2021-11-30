@@ -48,13 +48,12 @@ void main() {
         p3d_TransformTable[transform_index.y] * transform_weight.y +
         p3d_TransformTable[transform_index.z] * transform_weight.z +
         p3d_TransformTable[transform_index.w] * transform_weight.w);
-    mat4 model_matrix = p3d_ModelMatrix * skin_matrix;
     
     vec4 vert_pos4 = p3d_ModelViewMatrix * skin_matrix * p3d_Vertex;
 
     v_position = vec3(vert_pos4);
     v_color = p3d_Color;
-    vec3 normal = normalize(p3d_NormalMatrix * p3d_Normal);
+    vec3 normal = normalize(p3d_NormalMatrix * (skin_matrix * vec4(p3d_Normal.xyz, 0.0)).xyz);
     v_texcoord = (p3d_TextureMatrix * vec4(p3d_MultiTexCoord0, 0, 1)).xy;
     v_world_pos = (p3d_ModelMatrix * p3d_Vertex).xyz;
 
