@@ -17,9 +17,6 @@ class Level():
     def __init__(self, levelFile):
         self.levelFile = levelFile
 
-        print (common.models)
-        print (common.shared_models)
-
         self.geometry = NodePath(PandaNode("level root"))
         for index in range(5):
             loadedNP = common.models["{0}_{1}.egg.pz".format(levelFile, index)]
