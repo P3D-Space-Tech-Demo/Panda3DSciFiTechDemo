@@ -79,6 +79,7 @@ class MenuBackdropAnimation:
         nice_seq = Sequence()
         nice_seq.append(nice)
         nice_seq.loop()
+        self.motion_intervals.append(nice_seq)
 
         # mirror scene lighting
         # point light generator
@@ -127,6 +128,7 @@ class MenuBackdropAnimation:
         nice_seq = Sequence()
         nice_seq.append(nice)
         nice_seq.loop()
+        self.motion_intervals.append(nice_seq)
 
         screen_ship_2.set_pos_hpr(0., 0., 25., 0., 0., 0.)
         screen_ship_2.reparent_to(self.mirror_render)
@@ -134,6 +136,7 @@ class MenuBackdropAnimation:
         nice_seq = Sequence()
         nice_seq.append(nice)
         nice_seq.loop()
+        self.motion_intervals.append(nice_seq)
 
         screen_ship_3.set_pos_hpr(0., 0., -5., 0., 0., 0.)
         screen_ship_3.reparent_to(self.mirror_render)
@@ -141,6 +144,7 @@ class MenuBackdropAnimation:
         nice_seq = Sequence()
         nice_seq.append(nice)
         nice_seq.loop()
+        self.motion_intervals.append(nice_seq)
 
     def start_animation_type_2(self):
         """ Make the wireframe ship models fly past the camera """
