@@ -106,6 +106,7 @@ class MenuBackdropAnimation:
         self.mirror_filters.del_high_dynamic_range()
         self.mirror_filters.del_exposure_adjust()
         self.mirror_filters.del_gamma_adjust()
+        self.mirror_filters.cleanup()
 
         base.task_mgr.remove("move_next_ship")
 
