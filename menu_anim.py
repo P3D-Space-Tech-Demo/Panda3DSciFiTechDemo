@@ -57,7 +57,7 @@ class MenuBackdropAnimation:
         self.ships = deque()
 
         for filename in filenames:
-            screen_ship = common.shared_models[filename].copy_to(self.mirror_render)
+            screen_ship = common.models["shared"][filename].copy_to(self.mirror_render)
             common.mirror_ship_parts(screen_ship)
             holo.make_wire(
                 screen_ship,

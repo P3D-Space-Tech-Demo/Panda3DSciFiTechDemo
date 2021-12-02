@@ -7,6 +7,9 @@ from Ships import shipSpecs
 from Section1.intro import Intro
 from collections import deque
 
+shared_models = common.models["shared"]
+section1_models = common.models["section1"]
+
 ASSET_PATH = "Assets/Section1/"
 SHADOW_MASK = BitMask32.bit(1)
 
@@ -284,7 +287,7 @@ class HoloDisplay:
         # display_filters.set_gamma_adjust(1.3)
 
         # load in a display object model in normal render space
-        model = common.models["wide_screen_video_display.egg"]
+        model = section1_models["wide_screen_video_display.egg"]
         model.set_shader_off()
         model.set_transparency(TransparencyAttrib.M_dual)
         emitter_joint = player_char.expose_joint(None, "modelRoot", "emitter_attachment")
@@ -311,7 +314,7 @@ class HoloDisplay:
             "heavy_spec_screen_select.gltf"
         )
         # holo-display scene model load-in
-        holo_models = [common.models[f] for f in model_filenames]
+        holo_models = [section1_models[f] for f in model_filenames]
         model_pivots = [cls.scene_root.attach_new_node("pivot") for _ in holo_models]
 
         for i, (holo_model, model_pivot) in enumerate(zip(holo_models, model_pivots)):
@@ -721,7 +724,7 @@ class Worker:
 class WorkerBot(Worker):
 
     def __init__(self, beam, beam_connector):
-        model = common.models["worker_bot.gltf"].copy_to(base.render)
+        model = section1_models["worker_bot.gltf"].copy_to(base.render)
         model.detach_node()
 
         Worker.__init__(self, "bot", model, beam, beam_connector, .25, -.8875)
@@ -768,7 +771,7 @@ class WorkerBot(Worker):
 class WorkerDrone(Worker):
 
     def __init__(self, beam, beam_connector):
-        model = common.models["worker_drone.gltf"].copy_to(base.render)
+        model = section1_models["worker_drone.gltf"].copy_to(base.render)
 
         Worker.__init__(self, "drone", model, beam, beam_connector, -.1)
 
@@ -1063,7 +1066,7 @@ class Elevator:
 
     def __init__(self, elevator_root, y):
         self.instances.append(self)
-        self.model = common.models["worker_bot_elevator.gltf"].copy_to(elevator_root)
+        self.model = section1_models["worker_bot_elevator.gltf"].copy_to(elevator_root)
         self.model.set_y(y)
         self.model.set_shader_off()
         self.y = y
@@ -1255,8 +1258,7 @@ class DroneCompartment:
 
     def __init__(self):
         DroneCompartment.instance = self
-        self.model = common.models["worker_drone_compartment.gltf"]
-        del common.models["worker_drone_compartment.gltf"]
+        self.model = section1_models["worker_drone_compartment.gltf"]
         self.model.reparent_to(base.render)
         self.model.set_shader_off()
         self.idle = True
@@ -1359,9 +1361,8 @@ class DroneCompartment:
 class Hangar:
 
     def __init__(self, job_starter, platform_access_callback):
-        self.model = common.models["hangar.gltf"]
+        self.model = section1_models["hangar.gltf"]
         self.model.set_shader(metal_shader)
-        del common.models["hangar.gltf"]
         self.model.reparent_to(base.render)
         
         ceiling = self.model.find_all_matches('**/ceiling*')
@@ -1624,8 +1625,7 @@ class Hangar:
             root.flatten_strong()
 
     def create_corridor(self):
-        model = common.models["hangar_corridor.gltf"]
-        del common.models["hangar_corridor.gltf"]
+        model = section1_models["hangar_corridor.gltf"]
         model.reparent_to(self.model)
 
         # apply metalness effect shader
@@ -1915,7 +1915,7 @@ class Hangar:
         for x in base.render.find_all_matches('**/back_wing*'):
             x.detach_node()
 
-        finished_ship = common.shared_models["test_completed_ship_a.gltf"]
+        finished_ship = shared_models["test_completed_ship_a.gltf"]
         finished_ship.reparent_to(base.render)
         finished_ship.set_shader_off()
         finished_ship.set_shader(metal_shader)
@@ -2019,8 +2019,7 @@ class Hangar:
 
         threading2._start_new_thread(ship_ready, ())
 
-        cockpit = common.shared_models["test_cockpit.gltf"]
-#        del common.shared_models["test_cockpit.gltf"]
+        cockpit = shared_models["test_cockpit.gltf"]
         cockpit.reparent_to(base.render)
         cockpit.set_pos(0, -32, 9)
         cockpit.set_scale(1)
@@ -2035,8 +2034,7 @@ class Hangar:
         for t in cockpit.find_all_matches('**/*track*'):
             t.set_shader_off()
 
-        joystick = common.shared_models["joystick.gltf"]
-#        del common.shared_models["joystick.gltf"]
+        joystick = shared_models["joystick.gltf"]
         joystick.reparent_to(base.render)
         joystick.set_h(90)
         joystick.set_pos(0, 0, 10)
@@ -2223,7 +2221,7 @@ class Section1:
 
         shadow_light = base.render.find('shadow_spot')
         # player Actor setup begins
-        self.player_char = Actor(common.shared_models["player_character.gltf"])
+        self.player_char = Actor(shared_models["player_character.gltf"])
         self.player_char.load_anims({
             "ready_emitter": ASSET_PATH + "models/player_character_ready_emitter.gltf",
             "turn_emitter_cw": ASSET_PATH + "models/player_character_turn_emitter_cw.gltf",
@@ -2255,17 +2253,14 @@ class Section1:
         KeyBindings.set_handler("toggle_music", self.toggle_music, "section1")
 
         # initial collision
-        p_topper = common.models["p_topper.gltf"]
-        del common.models["p_topper.gltf"]
+        p_topper = section1_models["p_topper.gltf"]
         fp_ctrl.make_collision('brbn', p_topper, 0, 0)
 
-        p_topper_out = common.models["p_topper_out.gltf"]
-        del common.models["p_topper_out.gltf"]
+        p_topper_out = section1_models["p_topper_out.gltf"]
         pto_p = p_topper_out.get_pos()
         fp_ctrl.make_collision('brbn', p_topper_out, 0, 0, target_pos=(pto_p[0], pto_p[1], pto_p[2] -0.5))
 
-        p_topper_force = common.models["p_topper_force.gltf"]
-        del common.models["p_topper_force.gltf"]
+        p_topper_force = section1_models["p_topper_force.gltf"]
         fp_ctrl.make_collision('brbn_force', p_topper_force, 0, 0)
 
         add_section_task(Elevator.handle_requests, "handle_elevator_requests")
@@ -2275,8 +2270,7 @@ class Section1:
         add_section_task(compartment.handle_next_request, "handle_compartment_requests")
 
         self.model_root = None
-        self.holo_ship = common.models["holo_starship_a.gltf"]
-        del common.models["holo_starship_a.gltf"]
+        self.holo_ship = section1_models["holo_starship_a.gltf"]
         self.holo_ship.reparent_to(base.render)
         threading2._start_new_thread(holo.apply_hologram, (self.holo_ship, (0, 0, 0.4), (0.98, 1, 0.95)))
         self.holo_ship.hide()
@@ -2429,8 +2423,7 @@ class Section1:
         starship_id = "starship_a"
         self.starship_components = {}
 
-        model_root = common.models[f"{starship_id}.bam"]
-        del common.models[f"{starship_id}.bam"]
+        model_root = section1_models[f"{starship_id}.bam"]
         model_root.reparent_to(base.render)
         self.model_root = model_root
         self.model_root.set_shader(metal_shader)
@@ -2747,6 +2740,7 @@ class Section1:
         scene_filters.del_blur_sharpen()
         scene_filters.del_bloom()
 
+        section1_models.clear()
         common.currentSection = None
 
 

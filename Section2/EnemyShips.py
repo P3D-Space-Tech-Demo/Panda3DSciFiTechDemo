@@ -45,7 +45,7 @@ class BasicEnemy(FighterEnemy):
             pos = np.getPos()
             np.removeNode()
 
-            flame = common.shared_models["shipEngineFlame.egg"].copy_to(self.actor)
+            flame = common.models["shared"]["shipEngineFlame.egg"].copy_to(self.actor)
             flame.setPos(pos)
             glow = flame.find("**/glow")
             glow.setScale(scale, 1, scale)

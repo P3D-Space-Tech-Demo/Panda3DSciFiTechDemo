@@ -2,6 +2,8 @@ from common import *
 import common
 from direct.stdpy.file import *
 
+shared_models = common.models["shared"]
+
 
 class Intro:
 
@@ -26,7 +28,6 @@ class Intro:
 
         with open("Section2/models.txt") as model_path_file:
             model_paths = [path.replace("\r", "").replace("\n", "") for path in model_path_file]
-        common.models.clear()
         common.preload_models(model_paths, start_intro)
 
     def start(self):
@@ -72,8 +73,7 @@ class Intro:
         base.camLens.near = .01
         base.camLens.far = 90000
 
-        mothership = common.shared_models["player_mothership.gltf"]
-        del common.shared_models["player_mothership.gltf"]
+        mothership = shared_models["player_mothership.gltf"]
         mothership.reparent_to(self.scene_root)
         self.mothership = mothership
 
@@ -99,8 +99,7 @@ class Intro:
             self.wheels.append(wheel_copy)
 
         shipSpec = self.data
-        ship = common.shared_models[shipSpec.shipModelFileLowPoly].copy_to(hangar_exit)
-#        del common.shared_models[shipSpec.shipModelFileLowPoly]
+        ship = shared_models[shipSpec.shipModelFileLowPoly].copy_to(hangar_exit)
         common.mirror_ship_parts(ship)
 #        ship.reparent_to(hangar_exit)
         ship.set_pos(100., -50., 0.)
@@ -149,7 +148,7 @@ class Intro:
         flameColourGradients = Vec3(0.329, 0.502, 1)
         glowColour = Vec4(0, 0.1, 0.95, 1)
         for enginePos, engineScale in shipSpec.enginePositions:
-            flame = common.shared_models["shipEngineFlame.egg"].copy_to(self.ship)
+            flame = shared_models["shipEngineFlame.egg"].copy_to(self.ship)
             flame.setH(shipSpec.shipModelRotation)
             flame.setScale(1*engineScale/shipSpec.shipModelScalar)
             flame.setPos(enginePos)

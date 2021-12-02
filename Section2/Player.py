@@ -26,6 +26,10 @@ import common
 
 import math, random
 
+sharedModels = common.models["shared"]
+section2Models = common.models["section2"]
+
+
 class Player(GameObject, ArmedObject, ShieldedObject):
     def __init__(self, shipSpec):
         GameObject.__init__(self,
@@ -39,7 +43,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
                             2)
         ArmedObject.__init__(self)
 
-        self.dustTunnel = common.models["spaceDustTunnel.egg"]
+        self.dustTunnel = section2Models["spaceDustTunnel.egg"]
         self.dustTunnel.setTransparency(True)
 
         shader = Shader.load(Shader.SL_GLSL,
@@ -59,7 +63,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
         self.dustMovementOffset = 0
 
-        self.thirdPersonShip = common.shared_models[shipSpec.shipModelFileLowPoly]
+        self.thirdPersonShip = sharedModels[shipSpec.shipModelFileLowPoly]
         common.mirrorShipParts(self.thirdPersonShip)
         self.thirdPersonShip.setScale(shipSpec.shipModelScalar*0.5)
         self.thirdPersonShip.setH(shipSpec.shipModelRotation)
@@ -120,7 +124,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
         flameColourGradients = Vec3(0.329, 0.502, 1)
         glowColour = Vec4(0, 0.1, 0.95, 1)
         for enginePos, engineScale in shipSpec.enginePositions:
-            flame = common.shared_models["shipEngineFlame.egg"].copy_to(self.thirdPersonShip)
+            flame = sharedModels["shipEngineFlame.egg"].copy_to(self.thirdPersonShip)
             flame.setH(shipSpec.shipModelRotation)
             flame.setScale(1*engineScale/shipSpec.shipModelScalar)
             flame.setPos(enginePos)
@@ -237,14 +241,14 @@ class Player(GameObject, ArmedObject, ShieldedObject):
             markerRotationNP.setR(i*90)
         self.lockMarkerRoot.hide()
 
-        self.lockBar = common.models["uiLockBar.egg"]
+        self.lockBar = section2Models["uiLockBar.egg"]
         self.lockBar.reparentTo(self.uiRoot)
         self.lockBar.setScale(0.15)
         #self.lockBar.hide()
 
         cardMaker.setFrame(-1, 1, 0, 1)
 
-        self.cockpit = common.models[shipSpec.cockpitModelFile]
+        self.cockpit = section2Models[shipSpec.cockpitModelFile]
         self.cockpit.reparentTo(self.actor)
 
         bounds = self.thirdPersonShip.getTightBounds()
@@ -307,7 +311,7 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
         self.radarRootThirdPerson = self.uiRoot.attachNewNode(PandaNode("radar root 3rd person"))
         self.radarRootThirdPerson.setPos(0, 0, -1 + self.radarSize)
-        radarBacking = common.models["uiRadar.egg"]
+        radarBacking = section2Models["uiRadar.egg"]
         radarBacking.reparentTo(self.radarRootThirdPerson)
         radarBacking.setScale(self.radarSize)
         radarBacking.setTransparency(True)

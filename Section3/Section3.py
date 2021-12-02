@@ -4,6 +4,8 @@ from common import *
 import fp_ctrl
 from .intro import Intro
 
+section3_models = common.models["section3"]
+
 ASSET_PATH_1 = "Assets/Section3/"
 
 # keep track of all lights that have been created, such that they can be removed
@@ -126,8 +128,7 @@ class Section3:
 
         base.accept('f4', print_player_pos)
 
-        self.hg_1 = common.models["sec3_handgun_1.gltf"]
-        del common.models["sec3_handgun_1.gltf"]
+        self.hg_1 = section3_models["sec3_handgun_1.gltf"]
 
         base.drop_clip_toggle = False
 
@@ -202,8 +203,7 @@ class Section3:
 
         KeyBindings.set_handler("reload_gun", drop_clip, "section3")
 
-        self.model = common.models["tunnel_drop_1.gltf"]
-        del common.models["tunnel_drop_1.gltf"]
+        self.model = section3_models["tunnel_drop_1.gltf"]
         self.model.reparent_to(base.render)
         self.model.flatten_strong()
 
@@ -225,7 +225,7 @@ class Section3:
         self.hg_1.set_pos_hpr_scale(-1.33718, 0.452767, 5.61854, -90., 81.3, 0., 40., 40., 40.)
 
     def load_gunhand(self):
-        self.player_char = Actor(common.shared_models["player_character.gltf"])
+        self.player_char = Actor(common.models["shared"]["player_character.gltf"])
         self.player_char.load_anims({
             "squeeze_trigger": ASSET_PATH_1 + "models/player_character_squeeze_trigger.gltf"
         })
@@ -296,13 +296,15 @@ class Section3:
 
         remove_section_tasks()
         section_intervals.clear()
-        common.currentSection = None
 
         if self.intervals and not self.intervals.is_stopped():
             self.intervals.finish()
             self.intervals.clear_intervals()
             if self.intervals in section_intervals:
                 section_intervals.remove()
+
+        section3_models.clear()
+        common.currentSection = None
 
 
 def startIntro(data, show_loading_screen):

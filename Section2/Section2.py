@@ -24,6 +24,9 @@ from common import KeyBindings
 
 import random
 
+section2Models = common.models["section2"]
+
+
 class Section2():
     STATE_PLAYING = 0
     STATE_DEATH_CUTSCENE = 1
@@ -148,7 +151,7 @@ class Section2():
         lights = [self.currentLevel.lightNP, self.player.lightNP]
         self.portalSys = SphericalPortalSystem(self.currentLevel.geometry, lights, pos)
 
-        shieldModel = common.models["bigShield.egg"]
+        shieldModel = section2Models["bigShield.egg"]
         shieldModel.setTransparency(True)
         shieldModel.setBin("unsorted", 0)
         shieldModel.reparentTo(self.currentLevel.geometry)
@@ -333,6 +336,7 @@ class Section2():
         common.base.taskMgr.remove(self.updateTask)
         self.updateTask = None
 
+        section2Models.clear()
         common.currentSection = None
 
 def startIntro(data, show_loading_screen):

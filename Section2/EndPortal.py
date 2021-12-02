@@ -3,6 +3,9 @@ import common
 
 from panda3d.core import CollisionPolygon, GeomVertexFormat, CollisionNode
 
+shared_models = common.models["shared"]
+section2_models = common.models["section2"]
+
 
 class SphericalPortalSystem:
 
@@ -15,7 +18,7 @@ class SphericalPortalSystem:
         for light in lights:
             self.portal_node_1.set_light(light)
 
-        portal_generator = common.shared_models["portal_generator.gltf"]
+        portal_generator = shared_models["portal_generator.gltf"]
         portal_generator.set_scale(135.)
         portal_generator.set_shader(scene_shader)
         portal_generator.reparent_to(self.portal_node_0)
@@ -49,7 +52,7 @@ class SphericalPortalSystem:
         portal_texture.minfilter = Texture.FT_linear_mipmap_linear
         self.portal_sphere.set_texture(TextureStage("portal"), portal_texture)
 
-        self.tunnel_model_0 = common.shared_models["wrecked_tunnel.gltf"]
+        self.tunnel_model_0 = shared_models["wrecked_tunnel.gltf"]
         self.tunnel_model_0.reparent_to(self.portal_node_0)
         self.tunnel_model_0.set_hpr(-90., -40., 0.)
         self.tunnel_model_0.set_pos(portal_pos)
@@ -69,7 +72,7 @@ class SphericalPortalSystem:
         # Create the collision-geometry for the tunnel
         # With thanks to Epihaius for the relevant snippet!
         # Ref: https://discourse.panda3d.org/t/collision-mesh-from-loaded-model-for-built-in-collision-system/27102
-        tunnel_collision = common.models["wrecked_tunnel_collision.gltf"]
+        tunnel_collision = section2_models["wrecked_tunnel_collision.gltf"]
         tunnel_collision.set_scale(50)
         collision_copy = tunnel_collision.copy_to(common.base.render)
         tunnel_collision.remove_node()

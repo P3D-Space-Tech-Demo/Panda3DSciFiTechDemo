@@ -13,31 +13,24 @@ import importlib
 
 from panda3d.core import TextNode
 
+section2Models = common.models["section2"]
+
+
 class Level():
     def __init__(self, levelFile):
         self.levelFile = levelFile
 
         self.geometry = NodePath(PandaNode("level root"))
-        for index in range(5):
-            loadedNP = common.models["{0}_{1}.egg.pz".format(levelFile, index)]
-            del common.models["{0}_{1}.egg.pz".format(levelFile, index)]
-            loadedNP.reparentTo(self.geometry)
-
-        '''foundPartwiseFile = False
         index = 0
-        fName = "Assets/Section2/levels/{0}_{1}".format(levelFile, index)
-        virtualFS = VirtualFileSystem.getGlobalPtr()
-        while virtualFS.exists(Filename("{0}.egg".format(fName))):
-            foundPartwiseFile = True
-            loadedNP = common.base.loader.loadModel(fName)
+        modelPath = "{0}_{1}.egg.pz".format(levelFile, index)
+
+        while modelPath in section2Models:
+            loadedNP = section2Models[modelPath]
             loadedNP.reparentTo(self.geometry)
             index += 1
-            fName = "Assets/Section2/levels/{0}_{1}".format(levelFile, index)
-        if not foundPartwiseFile:
-            loadedNP = common.base.loader.loadModel("Assets/Section2/levels/{0}".format(levelFile))
-            loadedNP.reparentTo(self.geometry)'''
+            modelPath = "{0}_{1}.egg.pz".format(levelFile, index)
+
         self.geometry.reparentTo(common.base.render)
-        #self.geometry.setShaderAuto()
         self.geometry.setShader(common.metal_shader)
         #mats = self.geometry.findAllMaterials()
         #for mat in mats:

@@ -17,6 +17,8 @@ import common
 
 import math, random
 
+section2Models = common.models["section2"]
+
 FRICTION = 10.0
 
 class GameObject():
@@ -33,7 +35,7 @@ class GameObject():
             self.actor = NodePath(PandaNode("actor"))
             self.actor.reparentTo(self.root)
         elif modelAnims is None:
-            self.actor = common.models[modelName].copy_to(self.root)
+            self.actor = section2Models[modelName].copy_to(self.root)
         else:
             self.actor = Actor(modelName, modelAnims)
             self.actor.reparentTo(self.root)
@@ -276,7 +278,7 @@ class ShieldedObject():
 
     def alterHealth(self, dHealth, incomingImpulse, knockback, flinchValue, overcharge = False):
         if dHealth < 0 and incomingImpulse is not None and self.health > 0:
-            shield = common.models["shield.egg"].copy_to(self.root)
+            shield = section2Models["shield.egg"].copy_to(self.root)
             tex = shield.findTexture(TextureStage.getDefault())
             tex.setWrapV(Texture.WM_clamp)
             shield.setScale(self.size*self.shieldScalar)

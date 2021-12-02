@@ -8,7 +8,8 @@ from panda3d.core import (
     Filename,
     Texture,
     PandaNode,
-    CardMaker
+    CardMaker,
+    ModelPool
 )
 from direct.stdpy.file import *
 from direct.gui.DirectGui import *
@@ -892,6 +893,10 @@ class Game():
 
         self.currentMenu = None
 
+        ModelPool.list_contents()
+        c = ModelPool.garbage_collect()
+        print("Released models:", c)
+
     def openOptions(self):
         self.optionsMenu.show()
         self.currentMenu = self.optionsMenu
@@ -993,8 +998,10 @@ class Game():
                 self.currentMenu = None
 
     def cleanupCurrentSection(self):
+        import sys
         if self.currentSectionObject is not None:
             self.currentSectionObject.destroy()
+            print("\n\n****** currentSectionObject ref. count:", sys.getrefcount(self.currentSectionObject) - 2)
             self.currentSectionObject = None
 
     def destroy(self):

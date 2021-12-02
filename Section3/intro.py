@@ -25,7 +25,6 @@ class Intro:
 
         with open("Section3/models.txt") as model_path_file:
             model_paths = [path.replace("\r", "").replace("\n", "") for path in model_path_file]
-        common.models.clear()
         common.preload_models(model_paths, start_intro)
 
     def start(self):

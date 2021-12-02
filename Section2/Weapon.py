@@ -8,6 +8,9 @@ import common
 
 from Section2.GameObject import GameObject
 
+section2Models = common.models["section2"]
+
+
 class Weapon():
     def __init__(self, mask, range, damage, knockback):
         self.active = False
@@ -140,7 +143,7 @@ class Projectile(GameObject):
             self.blastModel = None
             self.blastModelFile = None
         else:
-            self.blastModel = common.models[blastModel]
+            self.blastModel = section2Models[blastModel]
             self.blastModelFile = blastModel
 
     @staticmethod
