@@ -281,10 +281,8 @@ class HoloDisplay:
         cam.node().get_lens().set_focal_length(10)
         cam.node().get_lens().set_fov(50)
 
-        base.display_filters = CommonFilters(cls.tex_buffer, cam)
-        # display_filters.set_high_dynamic_range()
-        base.display_filters.set_exposure_adjust(1.1)
-        # display_filters.set_gamma_adjust(1.3)
+        cls.display_filters = CommonFilters(cls.tex_buffer, cam)
+        cls.display_filters.set_exposure_adjust(1.1)
 
         # load in a display object model in normal render space
         model = section1_models["wide_screen_video_display.egg"]
@@ -362,7 +360,7 @@ class HoloDisplay:
         cls.player_char = None
         cls.ready = False
         
-        base.display_filters.cleanup()
+        cls.display_filters.cleanup()
 
     @classmethod
     def switch_on(cls, delay=0.):
