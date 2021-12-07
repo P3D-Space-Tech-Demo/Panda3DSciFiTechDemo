@@ -207,7 +207,7 @@ def update_cam(task):
     mouseSpeedY = 0.2
     # maximum and minimum pitch
     maxPitch = 90
-    minPitch = -50
+    minPitch = -90
 
     if base.win.movePointer(0, window_Xcoord_halved, window_Ycoord_halved):
 
