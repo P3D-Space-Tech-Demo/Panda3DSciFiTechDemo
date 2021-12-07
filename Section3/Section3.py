@@ -76,8 +76,8 @@ class Section3:
         render.set_shader_off()
         render.set_shader(metal_shader)
 
-        player_start_pos = Vec3(-2.7, 0, 100)
-        fp_ctrl.fp_init(player_start_pos, z_limit=-50)
+        player_start_pos = Vec3(0.552461, 26.3234, -2.54)
+        fp_ctrl.fp_init(player_start_pos, z_limit=-1000)
         fp_ctrl.enable_fp_camera()
 
         events = KeyBindings.events["section3"]
@@ -202,21 +202,21 @@ class Section3:
                 load_particle_config('Assets/Shared/particles/steam.ptf', self.hg_1, clip_1_pos, 2, inter_list=section_intervals, use_interval=True)
 
         KeyBindings.set_handler("reload_gun", drop_clip, "section3")
-
-        self.model = section3_models["tunnel_drop_1.gltf"]
-        self.model.reparent_to(base.render)
-        self.model.flatten_strong()
-
-        fp_ctrl.make_collision('ramp', self.model, 0, 0, target_pos = Vec3(), hpr_adj = Vec3(), scale_adj = 1)
+        
+        self.initial_tunnel = section3_models["sec3_initial_tunnel.gltf"]
+        self.initial_tunnel.reparent_to(base.render)
+        # self.initial_tunnel.set_pos(0, 0, 25)
+        self.initial_tunnel.flatten_strong()
+        
+        fp_ctrl.make_collision('tunnel', self.initial_tunnel, 0, 0)
 
         amb_light = AmbientLight('amblight')
         amb_light.set_priority(50)
         amb_light.set_color((0.5, 0.5, 0.5, 1))
         amb_light_node = render.attach_new_node(amb_light)
-        self.model.set_light(amb_light_node)
+        render.set_light(amb_light_node)
         section_lights.append(amb_light_node)
 
-        self.hg_1.set_shader(metal_shader)
         self.hg_1.set_light(amb_light_node)
 
         self.load_gunhand()
@@ -275,11 +275,12 @@ class Section3:
 
         self.hg_1.detach_node()
         self.hg_1 = None
-        self.model.detach_node()
-        self.model = None
-        ramp = base.render.find('ramp')
-        base.world.remove(ramp.node())
-        ramp.detach_node()
+        self.initial_tunnel.detach_node()
+        self.initial_tunnel = None
+        tunnel = base.render.find('tunnel')
+        base.world.remove(tunnel.node())
+        tunnel.detach_node()
+        tunnel = None
 
         self.player_char.detach_node()
         self.player_char = None

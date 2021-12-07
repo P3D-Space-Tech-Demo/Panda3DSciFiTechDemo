@@ -2,6 +2,6 @@ Assets/Shared/models/portal_generator.gltf
 Assets/Shared/models/wrecked_tunnel.gltf
 Assets/Shared/models/player_character.gltf
 Assets/Section3/models/player_character_squeeze_trigger.gltf
-Assets/Section3/models/ramp_test.gltf
 Assets/Section3/models/sec3_handgun_1.gltf
 Assets/Section3/levels/tunnel_drop_1.gltf
+Assets/Section3/models/sec3_initial_tunnel.gltf
