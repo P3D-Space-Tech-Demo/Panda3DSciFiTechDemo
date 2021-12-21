@@ -151,10 +151,7 @@ class Section3:
                 def reload_false():
                     base.drop_clip_toggle = False
                     section_intervals.remove(reload_hg_1)
-                    try:
-                        section_intervals.remove(base.particle_seq)
-                    except:
-                        print('No ParticleInterval present.')
+                    section_intervals.remove(base.particle_seq)
 
                 rl_false = Func(reload_false)
 
@@ -198,8 +195,7 @@ class Section3:
 
                 section_intervals.append(reload_hg_1)
 
-                start_particles('Assets/Shared/particles/steam.ptf', self.hg_1)
-                load_particle_config('Assets/Shared/particles/steam.ptf', self.hg_1, clip_1_pos, 2, inter_list=section_intervals, use_interval=True)
+                start_particles('Assets/Shared/particles/steam.ptf', self.hg_1, inter_duration=2, inter_list=section_intervals)
 
         KeyBindings.set_handler("reload_gun", drop_clip, "section3")
         
