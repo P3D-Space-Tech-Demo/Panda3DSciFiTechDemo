@@ -63,12 +63,11 @@ class Player(GameObject, ArmedObject, ShieldedObject):
 
         self.dustMovementOffset = 0
 
-        self.thirdPersonShip = sharedModels[shipSpec.shipModelFileLowPoly]
+        self.thirdPersonShip = sharedModels[shipSpec.shipModelFileLowPoly].copyTo(self.actor)
         common.mirrorShipParts(self.thirdPersonShip)
         self.thirdPersonShip.setScale(shipSpec.shipModelScalar*0.5)
         self.thirdPersonShip.setH(shipSpec.shipModelRotation)
         self.thirdPersonShip.setPos(shipSpec.shipModelOffset*shipSpec.shipModelScalar*0.5)
-        self.thirdPersonShip.reparentTo(self.actor)
 
         ShieldedObject.__init__(self, self.thirdPersonShip, Vec4(1, 0.3, 0.3, 1), 2.5)
 
