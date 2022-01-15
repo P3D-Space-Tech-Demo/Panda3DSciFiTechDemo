@@ -1990,7 +1990,7 @@ class Hangar:
             ramp_1_pos = Vec3(ramp_1_pos[0] + 13, ramp_1_pos[1], ramp_1_pos[2] - 2.4)
 
             slide_coll_pos = slide_coll.get_pos(base.render)
-            slide_coll_pos = Vec3(slide_coll_pos[0] + 13, slide_coll_pos[1], slide_coll_pos[2] - 2.4)
+            slide_coll_pos = Vec3(slide_coll_pos[0] + 13, slide_coll_pos[1], slide_coll_pos[2] - 2.2)
 
             ramp_lerp = LerpPosHprInterval(self.slide, 2, ramp_1_pos, (0, 0, 22))
             ramp_lerp_2 = LerpPosHprInterval(slide_coll, 2, slide_coll_pos, (0, 0, 22))
